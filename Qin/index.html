@@ -686,6 +686,7 @@ body.no-labels #hud .dock .oops-btn,body.no-labels #hud .dock .shop-btn{opacity:
     SPEAKER_SVG: () => SPEAKER_SVG,
     addBricks: () => addBricks,
     audioInit: () => audioInit,
+    backupLink: () => backupLink,
     bindCoinCounter: () => bindCoinCounter,
     burst: () => burst,
     cheer: () => cheer,
@@ -707,6 +708,7 @@ body.no-labels #hud .dock .oops-btn,body.no-labels #hud .dock .shop-btn{opacity:
     musicStop: () => musicStop,
     onClear: () => onClear,
     oopsFixed: () => oopsFixed,
+    packSave: () => packSave,
     pic: () => pic,
     picHTML: () => picHTML,
     pip: () => pip,
@@ -729,14 +731,17 @@ body.no-labels #hud .dock .oops-btn,body.no-labels #hud .dock .shop-btn{opacity:
     setVoice: () => setVoice,
     sfx: () => sfx,
     shake: () => shake,
+    shortenLink: () => shortenLink,
     snapHTML: () => snapHTML,
     speakBtn: () => speakBtn,
     streakHit: () => streakHit,
     streakReset: () => streakReset,
     stripPics: () => stripPics,
     tryAgain: () => tryAgain,
+    unpackSave: () => unpackSave,
     unsnap: () => unsnap,
-    wait: () => wait
+    wait: () => wait,
+    writeSave: () => writeSave
   });
   function load() {
     try {
@@ -775,6 +780,65 @@ body.no-labels #hud .dock .oops-btn,body.no-labels #hud .dock .shop-btn{opacity:
     } catch (e) {
       return null;
     }
+  }
+  async function pipeBytes(bytes, stream) {
+    const r = new Blob([bytes]).stream().pipeThrough(stream);
+    return new Uint8Array(await new Response(r).arrayBuffer());
+  }
+  async function packSave() {
+    const o = JSON.parse(JSON.stringify(S));
+    delete o.savedAt;
+    o.items = Object.fromEntries(Object.entries(S.items).map(([k, r]) => [k, [r.box, r.c, r.w, ...r.miss || []]]));
+    const raw = new TextEncoder().encode(JSON.stringify(o));
+    if (window.CompressionStream) {
+      try {
+        return "z" + b64u(await pipeBytes(raw, new CompressionStream("deflate-raw")));
+      } catch (e) {
+      }
+    }
+    return "j" + b64u(raw);
+  }
+  async function unpackSave(t) {
+    t = String(t).trim();
+    let bytes = unb64u(t.slice(1));
+    if (t[0] === "z") bytes = await pipeBytes(bytes, new DecompressionStream("deflate-raw"));
+    const o = JSON.parse(new TextDecoder().decode(bytes));
+    o.items = Object.fromEntries(Object.entries(o.items || {}).map(([k, a]) => Array.isArray(a) ? [k, { box: a[0], c: a[1], w: a[2], miss: a.slice(3), t: 0 }] : [k, a]));
+    return o;
+  }
+  async function backupLink() {
+    return location.origin + location.pathname + "?r=" + await packSave();
+  }
+  function shortenLink(long) {
+    return new Promise((res, rej) => {
+      if (long.length > 4900) return rej(new Error("too long"));
+      const cb = "__isgd" + Date.now();
+      const sc = document.createElement("script");
+      const done2 = () => {
+        delete window[cb];
+        sc.remove();
+        clearTimeout(tm);
+      };
+      const tm = setTimeout(() => {
+        done2();
+        rej(new Error("timeout"));
+      }, 9e3);
+      window[cb] = (d) => {
+        done2();
+        d && d.shorturl ? res(d.shorturl) : rej(new Error(d && d.errormessage || "failed"));
+      };
+      sc.onerror = () => {
+        done2();
+        rej(new Error("offline"));
+      };
+      sc.src = "https://is.gd/create.php?format=json&callback=" + cb + "&url=" + encodeURIComponent(long);
+      document.head.append(sc);
+    });
+  }
+  function writeSave(obj) {
+    if (!obj || typeof obj !== "object" || !obj.items) throw new Error("not a Pebble Town save");
+    localStorage.setItem(KEY, JSON.stringify(obj));
+    return obj;
   }
   function importSave(text) {
     let t = String(text || "").trim();
@@ -1257,7 +1321,7 @@ body.no-labels #hud .dock .oops-btn,body.no-labels #hud .dock .shop-btn{opacity:
     el.style.width = el.style.height = size + "px";
     return el;
   }
-  var KEY, fresh, S, exportSave, QCTX, REPLAYING, REPLAY, isReplaying, stripPics, restorePics, plainText, AC, master, musicGain, musicTimer, MEL, BASS, voice, speakToken, $, wait, SPEAKER_SVG, PIP_SVG, pipEl, bubbleEl, pipTimer, CHEERS, TRY, cheer, tryAgain, coinEl, CONF, streak, cleanups, hasPic, picHTML;
+  var KEY, fresh, S, b64u, unb64u, exportSave, QCTX, REPLAYING, REPLAY, isReplaying, stripPics, restorePics, plainText, AC, master, musicGain, musicTimer, MEL, BASS, voice, speakToken, $, wait, SPEAKER_SVG, PIP_SVG, pipEl, bubbleEl, pipTimer, CHEERS, TRY, cheer, tryAgain, coinEl, CONF, streak, cleanups, hasPic, picHTML;
   var init_core = __esm({
     "src/core.js"() {
       init_mathgen();
@@ -1277,6 +1341,15 @@ body.no-labels #hud .dock .oops-btn,body.no-labels #hud .dock .shop-btn{opacity:
         story: { finale: 0, quests: 0 }
       });
       S = fresh();
+      b64u = (bytes) => {
+        let s = "";
+        bytes.forEach((b) => s += String.fromCharCode(b));
+        return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+      };
+      unb64u = (t) => {
+        const s = atob(t.replace(/-/g, "+").replace(/_/g, "/"));
+        return Uint8Array.from(s, (c) => c.charCodeAt(0));
+      };
       exportSave = () => "PEBBLE1:" + btoa(unescape(encodeURIComponent(JSON.stringify(S))));
       QCTX = null;
       REPLAYING = false;
@@ -49800,66 +49873,103 @@ void main() {
     const when = S.savedAt ? new Date(S.savedAt).toLocaleString() : "\u2014";
     const status = h("span", {}, "checking\u2026");
     isProtected().then((p) => {
-      status.textContent = p === true ? "Yes \u2713 (the browser will not auto-clear it)" : p === false ? 'Not yet \u2014 tap "Protect"' : "This browser cannot say";
+      status.textContent = p === true ? "Yes \u2713" : p === false ? 'Not yet \u2014 tap "Protect"' : "This browser cannot say";
     });
     const msg = h("p", { style: { fontWeight: 700, minHeight: "1.3em", margin: "6px 0" } });
-    const fileName = () => `pebble-town-${(S.name || "save").toLowerCase()}-${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.txt`;
-    const download = () => {
-      const a = h("a", { href: URL.createObjectURL(new Blob([exportSave()], { type: "text/plain" })), download: fileName() });
-      document.body.append(a);
-      a.click();
-      a.remove();
-      msg.textContent = "Backup file saved to Downloads.";
-    };
-    const restore = (text) => {
+    const btn = (cls, label, fn) => h("button", { class: "btn small " + cls, onclick: fn }, label);
+    const linkOut = h("div", { class: "backup-link" });
+    const makeLink = async () => {
+      linkOut.innerHTML = "";
+      msg.textContent = "Making the link\u2026";
+      const long = await backupLink();
+      let url = long, short = false;
       try {
-        const o = importSave(text);
-        msg.textContent = `Restored ${o.name || "progress"} (${o.coins || 0} coins). Reloading\u2026`;
-        setTimeout(() => location.reload(), 900);
+        url = await shortenLink(long);
+        short = true;
       } catch (e) {
-        msg.textContent = "That is not a Pebble Town save code.";
+      }
+      msg.textContent = short ? "Done! Keep this link. Opening it on any device brings her progress back." : "Done! (The short-link service did not answer, so this is the full link. It works the same.)";
+      const share = async () => {
+        try {
+          if (navigator.share) {
+            await navigator.share({ title: `${S.name || "Pebble Town"} backup`, text: `Pebble Town backup for ${S.name || "her"} (${(/* @__PURE__ */ new Date()).toLocaleDateString()})`, url });
+            return;
+          }
+        } catch (e) {
+          if (e.name === "AbortError") return;
+        }
+        copy();
+      };
+      const copy = async () => {
+        try {
+          await navigator.clipboard.writeText(url);
+          msg.textContent = "Link copied.";
+        } catch (e) {
+          box3.select();
+          msg.textContent = "Select the link and copy it.";
+        }
+      };
+      const box3 = h("input", { value: url, readonly: "", onclick: (e) => e.target.select(), style: { width: "100%", font: short ? "700 26px var(--display)" : "12px monospace", textAlign: short ? "center" : "left", padding: "8px", border: "3px solid #2E2A4F", borderRadius: "12px", boxSizing: "border-box" } });
+      linkOut.append(box3, h("div", { style: { display: "flex", gap: "10px", flexWrap: "wrap", marginTop: "8px" } }, btn("green", "\u{1F4E4} Share", share), btn("paper", "\u{1F4CB} Copy", copy)));
+    };
+    const restoreText = async (text) => {
+      const t = String(text || "").trim();
+      if (!t) return;
+      if (/^(https?:\/\/)?(is\.gd|v\.gd)\//i.test(t)) {
+        location.href = t.startsWith("http") ? t : "https://" + t;
+        return;
+      }
+      if (/^[A-Za-z0-9_]{5,30}$/.test(t)) {
+        location.href = "https://is.gd/" + t;
+        return;
+      }
+      try {
+        let o;
+        const m = t.match(/[?&]r=([^&#\s]+)/);
+        if (m) o = await unpackSave(m[1]);
+        else {
+          importSave(t);
+          location.reload();
+          return;
+        }
+        if (!confirm(`Replace the progress on this device with ${o.name || "this backup"} (${o.coins || 0} coins)?`)) return;
+        writeSave(o);
+        location.reload();
+      } catch (e) {
+        msg.textContent = "That is not a Pebble Town backup.";
       }
     };
     const fileIn = h("input", { type: "file", accept: ".txt,.json,text/plain,application/json", style: { display: "none" }, onchange: (e) => {
       const f = e.target.files[0];
-      if (!f) return;
-      f.text().then((t) => {
-        if (confirm("Replace the progress on this device with this backup?")) restore(t);
-      });
+      if (f) f.text().then(restoreText);
     } });
-    const code = h("textarea", { rows: "3", placeholder: "Paste a save code here to restore", style: { width: "100%", font: "13px monospace", borderRadius: "8px", border: "2px solid #2E2A4F", padding: "6px", boxSizing: "border-box" } });
-    const btn = (cls, label, fn) => h("button", { class: "btn small " + cls, onclick: fn }, label);
+    const code = h("input", { placeholder: "Paste a backup link or short code", style: { flex: "1", minWidth: "200px", font: "16px inherit", padding: "8px", borderRadius: "10px", border: "2px solid #2E2A4F" } });
+    const download = () => {
+      const a = h("a", { href: URL.createObjectURL(new Blob([exportSave()], { type: "text/plain" })), download: `pebble-town-${(S.name || "save").toLowerCase()}-${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.txt` });
+      document.body.append(a);
+      a.click();
+      a.remove();
+      msg.textContent = "Backup file saved.";
+    };
     return h(
       "div",
       {},
-      h("p", { style: { margin: "0 0 6px" } }, `Progress is saved automatically in this browser (last saved: ${when}). It stays unless the browser's site data is cleared, a private/incognito window is used, or (on iPhone/iPad Safari) the game isn't opened for 7 days. A different browser or device starts empty \u2014 use a backup to move it.`),
-      h("p", { style: { margin: "0 0 8px" } }, h("b", {}, "Protected from auto-clearing: "), status),
+      h("p", { style: { margin: "0 0 6px" } }, `Progress saves automatically in this browser (last saved: ${when}). It can be lost if site data is cleared, in a private window, or on iPad Safari if the game isn't opened for 7 days. Make a backup link now and then \u2014 it holds everything.`),
+      h("div", { style: { display: "flex", gap: "10px", flexWrap: "wrap" } }, btn("green", "\u{1F517} Make backup link", makeLink)),
+      linkOut,
+      msg,
+      h("h4", { style: { margin: "14px 0 6px" } }, "Restore"),
+      h("div", { style: { display: "flex", gap: "10px", flexWrap: "wrap" } }, code, btn("red", "Restore", () => restoreText(code.value))),
       h(
-        "div",
-        { style: { display: "flex", gap: "10px", flexWrap: "wrap" } },
-        btn("green", "\u2B07 Save backup file", download),
-        btn("blue", "\u2B06 Load backup file", () => fileIn.click()),
-        btn("paper", "\u{1F4CB} Copy save code", async () => {
-          const c = exportSave();
-          code.value = c;
-          try {
-            await navigator.clipboard.writeText(c);
-            msg.textContent = "Save code copied. Paste it into a note or message to keep it.";
-          } catch (e) {
-            code.select();
-            msg.textContent = "Select the code above and copy it.";
-          }
-        }),
-        btn("paper", "\u{1F6E1} Protect", async () => {
+        "details",
+        { style: { marginTop: "10px", fontSize: "15px" } },
+        h("summary", {}, "More: backup file, storage protection"),
+        h("p", {}, h("b", {}, "Protected from auto-clearing: "), status, " ", btn("paper", "\u{1F6E1} Protect", async () => {
           const p = await protectStorage();
-          status.textContent = p ? "Yes \u2713 (the browser will not auto-clear it)" : "The browser said no \u2014 keep a backup file instead.";
-        }),
-        fileIn
-      ),
-      h("div", { style: { marginTop: "10px" } }, code, btn("red", "Restore from code", () => {
-        if (code.value.trim() && confirm("Replace the progress on this device with this code?")) restore(code.value);
-      })),
-      msg
+          status.textContent = p ? "Yes \u2713" : "The browser said no \u2014 keep backup links.";
+        })),
+        h("div", { style: { display: "flex", gap: "10px", flexWrap: "wrap" } }, btn("paper", "\u2B07 Save backup file", download), btn("paper", "\u2B06 Load backup file", () => fileIn.click()), fileIn)
+      )
     );
   }
   var init_parent = __esm({
@@ -49959,6 +50069,7 @@ void main() {
   async function boot() {
     load();
     protectStorage();
+    if (await restoreFromLink()) return;
     document.body.innerHTML = "";
     try {
       await Promise.race([Promise.all([document.fonts.load("40px Chewy"), document.fonts.load("bold 20px Andika")]), wait(1500)]);
@@ -50000,6 +50111,44 @@ void main() {
     pipMount();
     pipVisible(false);
     showTitle();
+  }
+  async function restoreFromLink() {
+    const r = new URLSearchParams(location.search).get("r");
+    if (!r) return false;
+    const clean = () => history.replaceState(null, "", location.pathname);
+    let o;
+    try {
+      o = await unpackSave(r);
+    } catch (e) {
+      clean();
+      return false;
+    }
+    const have = S.name || Object.keys(S.items).length;
+    return new Promise((res) => {
+      document.body.innerHTML = "";
+      const ov = h("div", { class: "overlay" }, h(
+        "div",
+        { class: "panel", style: { textAlign: "center", width: "min(520px,94vw)" } },
+        h("h2", {}, "Restore progress?"),
+        h("p", { style: { fontWeight: 700, fontSize: "20px" } }, `${o.name || "Player"} \xB7 ${o.coins || 0} coins \xB7 ${Object.keys(o.items || {}).length} things learned`),
+        have ? h("p", {}, `This will replace the progress now on this device (${S.name || "Player"} \xB7 ${S.coins || 0} coins).`) : null,
+        h(
+          "div",
+          { style: { display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap", marginTop: "12px" } },
+          h("button", { class: "btn green", onclick: () => {
+            writeSave(o);
+            clean();
+            location.reload();
+          } }, "Yes, restore"),
+          h("button", { class: "btn paper", onclick: () => {
+            clean();
+            location.reload();
+          } }, "No, keep this device")
+        )
+      ));
+      document.body.append(ov);
+      res(true);
+    });
   }
   function tapWord(w) {
     const s = SPELLING.find((x) => x.w === w);
