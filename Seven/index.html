@@ -492,9 +492,6 @@ body.no-labels #hud .dock .glitch-btn,body.no-labels #hud .dock .shop-btn{opacit
 @keyframes pulseme{50%{transform:scale(1.1);box-shadow:0 6px 0 var(--ink),0 0 0 10px #FFD23F66}}
 .hud-mission .btn.pulse-me{animation:pulseme .9s ease-in-out infinite!important}
 /* menu cards remember his best */
-.mcard .done-badge{position:absolute;top:8px;right:10px;font-size:15px;letter-spacing:1px;color:var(--yellow-d);background:#fff;border:2px solid var(--ink);border-radius:10px;padding:0 6px;line-height:1.4}
-.mcard.played{box-shadow:0 7px 0 var(--ink),inset 0 0 0 4px #7FD08F}
-.mcard.perfect::after{content:'✔';position:absolute;top:-12px;left:-10px;width:34px;height:34px;border-radius:50%;background:var(--mint-d);color:#fff;border:3px solid var(--ink);display:grid;place-items:center;font-size:18px;font-weight:900}
 .streak.hot .streak-fill{background:linear-gradient(90deg,var(--orange),var(--red));box-shadow:0 0 12px var(--orange)}
 /* overlays & panels */
 .overlay{position:fixed;inset:0;z-index:42;display:grid;place-items:center;background:rgba(14,19,48,.62);padding:16px}
@@ -704,6 +701,33 @@ table.prop-chart{border-collapse:collapse;font-size:15px;background:#fff;border:
 .blast-rock.boom{animation:boom .6s forwards}.blast-rock.miss{opacity:.7}
 @keyframes rockin{from{transform:translateY(-60vh) rotate(-8deg)}}@keyframes boom{to{transform:scale(1.4);opacity:0;filter:brightness(3)}}
 @media (max-width:760px){.mem-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.sky-band{height:56px}.tank{margin-right:120px}}
+
+/* ============ tile status (Not started / Try again / Done / Mastered) ============ */
+.mcard{padding-bottom:12px}
+.mcard .meter{display:none}
+.mcard .best{font-size:14px;letter-spacing:1px;color:var(--yellow-d);font-weight:700}.mcard .best-l{letter-spacing:0;color:var(--ink2);font-size:12px}
+.tstat{margin-top:auto;align-self:stretch;display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:10px;border:2px solid var(--ink);font:600 14px var(--display);background:#fff;color:var(--ink2)}
+.tstat-ic{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;flex:none}
+.tstat-l{white-space:nowrap}
+.tstat-m{flex:1;height:8px;border:2px solid var(--ink);border-radius:5px;background:#fff;overflow:hidden;min-width:30px}
+.tstat-m i{display:block;height:100%}
+.tstat.new{border-style:dashed;background:#ffffffaa}.tstat.new .tstat-ic{color:#9AA3C7;font-size:10px}
+.tstat.going{background:#FFF0C2}.tstat.going .tstat-ic{background:var(--orange);color:#fff;font-size:10px}.tstat.going .tstat-m i{background:var(--orange)}
+.tstat.done{background:#C9F5DF;color:var(--mint-d)}.tstat.done .tstat-ic{background:var(--mint-d);color:#fff}.tstat.done .tstat-m i{background:var(--mint-d)}
+.tstat.master{background:#FFE58A;color:#8A5A00}.tstat.master .tstat-ic{background:#fff;border:2px solid var(--ink)}.tstat.master .tstat-m i{background:var(--yellow-d)}
+.mcard.st-new{opacity:.96}
+.mcard.st-done{box-shadow:0 7px 0 var(--ink),inset 0 0 0 4px var(--mint)}
+.mcard.st-master{box-shadow:0 7px 0 var(--ink),inset 0 0 0 4px var(--yellow)}
+.tstamp{position:absolute;top:-14px;left:-12px;width:40px;height:40px;border-radius:50%;border:3px solid var(--ink);display:grid;place-items:center;font:900 20px var(--display);z-index:2;transform:rotate(-10deg);box-shadow:0 3px 0 var(--ink)}
+.tstamp.done{background:var(--mint-d);color:#fff}.tstamp.master{background:var(--yellow);font-size:20px}
+.tile-sum{display:flex;align-items:center;gap:12px;font-family:var(--display);font-size:18px;color:#fff;background:#0E133088;border:2px solid #ffffff44;border-radius:14px;padding:5px 14px}
+.light .tile-sum{color:var(--ink);background:#fff;border-color:var(--ink)}
+.tile-sum-bar{width:160px;height:12px;border:2px solid var(--ink);border-radius:8px;background:#fff;overflow:hidden}.tile-sum-bar i{display:block;height:100%;background:var(--mint)}
+.planet .tstat{width:140px;color:var(--ink2)}
+.planet .ball .tstamp{top:-8px;left:-8px}
+.planet.st-done .ball{box-shadow:0 0 0 5px var(--mint),0 8px 0 var(--ink)}.planet.st-master .ball{box-shadow:0 0 0 5px var(--yellow),0 8px 0 var(--ink)}
+
+.screen .stage{padding-bottom:calc(150px + env(safe-area-inset-bottom,0px))}
 </style></head>
 <body>
 <div id="space"></div><div id="labels"></div><div id="hud"></div>
@@ -1317,7 +1341,7 @@ function openScreen({ id, title, icon, bgClass, light, dark }) {
   const stage = h('div', { class: 'stage' });
   scr.append(bg, top, stage);
   document.body.append(scr);
-  $('#hud').classList.add('hidden'); $('#labels').classList.add('hidden');
+  $('#hud').classList.add('hidden'); $('#labels').classList.add('hidden'); clearTimeout(bubbleTimer); $('#bubble').classList.add('hidden');
   let st = 0;
   const api = {
     id, el: scr, stage, bg, onBack: null,
@@ -1341,15 +1365,33 @@ function closeScreen(silent) {
 }
 /* mission menu */
 let curCard = null;
+/* one clear status for every game tile */
+function tileStatus({ best = 0, meter, done }) {
+  const pct = meter != null ? Math.round(meter * 100) : null;
+  if (done === true || best >= 2 || (meter != null && meter >= .8)) return (best === 3 || (meter != null && meter >= .9)) ? { k: 'master', label: 'Mastered', icon: '🏆', pct } : { k: 'done', label: 'Done', icon: '✓', pct };
+  if (best > 0 || (meter != null && meter > 0)) return { k: 'going', label: best ? 'Try again' : 'Keep going', icon: '▶', pct };
+  return { k: 'new', label: 'Not started', icon: '●', pct };
+}
+function statusStrip(s) {
+  return h('span', { class: 'tstat ' + s.k }, h('span', { class: 'tstat-ic' }, s.icon), h('span', { class: 'tstat-l' }, s.label),
+    s.pct != null && s.k !== 'new' ? h('span', { class: 'tstat-m' }, h('i', { style: { width: Math.max(4, s.pct) + '%' } })) : null);
+}
 function missionMenu(scr, intro, cards) {
   scr.clear(); scr.onBack = null; curCard = null;
   readOut(intro);
-  scr.stage.append(h('div', { class: 'intro-line' }, speakBtn(intro), h('span', {}, intro)), h('div', { class: 'missions' }, cards.map(c => { const key = scr.id + '|' + c.name, best = S.cardBest[key] || 0;
-    return h('button', { class: 'mcard' + (best ? ' played' : '') + (best === 3 ? ' perfect' : ''), style: c.color ? { '--c': c.color } : null, onclick: async () => { SFX.tap(); curCard = c.noTrack ? null : key; await maybeHelp(scr.id, c.name); c.go(); } },
-      best ? h('span', { class: 'done-badge', title: 'Your best' }, '★'.repeat(best) + '☆'.repeat(3 - best)) : null,
-      c.tag ? h('span', { class: 'tag' }, c.tag) : null,
+  const tracked = cards.filter(c => !c.noTrack), stats = tracked.map(c => tileStatus({ best: S.cardBest[scr.id + '|' + c.name] || 0, meter: c.meter, done: c.done ?? (c.tag === '✓' ? true : undefined) }));
+  const nDone = stats.filter(s => s.k === 'done' || s.k === 'master').length;
+  scr.stage.append(h('div', { class: 'intro-line' }, speakBtn(intro), h('span', {}, intro)),
+    tracked.length ? h('div', { class: 'tile-sum' }, h('b', {}, `${nDone} / ${tracked.length} done`), h('span', { class: 'tile-sum-bar' }, h('i', { style: { width: (nDone / tracked.length * 100) + '%' } }))) : null,
+    h('div', { class: 'missions' }, cards.map(c => { const key = scr.id + '|' + c.name, best = S.cardBest[key] || 0;
+    const st = c.noTrack ? null : tileStatus({ best, meter: c.meter, done: c.done ?? (c.tag === '✓' ? true : undefined) });
+    const tag = c.tag === '✓' ? null : c.tag;
+    return h('button', { class: 'mcard' + (st ? ' st-' + st.k : ''), style: c.color ? { '--c': c.color } : null, onclick: async () => { SFX.tap(); curCard = c.noTrack ? null : key; await maybeHelp(scr.id, c.name); c.go(); } },
+      st && (st.k === 'done' || st.k === 'master') ? h('span', { class: 'tstamp ' + st.k }, st.icon) : null,
+      tag ? h('span', { class: 'tag' }, tag) : null,
       h('div', { class: 'em' }, c.em || '🚀'), h('b', {}, c.name), h('small', {}, c.desc || ''),
-      c.meter != null ? h('div', { class: 'meter' }, h('i', { style: { width: Math.round(c.meter * 100) + '%' } })) : null); })));
+      best ? h('span', { class: 'best' }, h('span', { class: 'best-l' }, 'Best '), '★'.repeat(best) + '☆'.repeat(3 - best)) : null,
+      st ? statusStrip(st) : null); })));
 }
 /* round runner: ask(i, holder) → Promise<boolean> */
 async function runRound(scr, { n, ask, again, back, label }) {
@@ -1918,8 +1960,9 @@ function openComms() {
     const row = h('div', { class: 'planets' });
     JOURNEYS.forEach(J => {
       const m = mastery(J.qs.map((q, k) => jqKey(J.L, k)));
-      row.append(h('button', { class: 'planet' + (m >= .99 ? ' done' : ''), onclick: () => { SFX.tap(); planet(J); } },
-        h('div', { class: 'ball', style: { '--c': J.planet } }, J.icon), h('span', { class: 'lv' }, 'L' + J.L), h('b', {}, J.title), h('small', {}, Math.round(m * 100) + '% decoded')));
+      const ps = tileStatus({ meter: m });
+      row.append(h('button', { class: 'planet st-' + ps.k, onclick: () => { SFX.tap(); planet(J); } },
+        h('div', { class: 'ball', style: { '--c': J.planet } }, J.icon, ps.k === 'done' || ps.k === 'master' ? h('span', { class: 'tstamp ' + ps.k }, ps.icon) : null), h('span', { class: 'lv' }, 'L' + J.L), h('b', {}, J.title), statusStrip(ps)));
     });
     scr.stage.append(row, h('div', { style: { display: 'flex', gap: '14px', flexWrap: 'wrap', justifyContent: 'center' } },
       h('button', { class: 'btn teal', onclick: whichStory }, '🪐 Which planet?'),
