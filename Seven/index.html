@@ -400,7 +400,7 @@ textarea.answer{width:100%;min-height:96px;border:3px solid var(--ink);border-ra
 .minipassage p{margin:6px 0}
 .ctxline{font-size:18px;color:var(--ink2);font-style:italic}
 
-.hud-mission{position:absolute;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:flex-end;gap:6px;pointer-events:none}
+.hud-mission{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none}
 .hud-mission .btn{pointer-events:auto;font-size:24px;padding:12px 28px 14px;animation:missionpulse 2.4s ease-in-out infinite}
 @keyframes missionpulse{50%{box-shadow:0 6px 0 var(--ink),0 0 0 8px #FF7A3D44}}
 .hud-hint{font-family:var(--display);font-size:14px;color:#fff;background:#0E133099;padding:3px 12px;border-radius:12px}
@@ -430,8 +430,6 @@ textarea.answer{width:100%;min-height:96px;border:3px solid var(--ink);border-ra
 @media (max-width:700px){.rd-row{grid-template-columns:110px 1fr 46px}.rd-row .rd-lvl{display:none}.rd-row .rd-sub{grid-column:1/4}.rd-grid{grid-template-columns:1fr}}
 .lcard .modelans{color:#E9FFF6}
 @media (max-width:700px){
-  #bubble{left:10px;bottom:calc(108px + env(safe-area-inset-bottom,0px));max-width:calc(100vw - 20px);border-radius:20px 20px 20px 4px}
-  .hud-mission{right:12px}
   .rd-row{grid-template-columns:1fr auto auto}.rd-row .rd-lvl{display:block}
   .rd-row .rd-bar{grid-column:1/4;grid-row:2}.rd-row .rd-sub{grid-column:1/4;grid-row:3;margin-top:-4px}
   body:has(.rd-rows) #bolt, body:has(.rd-rows) #bubble{display:none}
@@ -443,6 +441,176 @@ textarea.answer{width:100%;min-height:96px;border:3px solid var(--ink);border-ra
 .name-in::placeholder{color:#9AA3C7;font-weight:500}
 .name-in.shake{animation:nshake .4s}
 @keyframes nshake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+
+/* =========================================================
+   PEBBLE-STYLE SYSTEM UI (settings tray, dock, grown-ups, story)
+   ========================================================= */
+#bubble{left:calc(14px + env(safe-area-inset-left,0px));bottom:calc(132px + env(safe-area-inset-bottom,0px));max-width:min(470px,calc(100vw - 28px));border-radius:20px 20px 20px 4px;padding:10px 40px 10px 14px;cursor:pointer}
+#bubble .bubble-spk{display:inline-block;width:22px;height:22px;vertical-align:-4px;margin-right:6px;color:var(--teal-d)}
+#bubble .bubble-x{position:absolute;top:4px;right:6px;width:28px;height:28px;border:0;background:none;font:900 24px/1 var(--display);color:#9AA3C7;cursor:pointer}
+.speak{color:var(--ink);padding:11px}
+.speak svg{width:100%;height:100%}
+.speak.big{width:80px;height:80px;padding:17px}
+.prompt .speak,.intro-line .speak{width:40px;height:40px;padding:8px;margin-right:10px;vertical-align:-8px;box-shadow:0 3px 0 var(--ink)}
+.intro-line{display:flex;align-items:center;justify-content:center;gap:4px}
+/* HUD */
+.mission-chip{display:inline-flex;align-items:center;gap:10px;padding:5px 7px 5px 14px;font-family:var(--display);font-weight:600;font-size:17px;background:var(--panel);border:3px solid var(--ink);border-radius:30px;box-shadow:0 4px 0 var(--ink);white-space:nowrap;cursor:pointer}
+.mission-chip .m-crew b{font-size:21px;color:var(--teal-d)}
+.mission-chip .m-goal{background:#FFE58A;border:2px solid var(--ink);border-radius:20px;padding:1px 11px}
+.mission-chip .m-goal.go{background:var(--orange);color:#fff;animation:glowgo 1s infinite alternate}
+@keyframes glowgo{to{box-shadow:0 0 0 6px #FF7A3D55}}
+.mission-steps{font-size:19px;font-weight:700;line-height:1.6;padding-left:26px;margin:4px 0 14px}
+.mission-steps li.ok{color:var(--mint-d)}.mission-steps li.ok::marker{content:'✓ '}
+.menu-wrap{position:relative}
+.tray{position:absolute;right:0;top:58px;display:flex;flex-direction:column;gap:6px;padding:10px;background:var(--panel);border:3px solid var(--ink);border-radius:16px;box-shadow:0 6px 0 var(--ink);min-width:240px;z-index:30}
+.tray-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border:2px solid transparent;border-radius:12px;background:none;font:700 19px var(--read);color:var(--ink);cursor:pointer;text-align:left}
+.tray-row:hover{background:#FFF1C9;border-color:var(--ink)}
+.tray-row .spk{width:26px;height:26px;display:inline-grid;place-items:center;font-style:normal;font-size:22px}
+.tray-row .spk svg{width:26px;height:26px}
+.read-btn.mini{display:inline-flex;align-items:center;justify-content:center}
+.read-btn.mini .spk{display:block;width:26px;height:26px;margin:auto}
+.read-btn.mini.on{--c:#C9F5DF}
+.help-btn{font-family:var(--display);font-size:26px}
+.dock{position:absolute;right:max(14px,env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;pointer-events:auto}
+.dock-btn{position:relative;width:76px;height:76px;border-radius:20px;border:3px solid var(--ink);background:var(--panel);box-shadow:0 5px 0 var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer;transition:transform .12s}
+.dock-btn:hover{transform:translateY(-3px)}
+.dock-btn:active{transform:translateY(3px);box-shadow:0 2px 0 var(--ink)}
+.dock-btn .dock-ic{font-size:30px;line-height:1}
+.dock-btn small{font:600 13px var(--display);color:var(--ink);white-space:nowrap}
+.dock-btn.glitch-btn.has{background:#E4D6FF}
+.dock-btn .glitch-count{position:absolute;top:-10px;right:-10px;min-width:28px;height:28px;padding:0 6px;border-radius:14px;border:2px solid var(--ink);background:#fff;font:700 15px/24px var(--display);display:none}
+.dock-btn.glitch-btn.has .glitch-count{display:block;background:#8E5CF7;color:#fff}
+.dock-btn.shop-btn{background:#C9F5DF}
+.dock-btn .can-dot{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;border:2px solid var(--ink);background:var(--yellow);display:none}
+.dock-btn.shop-btn.can .can-dot{display:block;animation:bob 1s ease-in-out infinite}
+.dock-btn.on{background:#FFE58A}
+body.no-labels #labels,body.no-labels #hud .hud-hint,body.no-labels #hud .mission-chip{opacity:0;pointer-events:none}
+body.no-labels #hud .dock .glitch-btn,body.no-labels #hud .dock .shop-btn{opacity:.3}
+.quiet-row{display:flex;align-items:center;gap:8px;color:#DDE6FF;font-weight:700;font-size:17px;cursor:pointer}
+.quiet-row input{width:22px;height:22px;accent-color:var(--orange)}
+.pulse-me{animation:pulseme .9s ease-in-out infinite!important}
+@keyframes pulseme{50%{transform:scale(1.1);box-shadow:0 6px 0 var(--ink),0 0 0 10px #FFD23F66}}
+.hud-mission .btn.pulse-me{animation:pulseme .9s ease-in-out infinite!important}
+/* menu cards remember his best */
+.mcard .done-badge{position:absolute;top:8px;right:10px;font-size:15px;letter-spacing:1px;color:var(--yellow-d);background:#fff;border:2px solid var(--ink);border-radius:10px;padding:0 6px;line-height:1.4}
+.mcard.played{box-shadow:0 7px 0 var(--ink),inset 0 0 0 4px #7FD08F}
+.mcard.perfect::after{content:'✔';position:absolute;top:-12px;left:-10px;width:34px;height:34px;border-radius:50%;background:var(--mint-d);color:#fff;border:3px solid var(--ink);display:grid;place-items:center;font-size:18px;font-weight:900}
+.streak.hot .streak-fill{background:linear-gradient(90deg,var(--orange),var(--red));box-shadow:0 0 12px var(--orange)}
+/* overlays & panels */
+.overlay{position:fixed;inset:0;z-index:42;display:grid;place-items:center;background:rgba(14,19,48,.62);padding:16px}
+div.panel{position:relative;width:min(760px,96vw);max-height:92vh;overflow:auto;background:linear-gradient(180deg,#F7F9FD,#E3E8F2);border:4px solid var(--ink);border-radius:20px;padding:24px 26px 26px;box-shadow:0 10px 0 var(--ink),0 24px 40px rgba(0,0,0,.4)}
+.panel h2{font-family:var(--display);font-weight:600;font-size:34px;margin:0 0 12px}
+.panel .close{position:absolute;top:14px;right:14px}
+table.report{width:100%;border-collapse:collapse;font-size:16px}
+table.report td,table.report th{border-bottom:2px solid #D6DDEB;padding:6px 8px;text-align:left;vertical-align:top}
+table.report th{font-family:var(--display);font-weight:600}
+.hold-btn{position:relative;overflow:hidden}
+.hold-btn .fill{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(61,220,151,.45)}
+.gu-sec{border-top:3px dashed var(--panel2);padding-top:10px}
+.gu-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.gu-note{font-size:15px;color:var(--ink2);margin:0 0 8px}
+.gu-msg{font-weight:700;min-height:1.3em;margin:6px 0}
+.gu-select{font:inherit;padding:6px;border-radius:8px;border:2px solid var(--ink);max-width:100%}
+.gu-code{flex:1;min-width:200px;font:16px var(--read);padding:8px;border-radius:10px;border:2px solid var(--ink)}
+.gu-link{width:100%;font:12px monospace;padding:8px;border:3px solid var(--ink);border-radius:12px;margin-top:8px}
+.gu-link.short{font:700 26px var(--display);text-align:center}
+.gu-more{margin-top:10px;font-size:15px}
+.glitch-was{font-size:16px;background:#E4D6FF;border:2px solid var(--ink);border-radius:10px;padding:4px 12px}
+.bg-glitch{background:repeating-linear-gradient(0deg,transparent 0 6px,#ffffff06 6px 7px),radial-gradient(ellipse at 50% 0,#4A2A9E,#1A1240 70%)}
+/* how to play */
+div.panel.howto{width:min(600px,94vw)}
+.howto-top{font-family:var(--display);font-weight:600;font-size:19px;color:var(--orange-d)}
+.panel.howto ol{font-size:21px;font-weight:700;line-height:1.45;padding-left:28px;margin:6px 0 18px}
+.panel.howto li{margin:6px 0}
+/* dialogue box */
+.dlg{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:44;width:min(860px,94vw);display:flex;align-items:center;gap:16px;padding:16px 18px 16px 16px;
+  background:linear-gradient(180deg,#F7F9FD,#E3E8F2);border:4px solid var(--ink);border-radius:20px;box-shadow:0 8px 0 var(--ink),0 20px 30px rgba(0,0,0,.4);animation:pop .3s}
+.dlg-face{width:96px;height:96px;flex:0 0 auto;border-radius:50%;border:3px solid var(--ink);overflow:hidden;background:#fff}
+.dlg-face svg{width:100%;height:100%;display:block}
+.dlg-body{flex:1;min-width:0}
+.dlg-who{font-family:var(--display);font-weight:600;font-size:22px;color:var(--orange-d);margin-bottom:2px}
+.dlg-text{font-size:23px;font-weight:700;line-height:1.35;min-height:62px}
+.dlg-next{align-self:flex-end}
+.dlg-skip{position:absolute;top:-22px;right:14px;font-size:15px;padding:4px 12px 6px}
+.dlg.narrate{background:#141B3D;color:#F4F6FB;border-color:#fff8}.dlg.narrate .dlg-text{font-style:italic}
+.dlg.villain{background:#3B1F86;color:#fff}.dlg.villain .dlg-who{color:var(--mint)}
+.screen-flash{position:fixed;inset:0;background:#fff;z-index:43;pointer-events:none;opacity:0}
+.toast-big{position:fixed;left:50%;top:22%;z-index:41;transform:translateX(-50%);font-family:var(--display);font-weight:700;font-size:clamp(36px,7vw,72px);color:var(--yellow);white-space:nowrap;pointer-events:none;
+  text-shadow:0 4px 0 var(--ink),4px 0 0 var(--ink),-4px 0 0 var(--ink),0 -4px 0 var(--ink),3px 3px 0 var(--ink),-3px 3px 0 var(--ink),0 12px 18px rgba(0,0,0,.5)}
+/* tour */
+.tour{position:fixed;inset:0;z-index:46}
+.tour-hole{position:fixed;border-radius:18px;box-shadow:0 0 0 9999px rgba(14,19,48,.66);border:4px dashed var(--yellow);pointer-events:none;animation:holepulse 1.2s ease-in-out infinite}
+@keyframes holepulse{50%{border-color:#fff}}
+.tour-tip{position:fixed;background:linear-gradient(180deg,#F7F9FD,#E3E8F2);border:4px solid var(--ink);border-radius:18px;padding:14px 16px;box-shadow:0 7px 0 var(--ink);display:flex;flex-direction:column;gap:10px;align-items:flex-end}
+.tour-text{font-size:20px;font-weight:700;line-height:1.35;align-self:stretch}
+/* crew */
+.quest-mark{position:absolute;left:0;top:0;transform:translate(-50%,-100%);pointer-events:auto;font-family:var(--display);font-weight:700;font-size:28px;width:40px;height:46px;display:grid;place-items:center;color:var(--ink);background:var(--yellow);border:3px solid var(--ink);border-radius:50% 50% 50% 50%/60% 60% 40% 40%;box-shadow:0 4px 0 var(--ink);animation:qbob 1s ease-in-out infinite;cursor:pointer}
+@keyframes qbob{50%{margin-top:-8px}}
+.crew-bubble{position:absolute;left:0;top:0;transform:translate(-50%,-100%);max-width:240px;background:#fff;border:3px solid var(--ink);border-radius:14px;padding:6px 12px;font-weight:700;font-size:15px;line-height:1.3;box-shadow:0 3px 0 var(--ink);pointer-events:none;text-align:center}
+div.panel.quest{text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;width:min(780px,96vw)}
+.quest-who{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:600;font-size:24px;color:var(--orange-d)}
+.quest-face{width:58px;height:58px;border-radius:50%;border:3px solid var(--ink);overflow:hidden;display:inline-block}
+.quest-face svg{width:100%;height:100%;display:block}
+.quest-hold{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%}
+.quest-hold .prompt{color:var(--ink)!important}
+/* hangar */
+div.panel.shop-panel{width:min(1000px,96vw)}
+.shop-sub{margin:0 0 12px;font-weight:700;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.shop-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.shop-tab{font-family:var(--display);font-weight:600;font-size:17px;padding:7px 14px;border:3px solid var(--ink);border-radius:12px;background:#fff;box-shadow:0 4px 0 var(--ink)}
+.shop-tab.on{background:var(--yellow);transform:translateY(2px);box-shadow:0 2px 0 var(--ink)}
+.shop-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.shop-item{display:flex;flex-direction:column;gap:5px;align-items:center;text-align:center;padding:12px;border:3px solid var(--ink);border-radius:14px;background:#fff;box-shadow:0 5px 0 var(--ink)}
+.shop-item b{font-family:var(--display);font-weight:600;font-size:17px;line-height:1.1}
+.shop-item small{font-size:13px;font-weight:700;color:var(--mint-d)}
+.shop-item.eq{background:#E6FFF2}
+.shop-pic{width:120px;height:120px;object-fit:contain;background:radial-gradient(circle at 50% 60%,#DCE4FF 0 55%,transparent 56%);border-radius:50%}
+.shop-item .btn .star-ico{width:18px;height:18px}
+/* launch day meteors */
+.meteor-sky{position:absolute;inset:0;overflow:hidden}
+.meteor{position:absolute;top:-60px;width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#C9A27A,#7A5A3E);border:3px solid var(--ink);animation:meteorfall linear infinite}
+.meteor::after{content:'';position:absolute;left:50%;top:50%;width:80px;height:9px;margin-top:-4px;border-radius:5px;background:linear-gradient(90deg,#FFB347AA,transparent);transform:rotate(-72deg);transform-origin:left center;z-index:-1}
+@keyframes meteorfall{to{transform:translate(-30vw,110vh) rotate(260deg)}}
+.laser{position:absolute;bottom:0;width:6px;height:100%;background:linear-gradient(transparent,#7CFFCB 30%,#fff);box-shadow:0 0 18px #7CFFCB;animation:laser .7s ease-out forwards}
+@keyframes laser{from{transform:scaleY(0);transform-origin:bottom;opacity:1}40%{transform:scaleY(1)}to{opacity:0}}
+.glitch-bar{display:flex;align-items:center;gap:10px;background:#3B1F86;border:3px solid var(--ink);border-radius:16px;padding:6px 12px;box-shadow:0 4px 0 var(--ink);color:#fff;z-index:2}
+.glitch-bar small{font-family:var(--display);font-weight:600;font-size:14px;display:block}
+.gb-face{width:40px;height:40px;border-radius:50%;overflow:hidden;border:2px solid var(--ink);display:block}
+.gb-face svg{width:100%;height:100%;display:block}
+.shield-pips{display:flex;gap:3px;flex-wrap:wrap;max-width:300px}
+.shield-pips i{width:16px;height:12px;border-radius:4px;background:#FF4FD8;border:2px solid var(--ink);box-shadow:0 0 6px #FF4FD8}
+.shield-pips i.off{background:#2A1B5E;box-shadow:none}
+/* certificate & printing */
+.cert{text-align:center;border:8px double var(--yellow-d);background:linear-gradient(#FFFDF4,#FFF4D6)}
+.cert-top{font-family:var(--display);font-weight:600;font-size:20px;color:var(--yellow-d);letter-spacing:2px}
+.cert h2{font-size:46px;margin:6px 0}
+.cert-name{font-family:var(--display);font-weight:700;font-size:60px;color:var(--orange);text-shadow:0 3px 0 var(--ink);margin:4px 0 8px}
+.cert-stats{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;font-weight:700;margin:10px 0}
+.cert-stats b{font-size:28px;color:var(--mint-d)}
+.cert-date{font-size:15px;color:var(--ink2)}
+@media print{
+  body.printing *{visibility:hidden!important}
+  body.printing .print-me,body.printing .print-me *{visibility:visible!important}
+  body.printing .print-me{position:fixed;left:0;top:0;width:100%;max-height:none;box-shadow:none;overflow:visible}
+  body.printing .print-me .no-print,body.printing .print-me .no-print *{display:none!important}
+}
+@media (max-width:760px){
+  .dlg{gap:10px;padding:12px}.dlg-face{width:60px;height:60px}.dlg-text{font-size:17px;min-height:46px}.dlg-who{font-size:17px}
+  .mission-chip{font-size:14px;padding:3px 5px 3px 10px}.mission-chip .m-crew b{font-size:17px}
+  .dock{gap:6px}.dock-btn{width:58px;height:58px;border-radius:16px}.dock-btn .dock-ic{font-size:23px}.dock-btn small{font-size:10px}
+  .hud-mission{left:auto;right:12px;transform:none;bottom:calc(84px + env(safe-area-inset-bottom,0px));align-items:flex-end}
+  .hud-mission .btn{font-size:20px;padding:10px 18px 12px}
+  .hud-hint{display:none}
+  #bubble{bottom:calc(152px + env(safe-area-inset-bottom,0px));left:10px;max-width:calc(100vw - 20px)}
+  .cert h2{font-size:32px}.cert-name{font-size:42px}
+  .glitch-bar{padding:4px 8px}.shield-pips i{width:11px;height:10px}
+  .topbar .streak{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+
+body:has(.rd-rows) #bolt,body:has(.rd-rows) #bubble{display:none}
 </style></head>
 <body>
 <div id="space"></div><div id="labels"></div><div id="hud"></div>
@@ -873,69 +1041,130 @@ const S = (() => {
   let s = null;
   try { s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); } catch (e) {}
   s = s || {};
-  s.stars = s.stars || 0; s.items = s.items || {}; s.done = s.done || {}; s.log = s.log || {}; s.best = s.best || {}; s.sound = s.sound !== false; s.launched = s.launched || 0; s.seenParts = s.seenParts || {};
+  s.stars = s.stars || 0; s.items = s.items || {}; s.done = s.done || {}; s.log = s.log || {}; s.best = s.best || {}; s.launched = s.launched || 0; s.seenParts = s.seenParts || {};
+  s.settings = Object.assign({ music: true, sfx: s.sound !== false, read: false, rate: .9, voice: '' }, s.settings || {}); delete s.sound;
+  s.story = Object.assign({ intro: 0, toured: 0, finale: 0, quests: 0 }, s.story || {});
+  s.glitch = s.glitch || []; s.fixed = s.fixed || 0; s.seenHelp = s.seenHelp || {}; s.cardBest = s.cardBest || {}; s.crewHome = s.crewHome || {};
+  s.hangar = Object.assign({ own: [], paint: 'classic', flame: 'fire', decal: 'none' }, s.hangar || {});
   return s;
 })();
-function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {} }
+function save() { S.savedAt = Date.now(); try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {} }
+async function protectStorage() { try { if (navigator.storage && navigator.storage.persist) return (await navigator.storage.persisted()) || (await navigator.storage.persist()); } catch (e) {} return null; }
+async function isProtected() { try { return navigator.storage && navigator.storage.persisted ? await navigator.storage.persisted() : null; } catch (e) { return null; } }
 /* Leitner-style memory: box 0..3. right → +1, wrong → 0 */
-function mark(key, ok, label) {
+let REPLAYING = false, QGEN = null;
+function mark(key, ok, label, wrong) {
   const it = S.items[key] || (S.items[key] = { box: 0, r: 0, w: 0 });
   if (ok) { it.box = Math.min(3, it.box + 1); it.r++; } else { it.box = 0; it.w++; }
   if (label) it.label = label;
-  it.t = Date.now(); save();
+  it.t = Date.now();
+  if (!ok && !REPLAYING) logGlitch(key, label || it.label, wrong);
+  if (ok && !REPLAYING && it.box >= 2) S.glitch = S.glitch.filter(g => g.key !== key);
+  save(); try { refreshGlitch(); } catch (e) {}
+}
+/* Glitch Box: every miss is kept so he can redo that exact item */
+function logGlitch(key, label, wrong) {
+  if (!canReplay(key)) return;
+  let e = S.glitch.find(g => g.key === key);
+  if (!e) { e = { key, gen: QGEN, label: label || '', area: (CUR && CUR.id) || '', n: 0 }; S.glitch.unshift(e); }
+  e.n++; e.t = Date.now(); if (QGEN) e.gen = QGEN; if (label) e.label = label; if (wrong != null) e.wrong = String(wrong).slice(0, 80);
+  S.glitch = S.glitch.slice(0, 80);
 }
 const boxOf = k => (S.items[k] || { box: 0 }).box;
 /* choose n items, favouring weak / unseen ones */
+let FORCE = null;
 function choose(list, n, keyFn) {
+  if (FORCE) { const hit = list.find(x => keyFn(x) === FORCE); if (hit) return [hit]; }
   const scored = list.map(x => { const it = S.items[keyFn(x)]; const b = it ? it.box : -0.5; const w = it ? it.w : 0; return { x, s: b * 2 - Math.min(w, 3) + Math.random() * 2.2 }; });
   scored.sort((a, b) => a.s - b.s);
   return shuffle(scored.slice(0, Math.min(n, list.length)).map(o => o.x));
 }
 const mastery = keys => keys.length ? keys.reduce((t, k) => t + Math.min(2, boxOf(k)), 0) / (keys.length * 2) : 0;
-function addStars(n) { S.stars += n; save(); updateHUD(); }
+function addStars(n) { S.stars += n; save(); updateHUD(); try { refreshHangarBadge(); } catch (e) {} }
 
 /* =============== sound =============== */
-let AC = null;
-function tone(freq, dur = .12, type = 'sine', vol = .16, when = 0) {
-  if (!S.sound) return;
+let AC = null, MASTER = null, MUSICG = null, musicTimer = null;
+function audioInit() {
+  if (AC) { if (AC.state === 'suspended') AC.resume(); return AC; }
+  try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; }
+  MASTER = AC.createGain(); MASTER.gain.value = .9; MASTER.connect(AC.destination);
+  MUSICG = AC.createGain(); MUSICG.gain.value = 0; MUSICG.connect(MASTER);
+  if (S.settings.music) musicStart();
+  return AC;
+}
+function tone(freq, dur = .12, type = 'sine', vol = .16, when = 0, dest) {
+  if (!dest && !S.settings.sfx) return;
   try {
-    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    if (!audioInit()) return;
     const t = AC.currentTime + when, o = AC.createOscillator(), g = AC.createGain();
     o.type = type; o.frequency.setValueAtTime(freq, t);
-    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
-    o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + dur + .02);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .012); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+    o.connect(g); g.connect(dest || MASTER); o.start(t); o.stop(t + dur + .03);
   } catch (e) {}
 }
+/* background music: a slow, floaty space loop (pentatonic arpeggio + bass) */
+const MUS_MEL = [69, 72, 76, 79, 76, 72, 74, 76, 69, 72, 74, 79, 81, 79, 76, 74, 67, 71, 74, 79, 74, 71, 72, 74, 69, 72, 76, 81, 79, 76, 74, 72];
+const MUS_BASS = [45, 45, 41, 41, 43, 43, 40, 40];
+function musicStart() {
+  if (!AC || musicTimer) return;
+  MUSICG.gain.cancelScheduledValues(AC.currentTime); MUSICG.gain.linearRampToValueAtTime(.42, AC.currentTime + 2);
+  let step = 0, next = AC.currentTime + .1; const beat = .36;
+  musicTimer = setInterval(() => {
+    while (next < AC.currentTime + .5) {
+      const m = MUS_MEL[step % MUS_MEL.length];
+      if (step % 8 !== 7) tone(440 * Math.pow(2, (m - 69) / 12), beat * 2.2, 'sine', .045, next - AC.currentTime, MUSICG);
+      if (step % 4 === 0) tone(440 * Math.pow(2, (MUS_BASS[(step / 4) % MUS_BASS.length] - 69) / 12), beat * 3.8, 'triangle', .06, next - AC.currentTime, MUSICG);
+      next += beat; step++;
+    }
+  }, 150);
+}
+function musicStop() { if (!musicTimer) return; clearInterval(musicTimer); musicTimer = null; if (AC) MUSICG.gain.linearRampToValueAtTime(0, AC.currentTime + .4); }
 const SFX = {
   ok() { tone(660, .1, 'triangle'); tone(990, .16, 'triangle', .16, .09); },
   no() { tone(220, .18, 'sawtooth', .08); tone(170, .22, 'sawtooth', .07, .12); },
   tap() { tone(520, .05, 'square', .05); },
   key() { tone(880 + Math.random() * 120, .03, 'square', .04); },
   win() { [523, 659, 784, 1046].forEach((f, i) => tone(f, .18, 'triangle', .14, i * .11)); },
-  whoosh() { if (!S.sound) return; try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); const len = AC.sampleRate * 1.2, b = AC.createBuffer(1, len, AC.sampleRate), d = b.getChannelData(0); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len); const src = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain(); f.type = 'lowpass'; f.frequency.value = 900; g.gain.value = .25; src.buffer = b; src.connect(f); f.connect(g); g.connect(AC.destination); src.start(); } catch (e) {} },
+  whoosh() { if (!S.settings.sfx) return; try { if (!audioInit()) return; const len = AC.sampleRate * 1.2, b = AC.createBuffer(1, len, AC.sampleRate), d = b.getChannelData(0); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len); const src = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain(); f.type = 'lowpass'; f.frequency.value = 900; g.gain.value = .25; src.buffer = b; src.connect(f); f.connect(g); g.connect(MASTER); src.start(); } catch (e) {} },
+  boom() { if (!S.settings.sfx) return; try { if (!audioInit()) return; const len = AC.sampleRate * 1.4, b = AC.createBuffer(1, len, AC.sampleRate), d = b.getChannelData(0); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2); const src = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain(); f.type = 'lowpass'; f.frequency.value = 220; g.gain.value = .6; src.buffer = b; src.connect(f); f.connect(g); g.connect(MASTER); src.start(); } catch (e) {} },
+  zap() { tone(1400, .25, 'sawtooth', .07); tone(380, .3, 'square', .05, .05); },
+  laser() { if (!S.settings.sfx) return; try { if (!audioInit()) return; const t = AC.currentTime, o = AC.createOscillator(), g = AC.createGain(); o.type = 'square'; o.frequency.setValueAtTime(1800, t); o.frequency.exponentialRampToValueAtTime(240, t + .22); g.gain.setValueAtTime(.07, t); g.gain.exponentialRampToValueAtTime(.001, t + .25); o.connect(g); g.connect(MASTER); o.start(t); o.stop(t + .3); } catch (e) {} },
+  coin() { tone(1319, .08, 'square', .05); tone(1760, .22, 'square', .05, .07); },
+  build() { [262, 330, 392, 523, 659].forEach((f, i) => tone(f, .25, 'square', .045, i * .09)); },
+  fanfare() { [[523, 0], [659, .12], [784, .24], [1047, .36], [784, .6], [1047, .72]].forEach(([f, d]) => { tone(f, .35, 'square', .05, d); tone(f / 2, .35, 'triangle', .1, d); }); },
 };
 
 /* =============== speech =============== */
 let VOICE = null;
+const englishVoices = () => { try { return speechSynthesis.getVoices().filter(v => /^en(-|_)/i.test(v.lang)); } catch (e) { return []; } };
 function pickVoice() {
   try {
     const vs = speechSynthesis.getVoices();
-    VOICE = vs.find(v => /en-US/i.test(v.lang) && /Samantha|Google US|Aria|Jenny|Zira/i.test(v.name)) || vs.find(v => /en-US/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || null;
+    if (S.settings.voice) { const v = vs.find(x => x.name === S.settings.voice); if (v) return VOICE = v; }
+    VOICE = vs.find(v => /en-US/i.test(v.lang) && /Guy|Andrew|Brian|Christopher|Google US|Samantha|Aria|Jenny|Zira/i.test(v.name)) || vs.find(v => /en-US/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || null;
   } catch (e) {}
 }
+function setVoice(name) { S.settings.voice = name; save(); VOICE = null; pickVoice(); }
 try { speechSynthesis.onvoiceschanged = pickVoice; pickVoice(); } catch (e) {}
 const cmdr = () => S.name ? 'Commander ' + S.name : 'Commander';
 const withName = t => S.name ? String(t).replace(/\bCommander\b(?! [A-Z])/g, cmdr()) : t;
-function speak(text, rate = .92) {
+function speak(text, rate) {
   text = withName(text);
   try {
     speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(String(text).replace(/___/g, 'blank').replace(/–/g, 'nothing'));
-    if (VOICE) u.voice = VOICE; u.lang = 'en-US'; u.rate = rate; u.pitch = 1.05;
-    speechSynthesis.speak(u);
+    if (!VOICE) pickVoice();
+    const u = new SpeechSynthesisUtterance(String(text).replace(/_{2,}/g, 'blank').replace(/–/g, 'nothing'));
+    if (VOICE) u.voice = VOICE; u.lang = (VOICE && VOICE.lang) || 'en-US'; u.rate = rate || S.settings.rate || .9; u.pitch = 1.05;
+    setTimeout(() => speechSynthesis.speak(u), 40);
   } catch (e) {}
 }
-const speakBtn = (text, big) => h('button', { class: 'speak', title: 'Listen', onclick: e => { e.stopPropagation(); speak(typeof text === 'function' ? text() : text); } }, '🔊');
+const hush = () => { try { speechSynthesis.cancel(); } catch (e) {} };
+/* read-aloud setting: speaks only when it is on (tapping a speaker button always speaks) */
+const readOut = text => { if (S.settings.read && text) speak(text); };
+const SPEAKER_SVG = '<svg viewBox="0 0 40 40" width="100%" height="100%"><path d="M7 15h7l9-8v26l-9-8H7z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M28 13c3 4 3 10 0 14M32 9c5 6 5 16 0 22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>';
+const SPK_OFF = SPEAKER_SVG.replace('</svg>', '<path d="M4 4l32 32" stroke="#F0476A" stroke-width="4" stroke-linecap="round"/></svg>');
+const plainText = html => { const d = document.createElement('div'); d.innerHTML = String(html).replace(/<br\s*\/?>/g, ' '); return d.textContent.replace(/\s+/g, ' ').trim(); };
+const speakBtn = (text, big) => h('button', { class: 'speak' + (big ? ' big' : ''), title: 'Listen', 'aria-label': 'Hear it', onclick: e => { e.stopPropagation(); SFX.tap(); speak(typeof text === 'function' ? text() : text); }, html: SPEAKER_SVG });
 
 /* =============== Bolt the robot =============== */
 const BOLT_SVG = `<svg viewBox="0 0 112 120"><ellipse cx="56" cy="114" rx="30" ry="5" fill="#000" opacity=".2"/>
@@ -952,23 +1181,26 @@ const BOLT_SVG = `<svg viewBox="0 0 112 120"><ellipse cx="56" cy="114" rx="30" r
 let bubbleTimer = null;
 function bolt(text, opts = {}) {
   const b = $('#bubble'); if (!b) return;
-  text = withName(text); b.textContent = text; b.classList.remove('hidden'); b.style.animation = 'none'; void b.offsetWidth; b.style.animation = '';
+  text = withName(text); b.textContent = text; b.dataset.say = text; b.classList.remove('hidden'); b.style.animation = 'none'; void b.offsetWidth; b.style.animation = '';
+  b.prepend(h('span', { class: 'bubble-spk', html: SPEAKER_SVG }));
+  b.append(h('button', { class: 'bubble-x', 'aria-label': 'Close', onclick: e => { e.stopPropagation(); clearTimeout(bubbleTimer); b.classList.add('hidden'); } }, '×'));
+  b.onclick = () => { clearTimeout(bubbleTimer); speak(b.dataset.say); bubbleTimer = setTimeout(() => b.classList.add('hidden'), 6000); };
   clearTimeout(bubbleTimer);
   if (!opts.stay) bubbleTimer = setTimeout(() => b.classList.add('hidden'), opts.ms || Math.max(4200, text.length * 70));
-  if (opts.speak) speak(text);
+  if (opts.speak || S.settings.read) speak(text);
   const bo = $('#bolt'); bo.classList.remove('happy', 'sad'); if (opts.mood) { void bo.offsetWidth; bo.classList.add(opts.mood); setTimeout(() => bo.classList.remove(opts.mood), 1200); }
 }
 const PRAISE = ['Great job, Commander!', 'Systems green!', 'Nailed it!', 'Perfect landing!', 'Rocket power!', 'Yes! Spot on!', 'Brilliant!', 'Mission accomplished!'];
 const OOPS = ['Almost! Check it again.', 'Not quite, Commander.', 'Oops, let\'s fix that.', 'Close one! Look again.'];
 const BOLT_TIPS = [
-  'Tip: the test asks you to USE the words in a sentence. Make your sentence show what the word means!',
-  'Tip: an + vowel SOUND. an hour, but a university!',
-  'Tip: uncountable words never take -s. bread, water, money, news.',
-  'Tip: he, she, it → HAS got. I, you, we, they → HAVE got.',
-  'Tip: some in ✓ sentences, any in questions and ✗ sentences.',
-  'Tip: Journeys answers need FULL sentences. Start with "He…", "She…", "It…".',
-  'Tip: a descriptive essay needs a hook, 3 details with your senses, and a conclusion.',
-  'Tip: Watch the ending! yesterday → -ed, how? → -ly, more than one → -s.',
+  'Tip: use vocab words in your OWN sentences!',
+  'Tip: an hour, but a unicorn. Listen to the SOUND!',
+  'Tip: no -s on bread, water, money, news.',
+  'Tip: he HAS got. They HAVE got.',
+  'Tip: some in yes-sentences. any in questions and no-sentences.',
+  'Tip: answer Journeys in FULL sentences.',
+  'Tip: essay = hook + 3 details + conclusion.',
+  'Tip: yesterday → -ed. more than one → -s.',
 ];
 function flash(text) { const f = $('#flash'); f.innerHTML = ''; f.append(h('div', { class: 'big' }, text)); setTimeout(() => f.innerHTML = '', 1300); }
 function confetti(n = 80) {
@@ -987,7 +1219,8 @@ function openScreen({ id, title, icon, bgClass, light, dark }) {
   const back = h('button', { class: 'btn panel icon', title: 'Back to base', onclick: () => api.onBack ? api.onBack() : closeScreen() }, '⟵');
   const titleEl = h('div', { class: 'title' }, h('span', { class: 'ti' }, icon || ''), h('span', {}, title));
   const starChip = h('div', { class: 'chip' }, h('i', { class: 'star-ico' }), h('span', { id: 'starsS' }, S.stars));
-  const top = h('div', { class: 'topbar' }, back, titleEl, streak, starChip);
+  const help = h('button', { class: 'btn icon panel help-btn', 'aria-label': 'How to play', title: 'How to play', onclick: () => { SFX.tap(); replayHelp(); } }, '?');
+  const top = h('div', { class: 'topbar' }, back, titleEl, help, miniRead(), streak, starChip);
   const stage = h('div', { class: 'stage' });
   scr.append(bg, top, stage);
   document.body.append(scr);
@@ -997,25 +1230,33 @@ function openScreen({ id, title, icon, bgClass, light, dark }) {
     id, el: scr, stage, bg, onBack: null,
     clear() { stage.innerHTML = ''; stage.scrollTop = 0; },
     setTitle(t) { titleEl.lastChild.textContent = t; },
-    streak(ok) { st = ok ? st + 1 : 0; streakFill.style.width = Math.min(100, st * 20) + '%'; if (st === 5) { bolt('5 in a row! Turbo boost! +3 ⭐', { mood: 'happy' }); addStars(3); } },
+    streak(ok) { st = ok ? st + 1 : 0; streakFill.style.width = Math.min(100, (st % 5 || (st ? 5 : 0)) * 20) + '%'; streak.classList.toggle('hot', st >= 5); if (ok && st > 0 && st % 5 === 0) { SFX.fanfare(); confetti(40); bolt(`${st} in a row! Turbo boost! +3 ⭐`, { mood: 'happy' }); addStars(3); } },
   };
+  clearHelp();
+  if (['comms', 'launch', 'mission'].includes(id)) setTimeout(() => { if (CUR === api) maybeHelp(id, '*'); }, 450);
+  if (!CUR_SNAP) CUR_SNAP = snapProgress();
   CUR = api; hubRef() && HUB.pause(true);
   return api;
 }
+let CUR_SNAP = null;
+const snapProgress = () => { const st = stationsRef(); if (!st) return null; const o = {}; st.forEach(s => o[s.id] = s.progress()); o.__parts = st.filter(s => partBuilt(s.id)).map(s => s.id); return o; };
 function closeScreen(silent) {
   if (CUR) { CUR.el.remove(); CUR = null; }
-  try { speechSynthesis.cancel(); } catch (e) {}
+  hush(); curCard = null;
   $('#hud').classList.remove('hidden'); $('#labels').classList.remove('hidden');
-  if (!silent) { hubRef() && HUB.pause(false); updateHUD(); hubRef() && HUB.refresh(); checkNewParts(); }
+  if (!silent) { hubRef() && HUB.pause(false); updateHUD(); hubRef() && HUB.refresh(); const snap = CUR_SNAP; CUR_SNAP = null; celebrateReturn(snap); }
 }
 /* mission menu */
+let curCard = null;
 function missionMenu(scr, intro, cards) {
-  scr.clear(); scr.onBack = null;
-  scr.stage.append(h('div', { class: 'intro-line' }, intro), h('div', { class: 'missions' }, cards.map(c =>
-    h('button', { class: 'mcard', style: c.color ? { '--c': c.color } : null, onclick: () => { SFX.tap(); c.go(); } },
+  scr.clear(); scr.onBack = null; curCard = null;
+  readOut(intro);
+  scr.stage.append(h('div', { class: 'intro-line' }, speakBtn(intro), h('span', {}, intro)), h('div', { class: 'missions' }, cards.map(c => { const key = scr.id + '|' + c.name, best = S.cardBest[key] || 0;
+    return h('button', { class: 'mcard' + (best ? ' played' : '') + (best === 3 ? ' perfect' : ''), style: c.color ? { '--c': c.color } : null, onclick: async () => { SFX.tap(); curCard = c.noTrack ? null : key; await maybeHelp(scr.id, c.name); c.go(); } },
+      best ? h('span', { class: 'done-badge', title: 'Your best' }, '★'.repeat(best) + '☆'.repeat(3 - best)) : null,
       c.tag ? h('span', { class: 'tag' }, c.tag) : null,
       h('div', { class: 'em' }, c.em || '🚀'), h('b', {}, c.name), h('small', {}, c.desc || ''),
-      c.meter != null ? h('div', { class: 'meter' }, h('i', { style: { width: Math.round(c.meter * 100) + '%' } })) : null))));
+      c.meter != null ? h('div', { class: 'meter' }, h('i', { style: { width: Math.round(c.meter * 100) + '%' } })) : null); })));
 }
 /* round runner: ask(i, holder) → Promise<boolean> */
 async function runRound(scr, { n, ask, again, back, label }) {
@@ -1043,6 +1284,7 @@ function showResult(scr, { right, n, missed, again, back, label }) {
   const pct = right / n, stars = pct >= .9 ? 3 : pct >= .7 ? 2 : pct >= .4 ? 1 : 0;
   const earn = right + stars * 2; addStars(earn);
   if (stars >= 2 && scr.id) { S.done[scr.id] = 1; save(); }
+  if (curCard) { S.cardBest[curCard] = Math.max(S.cardBest[curCard] || 0, stars); save(); }
   if (stars >= 2) { SFX.win(); confetti(stars === 3 ? 120 : 60); }
   const msg = stars === 3 ? 'Mission perfect!' : stars === 2 ? 'Great flying!' : stars === 1 ? 'Good start!' : 'Let\'s train again!';
   const card = h('div', { class: 'plate result pop' },
@@ -1050,13 +1292,13 @@ function showResult(scr, { right, n, missed, again, back, label }) {
     h('div', { class: 'bigstars' }, [0, 1, 2].map(i => h('span', { class: i < stars ? '' : 'off' }, '⭐'))),
     h('div', { style: { fontWeight: 700, fontSize: '22px' } }, `${right} / ${n} correct`),
     h('div', { class: 'reward' }, '+', earn, h('i', { class: 'star-ico' }), 'stars for the rocket'),
-    missed.length ? h('div', {}, h('div', { style: { fontWeight: 700, marginBottom: '6px' } }, 'Practise these again:'), h('div', { class: 'missed' }, [...new Set(missed)].map(m => h('span', {}, m)))) : null,
+    missed.length ? h('div', {}, h('div', { style: { fontWeight: 700, marginBottom: '6px' } }, 'Try these again:'), h('div', { class: 'missed' }, [...new Set(missed)].map(m => h('span', {}, m)))) : null,
     h('div', { style: { display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '6px' } },
       again ? h('button', { class: 'btn orange', onclick: again }, 'Play again') : null,
       back ? h('button', { class: 'btn teal', onclick: back }, 'More missions') : null,
       h('button', { class: 'btn panel', onclick: () => closeScreen() }, 'Back to base')));
   scr.stage.append(card);
-  bolt(stars >= 2 ? pickOne(PRAISE) + ' Your rocket is getting stronger!' : 'Every try makes you stronger. Tricky ones will come back so you can beat them!', { mood: stars >= 2 ? 'happy' : null });
+  bolt(stars >= 2 ? pickOne(PRAISE) : 'Good try! Tricky ones will come back.', { mood: stars >= 2 ? 'happy' : null });
 }
 /* generic multiple-choice in a holder */
 function askChoice(holder, { options, answer, onPick, cls = 'opt', wrap }) {
@@ -1128,16 +1370,6 @@ function updateHUD() {
   const pips = $('#pipsH'); if (pips && stationsRef()) { pips.innerHTML = ''; STATIONS.forEach(st => pips.append(h('i', { class: partBuilt(st.id) ? 'on' : '', title: st.part }))); }
 }
 const partBuilt = id => { const st = STATIONS.find(s => s.id === id); return !!st && (!!S.done[id] || st.progress() >= .4); };
-function checkNewParts() {
-  if (!stationsRef()) return;
-  for (const st of STATIONS) {
-    if (partBuilt(st.id) && !S.seenParts[st.id]) {
-      S.seenParts[st.id] = 1; save();
-      setTimeout(() => { flash('NEW PART!'); SFX.win(); bolt(`${st.name} unlocked the ${st.part}! Look at your rocket on the launch pad!`, { mood: 'happy', speak: true }); hubRef() && HUB.celebrate(st.id); }, 400);
-      return;
-    }
-  }
-}
 
 /* =========================================================
    1 · LAUNCH CONTROL — vocab spelling in the class-quiz format
@@ -1155,8 +1387,8 @@ function openControl() {
     cards.push({ name: 'Sentence Forge', desc: 'Write your OWN sentence with a vocab word, like the test asks', em: '✍️', color: '#FFD0DA', tag: 'on the test!', meter: mastery(VOCAB.map(v => 'sent:' + v.w)), go: forge });
     cards.push({ name: 'Watch the ending', desc: '-ed, -ly, -ies, double letters…', em: '🔧', color: '#C9F5DF', tag: 'tricky!', meter: mastery(FORMS.map(formKey)), go: () => endings() });
     if (weak.length >= 3) cards.push({ name: 'Tricky codes', desc: `${weak.length} words to fix`, em: '🚨', color: '#FFD0DA', go: () => codes(choose(weak, Math.min(10, weak.length), spKey), 'Tricky codes') });
-    missionMenu(scr, 'The rocket computer is locked! Type each password to unlock it. The words in (brackets) tell you what the word means.', cards);
-    bolt('Each password is one of your vocab words. Look at the meaning in the brackets!');
+    missionMenu(scr, 'The rocket computer is locked! Type each password to open it.', cards);
+    bolt('Each password is a vocab word. The ( ) tells you what it means!');
   };
   scr._menu = menu;
   function codes(list, label) {
@@ -1272,8 +1504,8 @@ function openStarMap() {
     const cards = groups.map(([name, f, em]) => { const list = VOCAB.filter(f); return { name, desc: 'Link each word star to its meaning', em, meter: mastery(list.map(v => meanKey(v.w))), go: () => sky(list, name) }; });
     cards.push({ name: 'Telescope', desc: 'Same photos as your booklet: which word is it?', em: '🔭', color: '#C9E8FF', meter: mastery(Object.keys(PICS).map(picKey)), go: telescope });
     cards.push({ name: 'Whole galaxy', desc: 'Words from every lesson', em: '🌌', color: '#FFE58A', go: () => sky(VOCAB, 'Whole galaxy') });
-    missionMenu(scr, 'The star map lost its labels! Connect each word star to the star with its meaning.', cards);
-    bolt('Tap a word, then tap its meaning. Or drag a line between them!');
+    missionMenu(scr, 'The star map lost its labels! Link each word to its meaning.', cards);
+    bolt('Tap a word. Then tap what it means!');
   };
   function sky(list, label) {
     runRound(scr, { n: 3, again: () => sky(list, label), back: menu, ask: (i, hold) => constellation(hold, choose(list, 5, v => meanKey(v.w)), i) });
@@ -1370,7 +1602,7 @@ function misspell(w) {
 function crate(content, small) { return h('div', { class: 'crate' }, small ? h('small', {}, small) : null, content); }
 function openCargo() {
   const scr = openScreen({ id: 'cargo', title: 'Cargo Bay', icon: '📦', bgClass: 'bg-cargo' });
-  const menu = () => missionMenu(scr, 'Cargo is arriving for the rocket! Pack every crate the right way.', [
+  const menu = () => missionMenu(scr, 'Cargo is here! Pack every crate the right way.', [
     { name: 'Plural Packer', desc: 'Unit 1 · one box → two boxes', em: '📦', meter: mastery(PLURALS.map(p => 'pl:' + p[0])), go: plurals },
     { name: 'Name Tags', desc: 'Unit 1 · proper or common noun?', em: '🏷️', meter: mastery([...PROPER, ...COMMON].map(w => 'pn:' + w)), go: names },
     { name: 'Airlock Sort', desc: 'Unit 5 · countable or uncountable?', em: '🚪', meter: mastery([...COUNTABLE, ...UNCOUNTABLE].map(w => 'cu:' + w)), go: airlock },
@@ -1398,7 +1630,7 @@ function openCargo() {
     runRound(scr, { n: items.length, again: names, back: menu, ask: (i, hold) => new Promise(res => {
       const [w, proper] = items[i];
       const c = crate(w.toLowerCase(), 'NAME TAG');
-      hold.append(h('div', { class: 'intro-line' }, 'Is this a special name (proper noun) or an everyday word (common noun)?'), h('div', { class: 'belt' }, h('div', { class: 'track' }), c));
+      hold.append(h('div', { class: 'intro-line' }, 'Special name (proper noun) or everyday word (common noun)?'), h('div', { class: 'belt' }, h('div', { class: 'track' }), c));
       const go = async isProper => {
         const ok = isProper === proper; ok ? SFX.ok() : SFX.no(); mark('pn:' + w, ok, w);
         c.textContent = w; c.classList.add(isProper ? 'out-left' : 'out-right');
@@ -1416,7 +1648,7 @@ function openCargo() {
     runRound(scr, { n: items.length, again: airlock, back: menu, ask: (i, hold) => new Promise(res => {
       const [w, cnt] = items[i];
       const c = crate(w, 'CARGO');
-      hold.append(h('div', { class: 'intro-line' }, 'Can you count it one by one? Send it to the right airlock!'), h('div', { class: 'belt' }, h('div', { class: 'track' }), c));
+      hold.append(h('div', { class: 'intro-line' }, 'Can you count it? Send it to the right airlock!'), h('div', { class: 'belt' }, h('div', { class: 'track' }), c));
       const go = async isCnt => {
         const ok = isCnt === cnt; ok ? SFX.ok() : SFX.no(); mark('cu:' + w, ok, `${w} (${cnt ? 'countable' : 'uncountable'})`);
         c.classList.add(isCnt ? 'out-left' : 'out-right');
@@ -1462,7 +1694,7 @@ function openCargo() {
 function openDocking() {
   const scr = openScreen({ id: 'docking', title: 'Docking Bay', icon: '🛸', bgClass: 'bg-dock' });
   const all = ARTICLES.map((a, i) => ({ ...a, i }));
-  const menu = () => missionMenu(scr, 'Shuttles are coming in! Each one only docks with the right clamp: a, an, the, or – (nothing).', [
+  const menu = () => missionMenu(scr, 'Shuttles are coming! Pick a, an, the, or – (nothing).', [
     { name: 'Full docking', desc: 'All the article rules', em: '🛸', meter: mastery(all.map(a => 'ar:' + a.i)), go: () => dock(all) },
     { name: 'a or an?', desc: 'Listen for the vowel SOUND', em: '🔊', go: () => dock(all.filter(a => /^(a|an)$/i.test(a.a))) },
     { name: 'the or nothing?', desc: 'Meals, sports, countries, the moon…', em: '🌙', color: '#FFE58A', go: () => dock(all.filter(a => /^(the|–)$/i.test(a.a))) },
@@ -1516,7 +1748,7 @@ const ROBO_COLORS = ['#FF9A66', '#22C3B5', '#B9A6FF', '#FFD23F', '#7FD1FF', '#F4
 function openRobot() {
   const scr = openScreen({ id: 'robot', title: 'Robot Repair', icon: '🤖', bgClass: 'bg-robot' });
   const P = PRONOUNS.map((p, i) => ({ np: p[0], a: p[1], i })), B = BE.map((b, i) => ({ ...b, i })), G = HAVEGOT.map((g, i) => ({ ...g, i })), A = SHORTANS.map((x, i) => ({ ...x, i })), F = FIXIT.map((x, i) => ({ ...x, i }));
-  const menu = () => missionMenu(scr, 'The helper robots are broken! Plug in the right word to power each one up.', [
+  const menu = () => missionMenu(scr, 'The robots are broken! Pick the right word to fix each one.', [
     { name: 'Pronoun Power', desc: 'Unit 3 · Grandpa → He, Lisa and I → We', em: '🔋', meter: mastery(P.map(x => 'pr:' + x.i)), go: () => fix('pr') },
     { name: 'Voice Box', desc: 'Unit 3 · am, is or are?', em: '🗣️', meter: mastery(B.map(x => 'be:' + x.i)), go: () => fix('be') },
     { name: 'Have-Got Gears', desc: 'Unit 4 · has got / have got', em: '⚙️', meter: mastery(G.map(x => 'hg:' + x.i)), go: () => fix('hg') },
@@ -1589,7 +1821,7 @@ function openComms() {
   const scr = openScreen({ id: 'comms', title: 'Comms Tower', icon: '📡', bgClass: 'bg-comms', dark: true });
   const menu = () => {
     scr.clear(); scr.onBack = null;
-    scr.stage.append(h('div', { class: 'intro-line' }, 'Seven story planets are sending messages! Answer each one in a FULL SENTENCE, just like on the test.'));
+    scr.stage.append(h('div', { class: 'intro-line' }, 'Story planets are calling! Answer in a FULL sentence.'));
     const row = h('div', { class: 'planets' });
     JOURNEYS.forEach(J => {
       const m = mastery(J.qs.map((q, k) => jqKey(J.L, k)));
@@ -1600,7 +1832,7 @@ function openComms() {
       h('button', { class: 'btn teal', onclick: whichStory }, '🪐 Which planet?'),
       h('button', { class: 'btn orange', onclick: writeIt }, '✍️ Write it yourself'),
       h('button', { class: 'btn panel', onclick: () => allMix() }, '🎲 Mixed messages')));
-    bolt('Tap a planet. Build the answer from the pieces. Watch for the trick pieces that don\'t belong!');
+    bolt('Tap a planet. Build the answer. Watch out for trick pieces!');
   };
   scr._menu = menu;
   function planet(J) {
@@ -1696,7 +1928,7 @@ function transmission(hold, q) {
 const rdKey = (p, k) => `rd:${p}:${k}`;
 function openSignal() {
   const scr = openScreen({ id: 'signal', title: 'Signal Lab', icon: '🛰️', bgClass: 'bg-signal', dark: true });
-  const menu = () => missionMenu(scr, 'Strange signals are coming in. Each one is a story you have never read, just like the reading part of the test!', PASSAGES.map((p, k) => ({
+  const menu = () => missionMenu(scr, 'New signals! Each one is a story to read.', PASSAGES.map((p, k) => ({
     name: p.title, desc: `${p.from} · ${p.qs.length} questions`, em: ['🌋', '🐦', '🏀'][k] || '📡', meter: mastery(p.qs.map((q, j) => rdKey(p.id, j))), go: () => lab(p)
   })));
   scr._menu = menu;
@@ -1706,7 +1938,7 @@ function openSignal() {
     const qpanel = h('div', { class: 'qpanel' });
     const readBtn = h('button', { class: 'btn small teal', onclick: () => speak(p.title + '. ' + p.paras.join(' '), .9) }, '🔊 Read it to me');
     scr.stage.append(h('div', { class: 'lab' }, h('div', {}, passage, h('div', { style: { marginTop: '10px', display: 'flex', gap: '10px' } }, readBtn)), qpanel));
-    bolt('Read the whole story first. The answers are usually in the same order as the story!');
+    bolt('Read the whole story first. Answers come in story order!');
     let right = 0; const missed = [];
     (async () => {
       const dots = h('div', { class: 'dots' }, p.qs.map(() => h('i'))); qpanel.append(dots);
@@ -1768,7 +2000,7 @@ function logDone(k) { S.log.stages = S.log.stages || {}; S.log.stages[k] = 1; sa
 function openLog() {
   const scr = openScreen({ id: 'log', title: 'Mission Log', icon: '📓', bgClass: 'bg-log' });
   const st = () => S.log.stages || {};
-  const menu = () => missionMenu(scr, 'Every commander writes a mission log. Learn to build a great descriptive essay, step by step!', [
+  const menu = () => missionMenu(scr, 'Learn to write a great essay, step by step!', [
     { name: '1 · Build the log', desc: 'Put the essay parts in the right place', em: '🧩', tag: st().assemble ? '✓' : null, go: assemble },
     { name: '2 · Hook hunter', desc: 'Find the sentence that grabs the reader', em: '🎣', tag: st().hook ? '✓' : null, go: hooks },
     { name: '3 · Transition thrusters', desc: 'First, Next, Finally, In conclusion', em: '🔥', tag: st().trans ? '✓' : null, go: transitions },
@@ -1783,7 +2015,7 @@ function openLog() {
     const flames = h('div', { class: 'rb-flames' });
     const rocket = h('div', { class: 'rb-rocket' }, slotsDef.map(([k, cls, lab]) => h('button', { class: 'rb-slot ' + cls, 'data-k': k }, lab)), flames);
     const pieces = h('div', { class: 'rb-pieces' }, shuffle(ESSAY_PARTS).map(p => h('button', { class: 'piece', 'data-k': p.k }, p.t)));
-    scr.stage.append(h('div', { class: 'intro-line' }, 'Tap a piece of the essay, then tap where it belongs on the rocket.'), h('div', { class: 'rocketbuild' }, rocket, pieces));
+    scr.stage.append(h('div', { class: 'intro-line' }, 'Tap a piece. Then tap where it goes.'), h('div', { class: 'rocketbuild' }, rocket, pieces));
     let sel = null, errs = 0, filled = 0;
     $$('.piece', pieces).forEach(p => p.onclick = () => { $$('.piece', pieces).forEach(x => x.classList.remove('sel')); sel = p; p.classList.add('sel'); SFX.tap(); $$('.rb-slot', rocket).forEach(s => s.classList.toggle('hot', !s.classList.contains('filled'))); });
     $$('.rb-slot', rocket).forEach(s => s.onclick = async () => {
@@ -1794,7 +2026,7 @@ function openLog() {
         if (filled === 5) { flames.classList.add('on'); SFX.whoosh(); logDone('assemble'); await wait(900); showResult(scr, { right: Math.max(0, 5 - errs), n: 5, missed: [], again: assemble, back: menu }); }
       } else { SFX.no(); errs++; s.style.animation = 'shake .35s'; setTimeout(() => s.style.animation = '', 400); bolt(`Not there! ${sel.dataset.k === 'intro' ? 'The introduction starts with a hook.' : sel.dataset.k === 'end' ? 'The conclusion sums everything up.' : sel.dataset.k === 'body' ? 'The body has the details: First, Next, Finally.' : 'Date and title go at the very top.'}`); }
     });
-    bolt('A descriptive essay goes: Date, Title, Introduction, Body, Conclusion.');
+    bolt('Essay order: Date, Title, Introduction, Body, Conclusion.');
   }
   function hooks() {
     const items = shuffle(HOOKS);
@@ -1817,7 +2049,7 @@ function openLog() {
       if (w === T.answers[cur] || (cur === 1 && (w === 'Then') && false)) { filled[cur] = w; cur++; SFX.ok(); draw(); if (cur === 4) { logDone('trans'); speak(T.text.replace(/\[(\d)\]/g, (m, d) => T.answers[+d - 1])); await wait(1800); showResult(scr, { right: Math.max(0, 4 - errs), n: 4, missed: [], again: transitions, back: menu }); } }
       else { errs++; SFX.no(); e.target.classList.add('wrong'); setTimeout(() => e.target.classList.remove('wrong'), 400); bolt(cur === 3 ? 'The last part is the conclusion. Which transition starts a conclusion?' : 'Think about the order: first, then next, then finally!'); }
     } }, w)));
-    scr.stage.append(h('div', { class: 'intro-line' }, 'Fire the thrusters in order! Fill each blank with the right transition word.'), h('div', { class: 'logbook' }, para), bank);
+    scr.stage.append(h('div', { class: 'intro-line' }, 'Fill each blank with the right transition word.'), h('div', { class: 'logbook' }, para), bank);
     draw();
   }
   function senses() {
@@ -1838,7 +2070,7 @@ function openLog() {
     runRound(scr, { n: items.length, again: power, back: menu, ask: async (i, hold) => {
       const it = items[i];
       const pr = h('div', { class: 'prompt', html: esc(it.s).replace(esc(it.boring), `<u style="text-decoration-color:#FF7A3D;text-decoration-thickness:4px">${esc(it.boring)}</u>`) });
-      hold.append(h('div', { class: 'logbook' }, pr), h('div', { class: 'intro-line' }, 'Power it up! Which vocab word can replace the underlined words?'));
+      hold.append(h('div', { class: 'logbook' }, pr), h('div', { class: 'intro-line' }, 'Which vocab word can replace the underlined words?'));
       const ok = await askChoice(hold, { options: shuffle(it.o), answer: it.a });
       if (ok) { pr.innerHTML = esc(it.s).replace(esc(it.boring), `<b style="color:#C9501A">${esc(it.a)}</b>`); speak(it.s.replace(it.boring, it.a)); }
       if (i === items.length - 1) logDone('power');
@@ -1861,10 +2093,10 @@ function openLog() {
     const printLog = e => copyText(`Mission Log · ${L.topic}\n\n${L.text}`, e.currentTarget);
     const finish = () => {
       const n = (ta.value.match(/\b\w+\b/g) || []).length, ticked = Object.values(L.checks).filter(Boolean).length;
-      if (n < 60) return bolt(`Your log has ${n} words. Aim for at least 60 so the essay has a full introduction, body and conclusion!`);
-      if (ticked < checkItems.length) return bolt('Go through the checklist and tick every box first. That is how you check like a pro!');
+      if (n < 60) return bolt(`Your log has ${n} words. Try for 60 or more!`);
+      if (ticked < checkItems.length) return bolt('Tick every box on the checklist first!');
       if (!st().write) { logDone('write'); addStars(15); confetti(); SFX.win(); flash('LOG SAVED!'); }
-      bolt('Mission log complete! Ask a grown-up to read it and give you a score out of 20.', { mood: 'happy' });
+      bolt('Log done! Ask a grown-up to read it.', { mood: 'happy' });
     };
     scr.stage.append(h('div', { class: 'logbook', style: { display: 'flex', flexDirection: 'column', gap: '14px' } },
       h('div', { style: { fontFamily: 'var(--display)', fontWeight: 600, fontSize: '24px' } }, '1. Pick a topic'), topics,
@@ -1873,7 +2105,7 @@ function openLog() {
       h('div', { style: { fontFamily: 'var(--display)', fontWeight: 600, fontSize: '24px' } }, '4. Check it'), checks,
       h('div', { style: { display: 'flex', gap: '12px', flexWrap: 'wrap' } }, h('button', { class: 'btn orange', onclick: finish }, '🚀 Finish my log'), h('button', { class: 'btn teal', onclick: () => speak(ta.value || 'Your log is empty.') }, '🔊 Read it to me'), h('button', { class: 'btn panel', onclick: printLog }, '📋 Copy my log'))));
     upd();
-    bolt('Plan first, then write. Use your hook, three details with senses, and a conclusion!');
+    bolt('Plan first: hook, 3 details, conclusion. Then write!');
   }
   menu();
 }
@@ -1887,12 +2119,12 @@ function openLaunch() {
   scr.stage.append(h('div', { class: 'plate result pop' },
     h('div', { style: { fontSize: '70px' } }, '🚀'),
     h('h2', {}, 'Launch Day'),
-    h('div', { style: { fontSize: '19px', maxWidth: '560px' } }, `A 20-question practice test in the same order as the real paper: Vocabulary, Grammar, Journeys, Reading and Writing. Most questions have choices, and 4 ask you to write, just like the real test. Each right answer adds fuel. Get 14 or more and your rocket blasts off!`),
+    h('div', { style: { fontSize: '19px', maxWidth: '560px' } }, `A 20-question practice test, in the same order as the real test. Each right answer adds fuel. Get 14 right to blast off!`),
     h('div', { style: { fontWeight: 700 } }, `Rocket parts built: ${built} / ${STATIONS.length}`),
-    built < STATIONS.length ? h('div', { class: 'why' }, `Missing parts get swapped for junk: cardboard, duct tape and buckets! The rocket can still launch, but it won't be pretty.`) : h('div', { class: 'why', style: { background: '#C9F5DF' } }, 'All 8 parts built. Ready for a perfect launch!'),
+    built < STATIONS.length ? h('div', { class: 'why' }, `Missing parts become junk: cardboard, tape and buckets! It can still fly, but it will be bumpy.`) : h('div', { class: 'why', style: { background: '#C9F5DF' } }, 'All 8 parts built. Ready!'),
     S.best.launch ? h('div', { style: { fontWeight: 700, color: 'var(--orange-d)' } }, `Best launch: ${S.best.launch} / 20`) : null,
     h('button', { class: 'btn orange', onclick: () => start() }, 'Start the countdown')));
-  bolt(built < 4 ? 'Tip: build more rocket parts first so you are ready. But you can try the launch any time!' : 'This is like a practice test. Take your time on each question!');
+  bolt(built < 4 ? 'Tip: build more parts first. But you can try any time!' : 'Take your time on each question!');
   function makeQs() {
     const V = ['spellMC', 'spellMC', 'spellType', 'ending', 'meaning', 'picture', 'sentence'].map(k => QB[k]());
     const gpool = shuffle(['plural', 'proper', 'article', 'pronoun', Math.random() < .5 ? 'be' : 'shortAns', Math.random() < .5 ? 'haveGot' : 'countSort', Math.random() < .5 ? 'container' : 'there', 'fixMC']).slice(0, 6);
@@ -1906,12 +2138,14 @@ function openLaunch() {
     scr.clear();
     const cd = h('div', { class: 'countdown' }, 'T-20'), fuel = h('div', { class: 'fuel' }, h('i'));
     const hold = h('div', { class: 'plate lcard', style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' } });
-    scr.stage.append(cd, fuel, hold);
+    const ms = S.story.finale ? null : meteorShower(scr, need);
+    scr.stage.append(cd, ms ? ms.bar : null, fuel, hold);
     for (let k = 0; k < Q.length; k++) {
       if (CUR !== scr) return;
       const q = Q[k]; hold.innerHTML = ''; cd.textContent = 'T-' + (Q.length - k);
       const ok = await askQ(hold, q, { num: k + 1, total: Q.length });
       if (ok) right++; else missed.push(q.label);
+      if (ms) ms.hit(ok, right);
       fuel.firstChild.style.width = (right / Q.length * 100) + '%';
       scr.streak(ok); if (q.t && q.t !== 'type') await nextBtn(hold, 'Next ➜'); else await wait(ok ? 900 : (q.why ? 2600 : 2000));
     }
@@ -1919,20 +2153,22 @@ function openLaunch() {
     if (right >= need) {
       S.launched++; save(); addStars(right * 2);
       closeScreen(true); $('#hud').classList.add('hidden'); $('#labels').classList.add('hidden');
-      HUB.pause(false); const info = await HUB.launch() || { missing: [], stations: [] };
+      HUB.pause(false); hudShow(false); const info = await HUB.launch() || { missing: [], stations: [] };
       const full = !info.missing.length;
+      if (full && !S.story.finale) { CUR_SNAP = null; await ending(); return; }
+      if (!full && !S.story.finale) { await talk('glitch', 'Hee hee! A junk rocket! Come back with REAL parts!'); talkEnd(); }
       const ov = h('div', { class: 'titlecard' }, h('div', { class: 'mission' }, 'MISSION REPORT'), h('h1', { html: full ? 'LIFT<span>OFF!</span>' : 'LIFT-OFF…<br><span>SORT OF!</span>' }),
-        h('p', {}, full ? `You scored ${right} / ${Q.length}, and every part was built by you. A perfect launch, ${cmdr()}. You're ready for Wednesday!` : `You scored ${right} / ${Q.length}, so the rocket took off… but it flew with ${info.missing.join(', ')}. Bumpy ride!`),
-        full ? null : h('p', { style: { fontSize: '17px', color: 'var(--yellow)' } }, 'Earn the real parts at: ' + info.stations.join(' · ') + '. Then launch again for a smooth flight!'),
-        missed.length ? h('p', { style: { fontSize: '16px' } }, 'Quick review: ' + missed.slice(0, 6).join(' · ')) : null,
-        h('button', { class: 'btn orange', onclick: () => { ov.remove(); HUB.reset(); closeScreen(); } }, 'Back to base'));
+        h('p', {}, full ? `${right} / ${Q.length}! Every part was real. Perfect launch, ${cmdr()}!` : `${right} / ${Q.length}! It flew… with ${info.missing.join(', ')}. Bumpy ride!`),
+        full ? null : h('p', { style: { fontSize: '17px', color: 'var(--yellow)' } }, 'Get the real parts at: ' + info.stations.join(' · ')),
+        missed.length ? h('p', { style: { fontSize: '16px' } }, 'Review: ' + missed.slice(0, 6).join(' · ')) : null,
+        h('button', { class: 'btn orange', onclick: () => { ov.remove(); HUB.reset(); hudShow(true); closeScreen(); } }, 'Back to base'));
       document.body.append(ov); confetti(160); SFX.win(); speak('Lift off! Mission success, Commander!');
     } else {
       scr.clear();
-      scr.stage.append(h('div', { class: 'plate result pop' }, h('div', { style: { fontSize: '60px' } }, '🛑'), h('h2', {}, 'Launch on hold'), h('div', { style: { fontWeight: 700, fontSize: '22px' } }, `${right} / ${Q.length} fuel cells. You need ${need} to launch.`),
-        h('div', {}, 'Practise these, then try again:'), h('div', { class: 'missed' }, missed.map(m => h('span', {}, m))),
+      scr.stage.append(h('div', { class: 'plate result pop' }, h('div', { style: { fontSize: '60px' } }, '🛑'), h('h2', {}, 'Launch on hold'), h('div', { style: { fontWeight: 700, fontSize: '22px' } }, `${right} / ${Q.length}. You need ${need}.`),
+        h('div', {}, 'Practise these:'), h('div', { class: 'missed' }, missed.map(m => h('span', {}, m))),
         h('div', { style: { display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' } }, h('button', { class: 'btn orange', onclick: start }, 'Try again'), h('button', { class: 'btn panel', onclick: () => closeScreen() }, 'Back to base'))));
-      bolt('So close! Train at the stations that match the ones you missed, then come back for another launch.');
+      bolt('So close! Practise the ones you missed, then try again.');
     }
   }
 }
@@ -2029,6 +2265,35 @@ const QB = {
     const [qq, aa] = pickOne([['Which word starts the conclusion of an essay?', 'In conclusion'], ['Which word starts the FIRST detail in the body?', 'First'], ['Which word starts the LAST detail in the body?', 'Finally']]);
     return { sec: 'Writing', kind: 'Writing · Transitions', q: qq, o: four(aa, shuffle(['First', 'Next', 'Finally', 'In conclusion', 'Because'])), a: aa, key: 'tr:' + aa, label: aa }; },
 };
+/* tag every generated question with the generator that made it (used by the Glitch Box to rebuild it) */
+for (const k of Object.keys(QB)) { const f = QB[k]; QB[k] = (...a) => { const q = f(...a); if (q) q.gen = k; return q; }; }
+/* ---------- rebuild the exact question for one item key (Glitch Box) ---------- */
+const GEN_BY_PREFIX = { sp: 'spellType', form: 'ending', mean: 'meaning', pic: 'picture', sent: 'sentence', pl: 'plural', pn: 'proper', ar: 'article', pr: 'pronoun', be: 'be', hg: 'haveGot', sa: 'shortAns', ct: 'container', th: 'there', cu: 'countSort', fx: 'fixType', jq: 'jMC' };
+const FORCEABLE = new Set(['spellMC', 'spellType', 'ending', 'meaning', 'picture', 'sentence', 'plural', 'proper', 'article', 'pronoun', 'be', 'haveGot', 'shortAns', 'container', 'there', 'countSort', 'fixMC', 'fixType', 'jMC', 'jType']);
+const SPECIAL_PREFIX = ['rd', 'fo', 'hk', 'up', 'sn', 'tr', 'js'];
+const canReplay = key => { const p = String(key).split(':')[0]; return !!GEN_BY_PREFIX[p] || SPECIAL_PREFIX.includes(p); };
+function qForKey(key, gen) {
+  const parts = String(key).split(':'), pre = parts[0];
+  try {
+    if (pre === 'rd') { const p = PASSAGES.find(x => x.id === parts[1]), k = +parts[2], q = p && p.qs[k]; if (!q) return null;
+      if (q.t === 'mc') return { sec: 'Reading', kind: 'Reading', passage: p, q: esc(q.q), o: shuffle([...q.o]), a: q.o[q.a], key, label: `${p.title}: ${q.q}` };
+      if (q.t === 'fo') return { sec: 'Reading', kind: 'Fact or opinion?', passage: p, q: esc(q.q), o: ['Fact', 'Opinion'], a: q.a === 'fact' ? 'Fact' : 'Opinion', key, label: `${p.title}: ${q.q}`, why: q.why };
+      if (q.t === 'order') { const right = q.items.join(' → '); const wr = [1, 2, 3].map(() => shuffle(q.items).join(' → ')).filter(x => x !== right);
+        return { sec: 'Reading', kind: 'Reading · order', passage: p, q: 'Which list is in the right order?', o: four(right, wr.length ? wr : [[...q.items].reverse().join(' → ')]), a: right, key, label: `${p.title}: order` }; }
+      return null; }
+    if (pre === 'fo') { const x = FO_POOL().find(x => 'fo:' + x.s.slice(1, 20) === key); return x && { sec: 'Reading', kind: 'Fact or opinion?', q: `${esc(x.s)}<br>Is this a fact or an opinion?`, o: ['Fact', 'Opinion'], a: x.a === 'fact' ? 'Fact' : 'Opinion', key, label: 'fact / opinion', why: x.why }; }
+    if (pre === 'hk') { const hk = HOOKS.find(x => 'hk:' + x.topic === key); return hk && { sec: 'Writing', kind: 'Writing · Hooks', q: `Topic: <b>"${esc(hk.topic)}"</b><br>Which sentence is the best hook?`, o: shuffle([...hk.o]), a: hk.o[hk.a], key, label: 'hooks' }; }
+    if (pre === 'up') { const u = UPGRADES.find(x => 'up:' + x.a === key); return u && { sec: 'Writing', kind: 'Writing · Power words', q: `${esc(u.s).replace(esc(u.boring), `<u>${esc(u.boring)}</u>`)}<br>Which vocab word could replace the underlined words?`, o: shuffle([...u.o]), a: u.a, key, label: u.a }; }
+    if (pre === 'sn') { const se = SENSES[+parts[1]]; return se && { sec: 'Writing', kind: 'Writing · Senses', q: `"${esc(se.t)}"<br>Which sense does this detail use?`, o: ['see', 'hear', 'smell', 'taste', 'feel'], a: se.a, key, label: se.t }; }
+    if (pre === 'tr') { const aa = parts.slice(1).join(':'); const qq = { 'In conclusion': 'Which word starts the conclusion of an essay?', First: 'Which word starts the FIRST detail in the body?', Finally: 'Which word starts the LAST detail in the body?' }[aa]; return qq && { sec: 'Writing', kind: 'Writing · Transitions', q: qq, o: four(aa, shuffle(['First', 'Next', 'Finally', 'In conclusion', 'Because'])), a: aa, key, label: aa }; }
+    if (pre === 'js') { const Jr = JOURNEYS.find(x => String(x.L) === parts[1]); return Jr && { sec: 'Journeys', kind: 'Journeys · Which story?', q: `Which story is this? <br><i>"${esc(Jr.about)}"</i>`, o: four(Jr.title, shuffle(JOURNEYS.filter(x => x !== Jr)).map(x => x.title)), a: Jr.title, key, label: Jr.title }; }
+    const g = gen && FORCEABLE.has(gen) ? gen : GEN_BY_PREFIX[pre];
+    if (!g) return null;
+    FORCE = key; const q = QB[g](); FORCE = null;
+    return q && q.key === key ? q : null;
+  } catch (e) { FORCE = null; return null; }
+}
+
 const SECTION_KINDS = {
   Vocabulary: ['spellMC', 'spellType', 'ending', 'meaning', 'picture', 'useIt', 'sentence'],
   Grammar: ['plural', 'proper', 'article', 'pronoun', 'be', 'haveGot', 'shortAns', 'container', 'there', 'countSort', 'fixMC', 'fixType'],
@@ -2053,9 +2318,9 @@ function checkSentence(v, text) {
   if (!used) issues.push(`Use the word "${v.w}" (or a form of it, like "${v.a}").`);
   if (!/^[A-Z"]/.test(t)) issues.push('Start with a capital letter.');
   if (!/[.!?]["']?$/.test(t)) issues.push('End with a full stop, ? or !');
-  if (words.length < 6) issues.push('Make it longer: at least 6 words, so it shows what the word means.');
+  if (words.length < 6) issues.push('Make it longer: 6 words or more.');
   const sim = keyWords(t).filter(x => keyWords(v.s).includes(x)).length;
-  if (words.length && sim >= Math.max(4, keyWords(v.s).length - 1)) issues.push('That is very close to the example. Make up your own!');
+  if (words.length && sim >= Math.max(4, keyWords(v.s).length - 1)) issues.push('Too close to the example. Make your own!');
   return { ok: !issues.length, issues };
 }
 
@@ -2064,14 +2329,15 @@ async function askQ(hold, q, { num, total } = {}) {
   hold.append(h('div', { class: 'secrow' }, h('span', { class: 'secchip s-' + q.sec.toLowerCase() }, q.sec), h('span', { class: 'kind' }, q.kind + (num ? ` · Question ${num} of ${total}` : ''))));
   if (q.passage) hold.append(h('div', { class: 'minipassage' }, h('b', {}, q.passage.title), q.passage.paras.map(t => h('p', {}, t))));
   if (q.img) hold.append(h('div', { class: 'telescope', style: { width: 'min(230px,50vw)' } }, h('img', { src: q.img, alt: '' })));
-  hold.append(h('div', { class: 'prompt', html: q.q }));
-  let ok;
+  hold.append(h('div', { class: 'prompt' }, speakBtn(() => plainText(q.q)), h('span', { html: q.q })));
+  readOut(plainText(q.q));
+  let ok; let picked = null;
   if (!q.t) {
     const long = q.o.some(o => o.length > 28);
     const wrap = h('div', { class: 'opts' + (long ? ' col' : '') }); hold.append(wrap);
-    ok = await askChoice(hold, { options: q.o, answer: q.a, wrap });
+    ok = await askChoice(hold, { options: q.o, answer: q.a, wrap, onPick: (k, o) => picked = o });
     if (!ok && q.why) hold.append(h('div', { class: 'why pop' }, q.why));
-    mark(q.key, ok, q.label);
+    QGEN = q.gen || null; mark(q.key, ok, q.label, picked); QGEN = null;
     return ok;
   }
   if (q.t === 'type') {
@@ -2081,7 +2347,7 @@ async function askQ(hold, q, { num, total } = {}) {
     ok = await new Promise(res => { const sub = () => { if (!inp.value.trim()) return; inp.disabled = true; res(norm(inp.value) === q.a.toLowerCase()); }; go.onclick = sub; inp.onkeydown = e => { if (e.key === 'Enter') sub(); }; });
     inp.classList.add(ok ? 'ok' : 'no'); go.remove(); ok ? SFX.ok() : SFX.no();
     if (!ok) hold.append(h('div', { class: 'why pop' }, `Answer: ${q.a}${q.why ? '  ·  ' + q.why : ''}`));
-    mark(q.key, ok, q.label);
+    QGEN = q.gen || null; mark(q.key, ok, q.label, inp.value.trim()); QGEN = null;
     return ok;
   }
   // writing-style answers in a text box
@@ -2095,7 +2361,7 @@ async function askQ(hold, q, { num, total } = {}) {
   if (q.t === 'sentence') {
     const r = checkSentence(q.v, text); ok = r.ok;
     S.sentences = S.sentences || []; S.sentences.push({ w: q.v.w, text, ok, t: Date.now() }); S.sentences = S.sentences.slice(-40); save();
-    hold.append(ok ? h('div', { class: 'why pop', style: { background: '#C9F5DF' } }, '✓ Nice sentence! A grown-up can read it later on the readiness page.')
+    hold.append(ok ? h('div', { class: 'why pop', style: { background: '#C9F5DF' } }, '✓ Nice sentence!')
       : h('div', { class: 'why pop' }, h('b', {}, 'Fix-up checklist: '), r.issues.join(' '), h('br'), h('span', { style: { color: 'var(--ink2)' } }, 'Example: ' + q.v.s.replace('___', q.v.a))));
   } else if (q.t === 'fixtype') {
     const clean = s => norm(s).replace(/[.!?]+$/, '').replace(/\s+/g, ' ');
@@ -2109,7 +2375,7 @@ async function askQ(hold, q, { num, total } = {}) {
       h('div', { class: 'hint-line' }, `Key ideas you included: ${hit} of ${q.kw.length}${startsOK ? '' : ' · Start with a capital letter'}${endsOK ? '' : ' · End with a full stop'}`));
   }
   ok ? SFX.ok() : SFX.no();
-  mark(q.key, ok, q.label);
+  QGEN = q.gen || null; mark(q.key, ok, q.label, text); QGEN = null;
   return ok;
 }
 
@@ -2169,14 +2435,14 @@ function openMission() {
     h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: '8px' } },
       h('h2', { style: { fontFamily: 'var(--display)', margin: 0, fontSize: '32px' } }, "Today's Mission"),
       h('span', { class: 'chip count', style: { fontSize: '15px' } }, '⏱ ', h('b', {}, examCountdown()))),
-    h('div', { style: { fontSize: '18px' } }, `${total} questions · about 15 minutes. Bolt picked your weakest areas first, so every minute counts.`),
+    h('div', { style: { fontSize: '18px' } }, `${total} questions · about 15 minutes. The hardest parts come first.`),
     h('div', { class: 'legs' }, legs.map((l, i) => h('div', { class: 'leg' },
       h('span', { class: 'legn' }, i + 1), h('span', { class: 'secchip s-' + l.sec.toLowerCase() }, SEC_ICON[l.sec] + ' ' + l.sec),
       h('span', { class: 'legc' }, `${l.n} question${l.n === 1 ? "" : "s"}`), h('span', { class: 'legbar' }, h('i', { style: { width: Math.round(R[l.sec].cov * 100) + '%' } })), h('span', { class: 'legp' }, R[l.sec].seen ? `${Math.round(R[l.sec].acc * 100)}% correct` : 'not started'),
       i === 0 ? h('span', { class: 'tagw' }, 'focus') : null))),
     days ? h('div', { style: { fontWeight: 700, color: 'var(--orange-d)' } }, `🔥 Missions done: ${days} day${days > 1 ? 's' : ''}`) : null,
     h('button', { class: 'btn orange', style: { alignSelf: 'center', fontSize: '26px' }, onclick: () => run() }, 'Start mission')));
-  bolt('A mission has a few legs. Do them all in one go, then check your readiness!');
+  bolt('Do all the parts in one go!');
   async function run() {
     const Q = legs.flatMap(l => pickKinds(l.sec, l.n).map(k => QB[k]()));
     const seen = new Set(); for (let i = 0; i < Q.length; i++) { let g = 0; while (seen.has(Q[i].key) && g++ < 6) Q[i] = QB[pickOne(SECTION_KINDS[Q[i].sec])](); seen.add(Q[i].key); }
@@ -2209,9 +2475,9 @@ function openMission() {
           h('span', { class: 'legbar' }, h('i', { style: { width: Math.round(after[l.sec].cov * 100) + '%' } })), h('span', { class: 'legp' }, `${Math.round(after[l.sec].cov * 100)}% practised${d > 0 ? ` (+${d})` : ''}`)); })),
       h('div', { style: { display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' } },
         h('button', { class: 'btn orange', onclick: () => openMission() }, 'Another mission'),
-        h('button', { class: 'btn teal', onclick: () => openReadiness() }, '📊 Readiness'),
+        h('button', { class: 'btn teal', onclick: () => openGrownups() }, '📊 Readiness'),
         h('button', { class: 'btn panel', onclick: () => closeScreen() }, 'Back to base'))));
-    bolt(right / Q.length >= .8 ? 'Amazing! Try a Launch Day test to see if the rocket is ready.' : 'The questions you missed will come back in your next mission. That is how they stick!', { mood: right / Q.length >= .7 ? 'happy' : null });
+    bolt(right / Q.length >= .8 ? 'Amazing! Now try Launch Day!' : 'The ones you missed will come back next time.', { mood: right / Q.length >= .7 ? 'happy' : null });
   }
 }
 
@@ -2220,7 +2486,7 @@ function openMission() {
    ========================================================= */
 function openReadiness() {
   clearTimeout(bubbleTimer); $('#bubble')?.classList.add('hidden'); document.querySelectorAll('.confetti').forEach(c => c.remove());
-  const scr = openScreen({ id: 'ready', title: 'Readiness for Wednesday', icon: '📊', bgClass: 'bg-control' });
+  const scr = openScreen({ id: 'ready', title: 'Grown-ups · Readiness', icon: '👪', bgClass: 'bg-control' });
   const R = readiness();
   const lvl = x => x.cov >= .6 && x.acc >= .8 ? ['Ready', 'g'] : x.cov >= .3 && x.acc >= .65 ? ['Getting there', 'a'] : ['Needs work', 'r'];
   const weak = Object.entries(S.items).filter(([k, v]) => v.w > 0 && v.box < 2).sort((a, b) => b[1].w - a[1].w || b[1].t - a[1].t).slice(0, 10);
@@ -2245,13 +2511,707 @@ function openReadiness() {
       h('div', {}, h('h3', { class: 'rd-h' }, 'Sentences he wrote'),
         sents.length ? h('ul', { class: 'rd-list' }, sents.map(x => h('li', {}, h('b', {}, x.w + ': '), x.text, h('span', { class: x.ok ? 'rd-ok' : 'rd-x' }, x.ok ? ' ✓' : ' needs fixing')))) : h('p', {}, 'None yet. Try Launch Control → Sentence Forge.'))),
     essay ? h('div', {}, h('h3', { class: 'rd-h' }, `Mission Log essay · ${essay.topic} · ${(essay.text.match(/\b\w+\b/g) || []).length} words`), h('div', { class: 'minipassage', style: { maxHeight: '160px', whiteSpace: 'pre-wrap' } }, essay.text)) : null,
-    h('div', { style: { fontWeight: 700 } }, `Launch Day best: ${S.best.launch || 0} / 20 · Launches: ${S.launched || 0} · Missions done: ${Object.keys(S.daily || {}).length} day(s)`),
+    h('div', { style: { fontWeight: 700 } }, `Launch Day best: ${S.best.launch || 0} / 20 · Launches: ${S.launched || 0} · Missions done: ${Object.keys(S.daily || {}).length} day(s) · Crew radio checks: ${S.story.quests || 0}`),
+    ...grownupExtras(),
     h('div', { style: { display: 'flex', gap: '12px', flexWrap: 'wrap' } },
       h('button', { class: 'btn teal', onclick: e => copyText(`Rocket Base readiness${S.name ? ' for ' + S.name : ''} (${examCountdown()})\n${lines.join('\n')}`, e.currentTarget) }, '📋 Copy report'),
       h('button', { class: 'btn orange', onclick: () => openMission() }, "🎯 Today's Mission"),
       h('button', { class: 'btn panel', onclick: () => closeScreen() }, 'Back to base')));
   scr.stage.append(card);
 }
+
+/* =========================================================
+   SETTINGS · GROWN-UPS · BACKUPS · GLITCH BOX · HOW TO PLAY
+   (same layout and behaviour as Pebble Town)
+   ========================================================= */
+
+/* ---------- read-aloud & music toggles ---------- */
+function refreshReadBtn() {
+  $$('.read-btn').forEach(b => {
+    b.classList.toggle('on', !!S.settings.read);
+    const i = b.querySelector('.spk'); if (i) i.innerHTML = S.settings.read ? SPEAKER_SVG : SPK_OFF;
+    const s = b.querySelector('span'); if (s) s.textContent = S.settings.read ? 'Read aloud: on' : 'Read aloud: off';
+  });
+  $$('.music-row span').forEach(s => s.textContent = S.settings.music ? 'Music: on' : 'Music: off');
+}
+function toggleRead() {
+  S.settings.read = !S.settings.read; save(); refreshReadBtn(); SFX.tap();
+  if (S.settings.read) speak('I will read things out loud.'); else hush();
+}
+function toggleMusic() {
+  S.settings.music = !S.settings.music; save(); audioInit();
+  S.settings.music ? musicStart() : musicStop(); refreshReadBtn(); SFX.tap();
+}
+function miniRead() {
+  const b = h('button', { class: 'btn icon panel read-btn mini', 'aria-label': 'Read aloud on or off', title: 'Read aloud', onclick: toggleRead }, h('i', { class: 'spk' }));
+  setTimeout(refreshReadBtn, 0);
+  return b;
+}
+
+/* ---------- the ⚙️ tray on the base ---------- */
+function buildTray() {
+  const row = (icon, label, fn, cls = '') => h('button', { class: 'tray-row ' + cls, onclick: e => { e.stopPropagation(); fn(); } }, h('i', { class: 'spk', html: icon }), h('span', {}, label));
+  const tray = h('div', { class: 'tray hidden' },
+    row('', '', toggleRead, 'read-btn'),
+    row('🎵', '', toggleMusic, 'music-row'),
+    row('🧭', 'Show me around', async () => { closeTray(); if (CUR || STORY_BUSY) return; await baseTour(); }),
+    row('👪', 'Grown-ups', () => { closeTray(); openGrownups(); }));
+  const menuBtn = h('button', { class: 'btn icon panel menu-btn', 'aria-label': 'Settings', title: 'Settings', onclick: e => { e.stopPropagation(); SFX.tap(); tray.classList.toggle('hidden'); refreshReadBtn(); } }, '⚙️');
+  const closeTray = () => tray.classList.add('hidden');
+  addEventListener('pointerdown', e => { if (!tray.contains(e.target) && e.target !== menuBtn) closeTray(); });
+  setTimeout(refreshReadBtn, 0);
+  return h('div', { class: 'menu-wrap' }, menuBtn, tray);
+}
+
+/* ---------- grown-ups gate: press and hold ---------- */
+function openGrownups(after) {
+  SFX.tap();
+  const fill = h('span', { class: 'fill' });
+  let timer, t0;
+  const open = () => { clearInterval(timer); gate.remove(); (after || openReadiness)(); };
+  const stop = () => { clearInterval(timer); if (t0 && performance.now() - t0 >= 1500 && gate.isConnected) return open(); t0 = 0; fill.style.width = '0'; };
+  const hold = h('button', { class: 'btn panel hold-btn',
+    onpointerdown: () => { t0 = performance.now(); timer = setInterval(() => { const k = (performance.now() - t0) / 1500; fill.style.width = Math.min(100, k * 100) + '%'; if (k >= 1) open(); }, 30); },
+    onpointerup: stop, onpointerleave: stop, onpointercancel: stop }, fill, h('span', { style: { position: 'relative' } }, 'Hold for grown-ups'));
+  const gate = h('div', { class: 'overlay', onclick: e => { if (e.target === gate) gate.remove(); } },
+    h('div', { class: 'panel', style: { textAlign: 'center', width: 'min(460px,94vw)' } },
+      h('h2', {}, 'Grown-ups only'), h('p', { style: { fontWeight: 700 } }, 'Press and hold the button.'), hold));
+  document.body.append(gate);
+}
+
+/* ---------- extra sections for the grown-ups page ---------- */
+function grownupExtras() {
+  const sec = (t, ...k) => h('div', { class: 'gu-sec' }, h('h3', { class: 'rd-h' }, t), ...k);
+  // Glitch Box table
+  const G = S.glitch;
+  const gTbl = G.length ? h('table', { class: 'report' }, h('tr', {}, h('th', {}, 'Where'), h('th', {}, 'Question'), h('th', {}, 'His answer'), h('th', {}, 'Times')),
+    G.slice(0, 30).map(e => h('tr', {}, h('td', {}, AREA_NAME[e.area] || '—'), h('td', {}, e.label || e.key), h('td', {}, e.wrong || ''), h('td', {}, String(e.n)))))
+    : h('p', {}, S.fixed ? `All glitches fixed (${S.fixed} so far).` : 'No mistakes saved yet.');
+  // settings
+  const rate = h('input', { type: 'range', min: '0.6', max: '1.1', step: '0.05', value: String(S.settings.rate), oninput: e => { S.settings.rate = +e.target.value; save(); } });
+  const vsel = h('select', { class: 'gu-select', onchange: e => { setVoice(e.target.value); speak('Hello Commander! Let us build the rocket.'); } },
+    h('option', { value: '' }, 'Automatic'), englishVoices().map(v => h('option', { value: v.name, selected: S.settings.voice === v.name ? '' : null }, `${v.name} (${v.lang})`)));
+  const sfxBox = h('input', { type: 'checkbox', checked: S.settings.sfx ? '' : null, onchange: e => { S.settings.sfx = e.target.checked; save(); } });
+  const reset = h('button', { class: 'btn small red', onclick: () => { if (confirm('Erase all progress and stars? This cannot be undone.')) { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} location.reload(); } } }, 'Erase progress');
+  return [
+    sec('Keep his progress safe', backupBox()),
+    sec(`Glitch Box: mistakes to redo (${G.length})${S.fixed ? ` · fixed so far: ${S.fixed}` : ''}`, h('p', { class: 'gu-note' }, 'He redoes these from the 👾 Glitch Box button on the base. A question leaves the list when he gets it right there, or once he has it right twice anywhere else.'), gTbl),
+    sec('Story',
+      h('div', { class: 'gu-row' },
+        h('button', { class: 'btn small purple', onclick: () => { S.story.intro = 0; save(); location.reload(); } }, '▶ Replay the opening'),
+        h('button', { class: 'btn small red', onclick: () => { closeScreen(); previewEnding(); } }, '⚡ Preview the ending'))),
+    sec('Settings',
+      h('p', {}, h('label', {}, 'Speaking speed ', rate)),
+      h('p', {}, h('label', {}, 'Voice ', vsel)),
+      h('p', {}, h('label', {}, sfxBox, ' Sound effects')),
+      h('p', { class: 'gu-note' }, 'Progress is saved in this browser on this device.'),
+      h('div', { class: 'gu-row' }, h('button', { class: 'btn small teal', onclick: printList }, '🛠️ Practice list'), reset)),
+  ];
+}
+const AREA_NAME = { control: 'Launch Control', starmap: 'Star Map', cargo: 'Cargo Bay', docking: 'Docking Bay', robot: 'Robot Repair', comms: 'Comms Tower', signal: 'Signal Lab', log: 'Mission Log', launch: 'Launch Day', mission: "Today's Mission", crew: 'Crew radio', glitch: 'Glitch Box' };
+
+/* ---------- printing (certificate, practice list) ---------- */
+function printEl(el) {
+  el.classList.add('print-me'); document.body.classList.add('printing');
+  const done = () => { el.classList.remove('print-me'); document.body.classList.remove('printing'); removeEventListener('afterprint', done); };
+  addEventListener('afterprint', done); setTimeout(() => { try { print(); } catch (e) {} setTimeout(done, 1500); }, 60);
+}
+
+/* =========================================================
+   BACKUPS: link (compressed + short), file, restore
+   ========================================================= */
+const b64u = bytes => { let s = ''; bytes.forEach(b => s += String.fromCharCode(b)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+const unb64u = t => Uint8Array.from(atob(t.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+async function pipeBytes(bytes, stream) { const r = new Blob([bytes]).stream().pipeThrough(stream); return new Uint8Array(await new Response(r).arrayBuffer()); }
+function compactSave(lean) {
+  const o = JSON.parse(JSON.stringify(S)); delete o.savedAt;
+  o.items = Object.fromEntries(Object.entries(S.items).map(([k, r]) => [k, r.w > 0 && r.label && !lean ? [r.box, r.r, r.w, r.label] : [r.box, r.r, r.w]]));
+  o.glitch = S.glitch.slice(0, lean ? 20 : 60).map(e => [e.key, e.gen || '', e.n, e.area || '', lean ? '' : (e.wrong || '')]);
+  o.sentences = (S.sentences || []).slice(lean ? -8 : -20).map(x => [x.w, x.ok ? 1 : 0, lean ? '' : String(x.text).slice(0, 160)]);
+  if (lean && o.log && o.log.essay) o.log.essay = Object.assign({}, o.log.essay, { text: String(o.log.essay.text || '').slice(0, 300) });
+  o.v = 2;
+  return o;
+}
+async function packSave(lean) {
+  const raw = new TextEncoder().encode(JSON.stringify(compactSave(lean)));
+  if (window.CompressionStream) { try { return 'z' + b64u(await pipeBytes(raw, new CompressionStream('deflate-raw'))); } catch (e) {} }
+  return 'j' + b64u(raw);
+}
+async function unpackSave(t) {
+  t = String(t).trim();
+  let bytes = unb64u(t.slice(1));
+  if (t[0] === 'z') bytes = await pipeBytes(bytes, new DecompressionStream('deflate-raw'));
+  return expandSave(JSON.parse(new TextDecoder().decode(bytes)));
+}
+function expandSave(o) {
+  if (!o || typeof o !== 'object' || !o.items) throw new Error('not a Rocket Base save');
+  o.items = Object.fromEntries(Object.entries(o.items).map(([k, a]) => Array.isArray(a) ? [k, { box: a[0], r: a[1], w: a[2], label: a[3], t: 0 }] : [k, a]));
+  if (Array.isArray(o.glitch)) o.glitch = o.glitch.map(e => Array.isArray(e) ? { key: e[0], gen: e[1] || null, n: e[2], area: e[3], wrong: e[4] || undefined, label: (o.items[e[0]] || {}).label || '' } : e);
+  if (Array.isArray(o.sentences)) o.sentences = o.sentences.map(x => Array.isArray(x) ? { w: x[0], ok: !!x[1], text: x[2] || '(saved in a short backup)', t: 0 } : x);
+  return o;
+}
+async function backupLink(lean) { return location.origin + location.pathname + '?r=' + await packSave(lean); }
+function shortenLink(long) {
+  return new Promise((res, rej) => {
+    if (long.length > 4900) return rej(new Error('too long'));
+    const cb = '__isgd' + Date.now(), sc = document.createElement('script');
+    const done = () => { delete window[cb]; sc.remove(); clearTimeout(tm); };
+    const tm = setTimeout(() => { done(); rej(new Error('timeout')); }, 9000);
+    window[cb] = d => { done(); d && d.shorturl ? res(d.shorturl) : rej(new Error((d && d.errormessage) || 'failed')); };
+    sc.onerror = () => { done(); rej(new Error('offline')); };
+    sc.src = 'https://is.gd/create.php?format=json&callback=' + cb + '&url=' + encodeURIComponent(long);
+    document.head.append(sc);
+  });
+}
+function writeSave(o) { if (!o || !o.items) throw new Error('not a Rocket Base save'); localStorage.setItem(SAVE_KEY, JSON.stringify(o)); return o; }
+const exportSave = () => 'ROCKET1:' + btoa(unescape(encodeURIComponent(JSON.stringify(S))));
+function importSave(text) {
+  const t = String(text || '').trim(); if (!t) throw new Error('empty');
+  const o = t.startsWith('ROCKET1:') ? JSON.parse(decodeURIComponent(escape(atob(t.slice(8).replace(/\s+/g, ''))))) : JSON.parse(t);
+  return writeSave(expandSave(o));
+}
+/* on load: ?r=… asks to restore */
+async function restoreFromLink() {
+  const r = new URLSearchParams(location.search).get('r');
+  if (!r) return false;
+  const clean = () => history.replaceState(null, '', location.pathname);
+  let o; try { o = await unpackSave(r); } catch (e) { clean(); return false; }
+  const have = S.name || Object.keys(S.items).length;
+  const ov = h('div', { class: 'overlay', style: { zIndex: 60 } }, h('div', { class: 'panel', style: { textAlign: 'center', width: 'min(520px,94vw)' } },
+    h('h2', {}, 'Restore progress?'),
+    h('p', { style: { fontWeight: 700, fontSize: '20px' } }, `${o.name || 'Commander'} · ${o.stars || 0} stars · ${Object.keys(o.items || {}).length} things learned`),
+    have ? h('p', {}, `This will replace the progress now on this device (${S.name || 'Commander'} · ${S.stars || 0} stars).`) : null,
+    h('div', { class: 'gu-row', style: { justifyContent: 'center', marginTop: '12px' } },
+      h('button', { class: 'btn mint', onclick: () => { writeSave(o); clean(); location.reload(); } }, 'Yes, restore'),
+      h('button', { class: 'btn panel', onclick: () => { clean(); location.reload(); } }, 'No, keep this device'))));
+  document.body.append(ov);
+  return true;
+}
+function backupBox() {
+  const when = S.savedAt ? new Date(S.savedAt).toLocaleString() : '—';
+  const status = h('span', {}, 'checking…');
+  isProtected().then(p => { status.textContent = p === true ? 'Yes ✓' : p === false ? 'Not yet. Tap "Protect".' : 'This browser cannot say'; });
+  const msg = h('p', { class: 'gu-msg' });
+  const btn = (cls, label, fn) => h('button', { class: 'btn small ' + cls, onclick: fn }, label);
+  const linkOut = h('div', { class: 'backup-link' });
+  const makeLink = async () => {
+    linkOut.innerHTML = ''; msg.textContent = 'Making the link…';
+    let long = await backupLink(false); if (long.length > 4900) long = await backupLink(true);
+    let url = long, short = false;
+    try { url = await shortenLink(long); short = true; } catch (e) {}
+    msg.textContent = short ? 'Done! Keep this link. Opening it on any device brings his progress back.' : 'Done! (The short-link service did not answer, so this is the full link. It works the same.)';
+    const box = h('input', { value: url, readonly: '', onclick: e => e.target.select(), class: 'gu-link' + (short ? ' short' : '') });
+    const copy = async () => { try { await navigator.clipboard.writeText(url); msg.textContent = 'Link copied.'; } catch (e) { box.select(); msg.textContent = 'Select the link and copy it.'; } };
+    const share = async () => { try { if (navigator.share) { await navigator.share({ title: `${S.name || 'Rocket Base'} backup`, text: `Rocket Base backup for ${S.name || 'him'} (${new Date().toLocaleDateString()})`, url }); return; } } catch (e) { if (e.name === 'AbortError') return; } copy(); };
+    linkOut.append(box, h('div', { class: 'gu-row', style: { marginTop: '8px' } }, btn('mint', '📤 Share', share), btn('panel', '📋 Copy', copy)));
+  };
+  const restoreText = async text => {
+    const t = String(text || '').trim(); if (!t) return;
+    if (/^(https?:\/\/)?(is\.gd|v\.gd)\//i.test(t)) { location.href = t.startsWith('http') ? t : 'https://' + t; return; }
+    if (/^[A-Za-z0-9_]{5,30}$/.test(t)) { location.href = 'https://is.gd/' + t; return; }
+    try {
+      const m = t.match(/[?&]r=([^&#\s]+)/);
+      if (!m) { importSave(t); location.reload(); return; }
+      const o = await unpackSave(m[1]);
+      if (!confirm(`Replace the progress on this device with ${o.name || 'this backup'} (${o.stars || 0} stars)?`)) return;
+      writeSave(o); location.reload();
+    } catch (e) { msg.textContent = 'That is not a Rocket Base backup.'; }
+  };
+  const fileIn = h('input', { type: 'file', accept: '.txt,.json,text/plain,application/json', style: { display: 'none' }, onchange: e => { const f = e.target.files[0]; if (f) f.text().then(restoreText); } });
+  const code = h('input', { class: 'gu-code', placeholder: 'Paste a backup link or short code' });
+  const download = () => { const a = h('a', { href: URL.createObjectURL(new Blob([exportSave()], { type: 'text/plain' })), download: `rocket-base-${(S.name || 'save').toLowerCase()}-${new Date().toISOString().slice(0, 10)}.txt` }); document.body.append(a); a.click(); a.remove(); msg.textContent = 'Backup file saved.'; };
+  return h('div', {},
+    h('p', { class: 'gu-note' }, `Progress saves automatically in this browser (last saved: ${when}). It can be lost if site data is cleared, in a private window, or on iPad Safari if the game isn't opened for 7 days. Make a backup link now and then. It holds everything, and it also moves his progress between the copy on your computer and the website.`),
+    h('div', { class: 'gu-row' }, btn('mint', '🔗 Make backup link', makeLink)),
+    linkOut, msg,
+    h('h4', { style: { margin: '14px 0 6px' } }, 'Restore'),
+    h('div', { class: 'gu-row' }, code, btn('red', 'Restore', () => restoreText(code.value))),
+    h('details', { class: 'gu-more' }, h('summary', {}, 'More: backup file, storage protection'),
+      h('p', {}, h('b', {}, 'Protected from auto-clearing: '), status, ' ', btn('panel', '🛡 Protect', async () => { const p = await protectStorage(); status.textContent = p ? 'Yes ✓' : 'The browser said no. Keep backup links.'; })),
+      h('div', { class: 'gu-row' }, btn('panel', '⬇ Save backup file', download), btn('panel', '⬆ Load backup file', () => fileIn.click()), fileIn)));
+}
+
+/* =========================================================
+   GLITCH BOX — redo every mistake
+   ========================================================= */
+function refreshGlitch() {
+  const n = S.glitch.length;
+  $$('.glitch-count').forEach(e => e.textContent = String(n));
+  $$('.glitch-btn').forEach(b => b.classList.toggle('has', n > 0));
+}
+function openGlitch() {
+  if (CUR || STORY_BUSY) return;
+  audioInit(); SFX.whoosh(); hush();
+  const scr = openScreen({ id: 'glitch', title: 'Glitch Box', icon: '👾', bgClass: 'bg-glitch' });
+  const menu = () => {
+    S.glitch = S.glitch.filter(e => qForKey(e.key, e.gen)); save(); refreshGlitch();
+    const list = S.glitch;
+    if (!list.length) {
+      scr.clear();
+      scr.stage.append(h('div', { class: 'plate result pop' }, h('div', { style: { fontSize: '64px' } }, '🎉'), h('h2', {}, 'No glitches left!'),
+        h('p', { style: { fontWeight: 700, fontSize: '20px' } }, S.fixed ? `You fixed ${S.fixed}! The Glitch is shaking!` : 'Missed questions go here. Come back and zap them!'),
+        h('button', { class: 'btn orange', onclick: () => closeScreen() }, 'Back to base')));
+      bolt(S.fixed ? 'All fixed! Great job, Commander!' : 'Nothing here yet!');
+      return;
+    }
+    const groups = {};
+    for (const e of list) { const q = qForKey(e.key, e.gen); const s = q ? q.sec : 'Other'; (groups[s] = groups[s] || []).push(e); }
+    const cards = [{ name: 'Zap them all', desc: `${list.length} to fix`, em: '⚡', color: '#FFD0DA', noTrack: true, go: () => round(list) }];
+    for (const s of SEC_ORDER) if (groups[s]) cards.push({ name: s, desc: `${groups[s].length} to fix`, em: SEC_ICON[s], noTrack: true, go: () => round(groups[s]) });
+    missionMenu(scr, 'Get each one right to zap it!', cards);
+    bolt('Fix your mistakes. The Glitch gets smaller!');
+  };
+  scr._menu = menu;
+  function round(entries) {
+    const L = entries.slice(0, 12);
+    runRound(scr, { n: L.length, back: menu, again: () => S.glitch.length ? round(S.glitch) : menu(), ask: async (i, hold) => {
+      const e = L[i], q = qForKey(e.key, e.gen);
+      if (!q) return true;
+      const card = h('div', { class: 'plate lcard', style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' } }); hold.append(card);
+      if (e.wrong) card.append(h('div', { class: 'glitch-was' }, '👾 Last time you said: ', h('b', {}, e.wrong)));
+      REPLAYING = true; let ok;
+      try { ok = await askQ(card, q); } finally { REPLAYING = false; }
+      if (ok) { S.glitch = S.glitch.filter(x => x.key !== e.key); S.fixed++; save(); SFX.laser(); flash('ZAPPED!'); }
+      else { e.n++; save(); }
+      refreshGlitch();
+      if (q.t && q.t !== 'type') await nextBtn(card); else await wait(ok ? 900 : 2400);
+      return ok;
+    } });
+  }
+  menu();
+}
+
+/* =========================================================
+   HOW TO PLAY — shown the first time, "?" brings it back
+   ========================================================= */
+const HELP = [
+  ['control', /^Lesson|Mixed|Tricky/, 'Code typing', ['Read the sentence and the clue in ( ).', 'Type the missing word with the keys.', 'Wrong? Bolt gives a hint. Try again!']],
+  ['control', /Forge/, 'Sentence Forge', ['Read what the word means.', 'Write your OWN sentence with the word.', 'Capital at the start. Full stop at the end. 6+ words.']],
+  ['control', /ending/, 'Watch the ending', ['Read the sentence.', 'Type the word with the right ending: -ed, -ly, -s, -ies…']],
+  ['starmap', /Lesson|galaxy/, 'Connect the stars', ['Tap a word star.', 'Then tap the star with its meaning.', 'Link them all!']],
+  ['starmap', /Telescope/, 'Telescope', ['Look at the photo.', 'Tap the word that matches it.']],
+  ['cargo', /Plural/, 'Plural Packer', ['Read the word on the crate.', 'Stamp it with the plural: one box → two boxes.']],
+  ['cargo', /Name/, 'Name Tags', ['Is it a special name (proper noun)?', 'Or an everyday word (common noun)?']],
+  ['cargo', /Airlock/, 'Airlock Sort', ['Can you count it one by one?', 'Countable or uncountable? Send it to the right airlock.']],
+  ['cargo', /Packing/, 'Packing Station', ['Read the food or thing.', 'Pick the right container: a loaf of bread, a bar of soap…']],
+  ['cargo', /Scanner/, 'Cargo Scanner', ['Read the sentence.', 'There is or there are? Some or any?']],
+  ['docking', /./, 'Docking Bay', ['Read the sentence.', 'Pick a, an, the, or nothing (–).', 'an goes before a vowel SOUND: an hour, a unicorn.']],
+  ['robot', /Pronoun/, 'Pronoun Power', ['Read the words in bold.', 'Pick the pronoun that can replace them.']],
+  ['robot', /Voice/, 'Voice Box', ['Read the sentence.', 'Pick am, is or are.']],
+  ['robot', /Gears|Chip/, 'Have got', ['he / she / it → has got', 'I / you / we / they → have got']],
+  ['robot', /Broken/, 'Broken Robots', ['Each sentence has ONE mistake.', 'Tap the wrong word.', 'Pick the right word to fix it.']],
+  ['comms', /./, 'Comms Tower', ['Tap a story planet.', 'Build the answer from the pieces, in order.', 'Watch out for trick pieces that do not belong!', 'Later, you write the answer yourself.']],
+  ['signal', /./, 'Signal Lab', ['Read the whole story first.', 'Then answer the questions.', 'Answers come in story order.']],
+  ['log', /Build/, 'Build the log', ['Tap a piece of the essay.', 'Tap where it goes on the rocket.']],
+  ['log', /Hook/, 'Hook hunter', ['Read the topic.', 'Pick the sentence that grabs the reader.']],
+  ['log', /Transition/, 'Transition thrusters', ['Fill each blank with First, Next, Finally or In conclusion.']],
+  ['log', /Sense/, 'Sense scanner', ['Read the detail.', 'Which sense is it: see, hear, smell, taste or feel?']],
+  ['log', /Power/, 'Power words', ['Read the underlined words.', 'Pick the vocab word that can replace them.']],
+  ['log', /Write/, 'Write your log', ['Pick a topic.', 'Plan: hook, 3 details, conclusion.', 'Write it. Then check the list.']],
+  ['launch', /./, 'Launch Day', ['20 questions, like the real test.', 'Right answers zap meteors.', 'Get 14 right to blast off!']],
+  ['mission', /./, "Today's Mission", ['The hardest parts come first.', 'Do them all in one go.']],
+  ['glitch', /./, 'Glitch Box', ['These are questions you missed.', 'Get one right to zap it!']],
+];
+let lastHelp = null;
+const helpFor = (area, name) => { const m = HELP.find(([a, re]) => a === area && re.test(name || '')); return m ? { key: area + ':' + m[2], title: m[2], steps: m[3] } : null; };
+const clearHelp = () => { lastHelp = null; };
+function showHelp(hp) {
+  return new Promise(res => {
+    if (!hp) return res();
+    lastHelp = hp;
+    const ov = h('div', { class: 'overlay' }, h('div', { class: 'panel howto' },
+      h('div', { class: 'howto-top' }, 'How to play'), h('h2', {}, hp.title),
+      h('ol', {}, hp.steps.map(s => h('li', {}, s))),
+      h('button', { class: 'btn orange', onclick: () => { ov.remove(); res(); } }, "Let's go!")));
+    document.body.append(ov); SFX.tap(); readOut(hp.title + '. ' + hp.steps.join(' '));
+  });
+}
+async function maybeHelp(area, name) {
+  const hp = helpFor(area, name); if (!hp) return;
+  lastHelp = hp;
+  if (S.seenHelp[hp.key]) return;
+  S.seenHelp[hp.key] = 1; save();
+  await showHelp(hp);
+}
+function replayHelp() {
+  if (lastHelp) return showHelp(lastHelp);
+  const m = CUR && HELP.find(x => x[0] === CUR.id);
+  if (m) return showHelp({ key: CUR.id + ':' + m[2], title: m[2], steps: m[3] });
+  bolt('Pick a game first. Then tap ?');
+}
+
+/* =========================================================
+   STORY · CREW · GLITCH · TOUR · ENDING · HANGAR
+   ========================================================= */
+let STORY_BUSY = false;
+const BASE_NAME = 'Moon Base Seven';
+
+/* ---------- faces for the dialogue box ---------- */
+const FACE = {
+  nova: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#C9E8FF"/><path d="M22 62q0-36 28-36t28 36" fill="#3B2C1E"/><circle cx="50" cy="56" r="22" fill="#E8B48A" stroke="#141B3D" stroke-width="3"/>
+<path d="M28 50q4-22 22-22t22 22q-8-10-22-12q-14 2-22 12z" fill="#3B2C1E"/><circle cx="42" cy="56" r="3.2" fill="#141B3D"/><circle cx="58" cy="56" r="3.2" fill="#141B3D"/><path d="M43 66q7 5 14 0" stroke="#141B3D" stroke-width="3" fill="none" stroke-linecap="round"/>
+<path d="M24 56a26 26 0 0 1 52 0" stroke="#141B3D" stroke-width="4" fill="none"/><rect x="18" y="50" width="10" height="16" rx="4" fill="#FF7A3D" stroke="#141B3D" stroke-width="3"/><path d="M24 66q2 10 16 10" stroke="#141B3D" stroke-width="3" fill="none"/><circle cx="41" cy="76" r="3" fill="#FF7A3D" stroke="#141B3D" stroke-width="2"/>
+<path d="M30 84q20 -8 40 0v16H30z" fill="#22C3B5" stroke="#141B3D" stroke-width="3"/></svg>`,
+  glitch: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#2A1B5E"/><path d="M26 34l-8-20 18 12zM74 34l8-20-18 12z" fill="#3DDC97" stroke="#141B3D" stroke-width="3" stroke-linejoin="round"/>
+<circle cx="50" cy="56" r="30" fill="#8E5CF7" stroke="#141B3D" stroke-width="3"/><circle cx="39" cy="50" r="9" fill="#fff" stroke="#141B3D" stroke-width="2.5"/><circle cx="61" cy="50" r="9" fill="#fff" stroke="#141B3D" stroke-width="2.5"/>
+<circle cx="41" cy="51" r="4.5" fill="#3DDC97"/><circle cx="59" cy="51" r="4.5" fill="#3DDC97"/><circle cx="41" cy="51" r="2" fill="#141B3D"/><circle cx="59" cy="51" r="2" fill="#141B3D"/>
+<path d="M33 40l10 4M67 40l-10 4" stroke="#141B3D" stroke-width="3.5" stroke-linecap="round"/><path d="M34 66q16 14 32 0z" fill="#141B3D"/><path d="M38 67l3 5 3-4 3 5 3-5 3 5 3-5 3 4 3-5" fill="#fff"/>
+<rect x="12" y="20" width="7" height="7" fill="#FF4FD8"/><rect x="80" y="72" width="6" height="6" fill="#3DDC97"/><rect x="74" y="16" width="5" height="5" fill="#FF4FD8"/></svg>`,
+  story: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#1D2660"/><circle cx="50" cy="50" r="20" fill="#7069B8" stroke="#fff" stroke-width="3"/><circle cx="44" cy="44" r="5" fill="#625BAA"/><circle cx="57" cy="56" r="4" fill="#625BAA"/>
+<ellipse cx="50" cy="50" rx="34" ry="9" fill="none" stroke="#FFD23F" stroke-width="3" transform="rotate(-18 50 50)"/><circle cx="22" cy="26" r="2" fill="#fff"/><circle cx="80" cy="30" r="2.5" fill="#fff"/><circle cx="74" cy="80" r="2" fill="#fff"/></svg>`,
+  crew: c => `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#C9E8FF"/><path d="M26 100v-14q24-12 48 0v14z" fill="#F4F6FB" stroke="#141B3D" stroke-width="3"/><rect x="40" y="86" width="20" height="10" rx="2" fill="${c}" stroke="#141B3D" stroke-width="2"/>
+<circle cx="50" cy="48" r="30" fill="#F4F6FB" stroke="#141B3D" stroke-width="3"/><path d="M28 48q0-18 22-18t22 18q0 16-22 16t-22-16z" fill="#0A2A2E" stroke="#141B3D" stroke-width="2.5"/>
+<path d="M34 44q6-8 14-8" stroke="#7CFFCB" stroke-width="3" fill="none" stroke-linecap="round" opacity=".8"/><circle cx="43" cy="50" r="3" fill="#7CFFCB"/><circle cx="57" cy="50" r="3" fill="#7CFFCB"/><path d="M45 57q5 3 10 0" stroke="#7CFFCB" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>`,
+};
+FACE.bolt = `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#FFE9DC"/><g transform="translate(6 2) scale(.78)">${BOLT_SVG.replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '')}</g></svg>`;
+
+/* ---------- dialogue box ---------- */
+let dlg = null, skipping = false;
+function dialogueBox() {
+  if (dlg) return dlg;
+  const face = h('div', { class: 'dlg-face' }), who = h('div', { class: 'dlg-who' }), text = h('div', { class: 'dlg-text' });
+  const next = h('button', { class: 'btn small orange dlg-next' }, 'Next ▸'), skip = h('button', { class: 'btn small panel dlg-skip' }, 'Skip story');
+  const el = h('div', { class: 'dlg hidden' }, face, h('div', { class: 'dlg-body' }, who, text), next, skip);
+  document.body.append(el);
+  return dlg = { el, face, who, text, next, skip };
+}
+function talk(speaker, line, { auto = 0, canSkip = false, crewId } = {}) {
+  const B = dialogueBox(); line = withName(line);
+  B.el.classList.remove('hidden'); $('#bubble').classList.add('hidden');
+  const C = crewId && CREW[crewId];
+  const map = { nova: ['Flight Director Nova', FACE.nova], bolt: ['Bolt', FACE.bolt], story: ['', FACE.story], glitch: ['The Glitch', FACE.glitch], crew: [C ? `${C.name} · ${C.role}` : 'Crew', FACE.crew(C ? '#' + STATIONS.find(s => s.id === crewId).color.toString(16).padStart(6, '0') : '#FF7A3D')] };
+  const [name, svg] = map[speaker] || map.story;
+  B.face.innerHTML = svg; B.who.textContent = name; B.who.style.display = name ? '' : 'none';
+  B.el.classList.toggle('narrate', speaker === 'story'); B.el.classList.toggle('villain', speaker === 'glitch');
+  B.text.textContent = ''; B.skip.style.display = canSkip ? '' : 'none';
+  if (S.settings.read) speak(line);
+  return new Promise(res => {
+    if (skipping) { res(); return; }
+    let i = 0; const typer = setInterval(() => { i += 2; B.text.textContent = line.slice(0, i); if (i >= line.length) clearInterval(typer); }, 22);
+    const done = () => { clearInterval(typer); B.next.onclick = null; SFX.tap(); res(); };
+    B.next.onclick = e => { e.stopPropagation(); if (B.text.textContent.length < line.length) { clearInterval(typer); B.text.textContent = line; return; } done(); };
+    B.skip.onclick = e => { e.stopPropagation(); skipping = true; hush(); done(); };
+    if (auto) setTimeout(() => { if (B.next.onclick) done(); }, auto);
+    setTimeout(() => B.next.focus(), 50);
+  });
+}
+function talkEnd() { if (dlg) dlg.el.classList.add('hidden'); }
+function screenFlash() { const f = h('div', { class: 'screen-flash' }); document.body.append(f); f.animate([{ opacity: 0 }, { opacity: .85 }, { opacity: 0 }, { opacity: .5 }, { opacity: 0 }], { duration: 700 }).onfinish = () => f.remove(); }
+function bigToast(t) { const e = h('div', { class: 'toast-big' }, t); document.body.append(e); e.animate([{ transform: 'translateX(-50%) scale(.3)', opacity: 0 }, { transform: 'translateX(-50%) scale(1.1)', opacity: 1, offset: .2 }, { transform: 'translateX(-50%) scale(1)', opacity: 1, offset: .8 }, { transform: 'translateX(-50%) scale(1)', opacity: 0 }], { duration: 2600 }).onfinish = () => e.remove(); }
+function hudShow(v) { $('#hud').classList.toggle('hidden', !v); $('#labels').classList.toggle('hidden', !v); $('#bolt').classList.toggle('hidden', !v); if (!v) $('#bubble').classList.add('hidden'); HUB.crewUI(v); }
+
+/* ---------- crew ---------- */
+const CREW = {
+  control: { name: 'Max', role: 'Launch Engineer', lines: ['Spell it right, fly it right!', 'conferred has two r\'s!', 'Ten, nine, eight… just kidding!'] },
+  starmap: { name: 'Luna', role: 'Star Navigator', lines: ['Know the meaning, find the way!', 'remote means far away. Like Earth!', 'I counted 900 stars today.'] },
+  cargo: { name: 'Tank', role: 'Cargo Chief', lines: ['One box, two boxES!', 'You can\'t count water!', 'A loaf of bread, a bar of soap. Easy!'] },
+  docking: { name: 'Zara', role: 'Docking Pilot', lines: ['an hour, a unicorn. Listen to the SOUND!', 'We play soccer. No "the"!', 'Smooth docking, Commander!'] },
+  robot: { name: 'Gizmo', role: 'Robot Mechanic', lines: ['He HAS got. They HAVE got.', 'I fixed 12 robots before lunch!', 'Grandpa → He. Lisa and I → We.'] },
+  comms: { name: 'Sparky', role: 'Radio Officer', lines: ['Full sentences, please. Over!', 'Capital at the start. Full stop at the end!', 'Over and out!'] },
+  signal: { name: 'Dr. Ray', role: 'Signal Scientist', lines: ['Read the whole story first!', 'A fact can be checked. An opinion can\'t.', 'Answers come in story order.'] },
+  log: { name: 'Scout', role: 'Mission Writer', lines: ['Hook, 3 details, conclusion!', 'Use your 5 senses!', 'In conclusion… I love writing!'] },
+};
+const crewWants = id => !!S.story.finale || !!S.crewHome[id] || STATIONS.find(s => s.id === id).progress() >= .25;
+function crewSync(animate) {
+  const arrived = [];
+  for (const st of STATIONS) {
+    const want = crewWants(st.id);
+    if (want && !S.crewHome[st.id]) { S.crewHome[st.id] = 1; arrived.push(st.id); }
+    HUB.crewVisible(st.id, want, animate && arrived.includes(st.id));
+  }
+  if (arrived.length) save();
+  refreshCrewChip();
+  return arrived;
+}
+const crewCount = () => STATIONS.filter(s => S.crewHome[s.id] || S.story.finale).length;
+function refreshCrewChip() {
+  const parts = STATIONS.filter(s => partBuilt(s.id)).length;
+  $$('.m-crew').forEach(e => e.innerHTML = `<b>${crewCount()}</b>/8 crew`);
+  $$('.m-goal').forEach(e => { e.className = 'm-goal' + (parts === 8 && !S.story.finale ? ' go' : ''); e.textContent = S.story.finale ? 'Base saved! 🎉' : parts === 8 ? 'Launch Day!' : `🚀 ${parts}/8 parts`; });
+}
+const QUESTS = new Set();
+const QUEST_KINDS = ['spellMC', 'meaning', 'ending', 'plural', 'proper', 'article', 'pronoun', 'be', 'haveGot', 'countSort', 'there', 'fixMC', 'factOp'];
+function topUpQuests() {
+  if (STORY_BUSY) return;
+  const home = STATIONS.filter(s => HUB.crewOn(s.id)).map(s => s.id);
+  [...QUESTS].forEach(id => { if (!home.includes(id)) { QUESTS.delete(id); HUB.setQuest(id, false); } });
+  const free = shuffle(home.filter(id => !QUESTS.has(id)));
+  while (QUESTS.size < Math.min(2, home.length) && free.length) { const id = free.pop(); QUESTS.add(id); HUB.setQuest(id, true); }
+}
+function tapCrew(id) {
+  if (CUR || STORY_BUSY) return;
+  const C = CREW[id]; audioInit(); SFX.tap();
+  if (!QUESTS.has(id)) { HUB.crewSay(id, `${C.name}: ${pickOne(C.lines)}`); return; }
+  QUESTS.delete(id); HUB.setQuest(id, false);
+  const q = QB[pickOne(QUEST_KINDS)]();
+  const card = h('div', { class: 'panel quest' });
+  const ov = h('div', { class: 'overlay' }, card);
+  const later = h('button', { class: 'btn small panel', style: { marginTop: '8px' }, onclick: () => { ov.remove(); QUESTS.add(id); HUB.setQuest(id, true); } }, 'Maybe later');
+  const hold = h('div', { class: 'quest-hold' });
+  card.append(h('div', { class: 'quest-who' }, h('span', { class: 'quest-face', html: FACE.crew('#' + STATIONS.find(s => s.id === id).color.toString(16).padStart(6, '0')) }), `📻 ${C.name} radios:`), hold, later);
+  document.body.append(ov);
+  const prevCur = CUR; CUR = { id: 'crew' };
+  askQ(hold, q).then(async ok => {
+    CUR = prevCur; later.remove();
+    S.story.quests++; save();
+    if (ok) { addStars(4); SFX.coin(); flash('+4 ⭐'); }
+    const close = h('button', { class: 'btn orange', style: { marginTop: '12px' }, onclick: () => { ov.remove(); HUB.crewSay(id, ok ? 'Thanks, Commander! Over and out!' : 'Thanks! We\'ll practise that one.'); setTimeout(topUpQuests, 25000); } }, ok ? 'Over and out! ✓' : 'Got it');
+    card.append(close); setTimeout(() => close.focus(), 60);
+  });
+}
+
+/* ---------- the Glitch on the base ---------- */
+const GLITCH_TAUNTS = () => [
+  'Hee hee! You can\'t spell "impassable"!', 'My meteors are coming on Launch Day!', 'Bucket engine! Hee hee!',
+  S.glitch.length ? `I hid ${S.glitch.length} mistakes in my box. Bet you can't fix them!` : 'You fixed all my glitches?! Grrr!',
+  'One mouse, two… mouses? Hee hee!', 'An unicorn! A hour! Hee hee!'];
+function glitchSync() {
+  if (S.story.finale) { HUB.glitchShow(false); return; }
+  const parts = STATIONS.filter(s => partBuilt(s.id)).length;
+  HUB.glitchShow(true); HUB.glitchSize(Math.max(.55, 1.45 - .1 * parts - Math.min(.25, S.fixed * .01)));
+}
+function tapGlitch() { if (STORY_BUSY || CUR) return; SFX.zap(); HUB.glitchZap(); bolt('The Glitch says: ' + pickOne(GLITCH_TAUNTS()), { ms: 4200 }); }
+
+/* ---------- opening ---------- */
+async function opening() {
+  STORY_BUSY = true; skipping = false; HUB.lock(true);
+  hudShow(false);
+  HUB.showAll(true); STATIONS.forEach(s => HUB.crewVisible(s.id, true, false)); HUB.glitchShow(false);
+  HUB.fly({ yaw: -.8, pitch: .5, dist: 36, tx: 0, ty: 3, tz: 0 }, 10); HUB.fly({ yaw: .2, pitch: .42, dist: 30, tx: 0, ty: 3, tz: 0 }, 9000);
+  await talk('story', `This is ${BASE_NAME}.`, { canSkip: true });
+  await talk('story', 'The crew is building a rocket. It flies on Wednesday!', { canSkip: true });
+  if (!skipping) {
+    SFX.boom(); screenFlash(); HUB.glitchShow(true); HUB.glitchSize(1.7);
+    await HUB.fly({ yaw: .35, pitch: .45, dist: 38, tx: -2, ty: 6, tz: -2 }, 1200);
+    await talk('glitch', 'Hee hee hee! I am the GLITCH!', { canSkip: true });
+    HUB.glitchZap([0, 5, 0]); screenFlash(); await wait(250); HUB.glitchZap([0, 3, 0]); HUB.blastParts(); screenFlash();
+    await wait(500);
+    STATIONS.forEach((s, i) => setTimeout(() => HUB.crewVisible(s.id, false, true), i * 90));
+    await wait(1600);
+    await talk('glitch', 'I broke your rocket and mixed up your words! Hee hee!', { canSkip: true });
+  } else { HUB.glitchShow(true); }
+  skipping = false;
+  HUB.showAll(false); STATIONS.forEach(s => HUB.crewVisible(s.id, false, false)); crewSync(false); glitchSync(); HUB.refresh();
+  await HUB.rocketView();
+  await talk('nova', `Commander ${S.name}! This is Flight Director Nova.`);
+  await talk('nova', 'The Glitch broke our rocket! The crew flew away!');
+  $('#bolt').classList.remove('hidden');
+  await talk('bolt', "I'm Bolt. I'll help you!");
+  await talk('nova', 'Play at each station. Fix it, and a part and a crew member come back.');
+  await talk('nova', 'Then pass Launch Day to blast off and beat the Glitch!');
+  await talk('bolt', "Let's go!");
+  talkEnd();
+  S.story.intro = 1; save();
+  await HUB.overview(1200);
+  hudShow(true); STORY_BUSY = false; HUB.lock(false);
+}
+
+/* ---------- spotlight tour ---------- */
+function spot(target, text, { pad = 10, place = 'below' } = {}) {
+  return new Promise(res => {
+    const el = typeof target === 'function' ? target() : $(target);
+    const r = el && el.offsetParent !== null ? el.getBoundingClientRect() : { left: innerWidth / 2 - 60, top: innerHeight / 2 - 40, width: 120, height: 80 };
+    const hole = h('div', { class: 'tour-hole' });
+    Object.assign(hole.style, { left: r.left - pad + 'px', top: r.top - pad + 'px', width: r.width + pad * 2 + 'px', height: r.height + pad * 2 + 'px' });
+    const next = h('button', { class: 'btn small orange' }, 'Next ▸');
+    const tip = h('div', { class: 'tour-tip' }, h('div', { class: 'tour-text' }, text), next);
+    const ov = h('div', { class: 'tour' }, hole, tip);
+    document.body.append(ov);
+    const tw = Math.min(380, innerWidth - 24); tip.style.width = tw + 'px';
+    const x = Math.max(12, Math.min(innerWidth - tw - 12, r.left + r.width / 2 - tw / 2));
+    let y = r.top + r.height + pad + 16;
+    if (place === 'above' || y + 160 > innerHeight) y = Math.max(12, r.top - pad - 16 - 150);
+    Object.assign(tip.style, { left: x + 'px', top: y + 'px' });
+    SFX.tap(); readOut(text);
+    const done = () => { ov.remove(); res(); };
+    next.onclick = e => { e.stopPropagation(); done(); }; ov.onclick = e => { if (e.target === ov) done(); };
+    setTimeout(() => next.focus(), 50);
+  });
+}
+async function baseTour() {
+  STORY_BUSY = true; HUB.lock(true);
+  try {
+    await HUB.overview(600);
+    await spot('.mission-chip', 'Bring back all 8 crew and 8 parts!');
+    const mid = () => STATIONS.map(s => HUB.labelEl(s.id)).filter(l => l && l.style.display !== 'none').map(l => { const r = l.getBoundingClientRect(); return { l, d: Math.hypot(r.left + r.width / 2 - innerWidth / 2, r.top + r.height / 2 - innerHeight * .45) + (r.left < 0 || r.right > innerWidth ? 9999 : 0) }; }).sort((x, y) => x.d - y.d)[0];
+    await spot(() => (mid() || {}).l, 'Tap a station to play.');
+    await spot('.star-chip', 'Right answers give you stars ⭐');
+    await spot('.dock', 'Fix mistakes in the Glitch Box. Spend stars in the Hangar!', { place: 'above' });
+    await spot('.menu-btn', 'Sound and help are here.');
+    await spot('#bolt', "That's me! Tap me for tips.", { place: 'above' });
+    await spot('#missionBtn', "Start here! Tap Today's Mission.", { place: 'above' });
+    S.story.toured = 1; save();
+    $('#missionBtn').classList.add('pulse-me'); setTimeout(() => $('#missionBtn').classList.remove('pulse-me'), 12000);
+  } finally { STORY_BUSY = false; HUB.lock(false); topUpQuests(); }
+}
+
+/* ---------- coming back from a station ---------- */
+const starsOfP = p => p >= .85 ? 3 : p >= .55 ? 2 : p >= .25 ? 1 : 0;
+async function celebrateReturn(snap) {
+  if (!snap || STORY_BUSY || !stationsRef()) { glitchSync(); topUpQuests(); return; }
+  STORY_BUSY = true; HUB.lock(true);
+  try {
+    const changed = STATIONS.filter(s => s.progress() > (snap[s.id] || 0) + 1e-4).slice(0, 3);
+    for (const s of changed) {
+      await HUB.focusStation(s.id); SFX.build();
+      const lab = HUB.labelEl(s.id); if (lab) lab.animate([{ transform: 'translate(-50%,-100%) scale(1)' }, { transform: 'translate(-50%,-100%) scale(1.25)' }, { transform: 'translate(-50%,-100%) scale(1)' }], { duration: 600 });
+      const b = starsOfP(snap[s.id] || 0), a = starsOfP(s.progress());
+      if (a > b) { SFX.fanfare(); bigToast(`${'★'.repeat(a)} ${s.name}!`); bolt(`${s.name} got ${a === 3 ? 'all three stars!' : a === 1 ? 'its first star!' : 'another star!'}`, { mood: 'happy' }); await wait(2000); }
+      else { bolt(`${s.name} is getting stronger!`, { mood: 'happy', ms: 2200 }); await wait(1300); }
+    }
+    const arrived = crewSync(true);
+    for (const id of arrived.slice(0, 3)) {
+      const p = HUB.crewPos(id); if (p) await HUB.focusAt({ x: p.x, y: 1, z: p.z }, 12);
+      await wait(1900); HUB.crewSay(id, `I'm back! I'm ${CREW[id].name}, the ${CREW[id].role}.`, 3.5); SFX.win(); await wait(2600);
+    }
+    for (const st of STATIONS) if (partBuilt(st.id) && !S.seenParts[st.id]) {
+      S.seenParts[st.id] = 1; save();
+      await HUB.rocketView(); flash('NEW PART!'); SFX.win(); HUB.celebrate(st.id); HUB.refresh();
+      bolt(`${st.name} unlocked the ${st.part}!`, { mood: 'happy' }); await wait(2400);
+    }
+    glitchSync();
+    if (STATIONS.every(s => partBuilt(s.id)) && !S.story.finale && !S.story.allParts) {
+      S.story.allParts = 1; save(); await HUB.rocketView();
+      await talk('nova', 'All 8 parts are built! Now pass Launch Day!'); talkEnd();
+    }
+    if (changed.length || arrived.length) await HUB.overview(1100);
+  } finally { STORY_BUSY = false; HUB.lock(false); updateHUD(); refreshCrewChip(); setTimeout(topUpQuests, 400); }
+}
+
+/* ---------- Launch Day: meteor shower ---------- */
+function meteorShower(scr, need) {
+  const sky = h('div', { class: 'meteor-sky' }); scr.bg.append(sky);
+  for (let i = 0; i < 9; i++) sky.append(h('i', { class: 'meteor', style: { left: (8 + Math.random() * 84) + '%', animationDelay: (-Math.random() * 6) + 's', animationDuration: (4 + Math.random() * 3) + 's' } }));
+  const pips = h('div', { class: 'shield-pips' }, Array.from({ length: need }, () => h('i')));
+  const bar = h('div', { class: 'glitch-bar' }, h('span', { class: 'gb-face', html: FACE.glitch }), h('div', {}, h('small', {}, "Glitch's meteor shield"), pips));
+  return {
+    bar,
+    hit(ok, hits) {
+      if (ok) { if (hits <= need) pips.children[need - hits].classList.add('off'); const beam = h('i', { class: 'laser', style: { left: (20 + Math.random() * 60) + '%' } }); scr.bg.append(beam); setTimeout(() => beam.remove(), 700); SFX.laser(); }
+      else { bar.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-8px)' }, { transform: 'translateX(8px)' }, { transform: 'translateX(0)' }], { duration: 300 }); SFX.zap(); }
+    },
+  };
+}
+
+/* ---------- the ending ---------- */
+async function ending({ preview = false } = {}) {
+  STORY_BUSY = true; HUB.lock(true); hudShow(false);
+  try {
+    HUB.orbit(); HUB.glitchShow(true); HUB.glitchSize(1.1);
+    await HUB.fly({ yaw: .35, pitch: .4, dist: 38, tx: -3, ty: 8, tz: -3 }, 1200);
+    await talk('glitch', 'NOOO! You beat my meteors! How are you so SMART?!');
+    HUB.glitchVanish(); SFX.boom(); screenFlash(); await wait(1800);
+    if (!preview) { S.story.finale = 1; save(); }
+    STATIONS.forEach(s => HUB.crewVisible(s.id, true, false));
+    HUB.crewCheer(14);
+    const fw = setInterval(() => { HUB.firework(); if (Math.random() < .6) HUB.firework(); SFX.tap(); }, 450);
+    HUB.fly({ yaw: 1.2, pitch: .5, dist: 34, tx: 0, ty: 3, tz: 0 }, 4000);
+    await talk('nova', `We made it to space! Thank you, Commander ${S.name}!`, { auto: 6000 });
+    HUB.fly({ yaw: 2.6, pitch: .55, dist: 36, tx: 0, ty: 3, tz: 0 }, 4000);
+    await talk('bolt', 'Look! Everyone is cheering for you!', { auto: 4500 });
+    talkEnd(); await wait(1500); clearInterval(fw);
+    await certificate(preview);
+  } finally {
+    if (preview && !S.story.finale) { crewSync(false); }
+    HUB.reset(); glitchSync(); await HUB.overview(1000);
+    hudShow(true); STORY_BUSY = false; HUB.lock(false); updateHUD(); refreshCrewChip(); topUpQuests();
+    bolt(S.story.finale ? 'Now get ★★★ everywhere!' : 'That was a preview!', { ms: 6000 });
+  }
+}
+function previewEnding() { if (STORY_BUSY) return; ending({ preview: true }); }
+function certificate() {
+  return new Promise(res => {
+    const words = VOCAB.filter(v => boxOf(spKey(v)) >= 2).length;
+    const sents = (S.sentences || []).filter(x => x.ok).length;
+    const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const cert = h('div', { class: 'panel cert' },
+      h('div', { class: 'cert-top' }, `★ ${BASE_NAME} ★`),
+      h('h2', {}, 'Certified Astronaut'),
+      h('p', {}, 'This certificate is given to'),
+      h('div', { class: 'cert-name' }, S.name || 'Commander'),
+      h('p', {}, 'for beating the Glitch!'),
+      h('div', { class: 'cert-stats' }, h('span', {}, h('b', {}, String(words)), ' words spelled'), h('span', {}, h('b', {}, String(sents)), ' sentences written'), h('span', {}, h('b', {}, `${S.best.launch || 0}/20`), ' Launch Day best')),
+      h('p', { class: 'cert-date' }, date + ' · signed, Flight Director Nova and Bolt'));
+    const btns = h('div', { class: 'gu-row no-print', style: { justifyContent: 'center' } },
+      h('button', { class: 'btn teal', onclick: () => printEl(cert) }, 'Print'),
+      h('button', { class: 'btn orange', onclick: () => { ov.remove(); res(); } }, 'Back to base'));
+    cert.append(btns);
+    const ov = h('div', { class: 'overlay' }, cert);
+    document.body.append(ov); confetti(120); SFX.fanfare();
+  });
+}
+
+/* =========================================================
+   HANGAR — spend stars on vehicles and rocket upgrades
+   ========================================================= */
+const HANGAR = {
+  vehicles: [['dog', 'Robo-Dog', 30], ['drone', 'Quad Drone', 35], ['buggy', 'Moon Buggy', 45], ['hover', 'Hover Bike', 55], ['tower', 'Laser Light Tower', 60], ['truck', 'Monster Rover', 70], ['ufo', 'Friendly UFO', 80], ['sat', 'Satellite', 85], ['shuttle', 'Mini Shuttle', 95], ['mech', 'Mech Walker', 120], ['rex', 'Robo-Rex', 150]],
+  paint: [['classic', 'Classic White', 0], ['lava', 'Lava Red', 40], ['ice', 'Ice Blue', 40], ['camo', 'Moon Camo', 50], ['galaxy', 'Galaxy Purple', 60], ['stealth', 'Stealth', 70], ['gold', 'Gold Rush', 100]],
+  decal: [['none', 'No sticker', 0], ['bolt', 'Lightning Bolt', 30], ['stars', 'Star Burst', 30], ['race', 'Race Stripe', 35], ['flames', 'Hot Flames', 45], ['claw', 'Claw Marks', 45], ['shark', 'Shark Mouth', 55], ['seven', 'Number 7', 60]],
+  flame: [['fire', 'Fire Orange', 0], ['plasma', 'Blue Plasma', 40], ['toxic', 'Toxic Green', 45], ['purple', 'Purple Power', 50], ['rainbow', 'Rainbow Blast', 100]],
+};
+const HG_TABS = [['vehicles', '🚙 Vehicles'], ['paint', '🎨 Paint'], ['decal', '⚡ Stickers'], ['flame', '🔥 Engine flame']];
+const owns = (tab, id) => tab !== 'vehicles' && HANGAR[tab][0][0] === id || S.hangar.own.includes(tab + ':' + id);
+const ownedVehicles = () => HANGAR.vehicles.map(v => v[0]).filter(id => owns('vehicles', id));
+function applyHangar(focus) { HUB.setLook({ paint: S.hangar.paint, decal: S.hangar.decal, flame: S.hangar.flame }); return HUB.setVehicles(ownedVehicles(), focus); }
+function refreshHangarBadge() {
+  const can = Object.entries(HANGAR).some(([tab, list]) => list.some(([id, , p]) => !owns(tab, id) && S.stars >= p));
+  $$('.shop-btn').forEach(b => b.classList.toggle('can', can));
+}
+function openHangar(tab = 'vehicles') {
+  if (CUR || STORY_BUSY) return;
+  audioInit(); SFX.tap();
+  const list = h('div', { class: 'shop-list' });
+  const tabs = h('div', { class: 'shop-tabs' }, HG_TABS.map(([t, label]) => h('button', { class: 'shop-tab' + (t === tab ? ' on' : ''), onclick: () => { ov.remove(); openHangar(t); } }, label)));
+  const nV = ownedVehicles().length;
+  for (const [id, name, price] of HANGAR[tab]) {
+    const have = owns(tab, id), eq = tab !== 'vehicles' && S.hangar[tab] === id;
+    const img = h('img', { class: 'shop-pic', alt: name });
+    const status = tab === 'vehicles' ? (have ? 'In your base ✓' : '') : eq ? 'On your rocket ✓' : have ? 'Yours' : '';
+    let btn;
+    if (tab === 'vehicles') btn = have ? h('button', { class: 'btn small panel', onclick: () => { ov.remove(); showVehicle(id, name); } }, 'Find it')
+      : h('button', { class: 'btn small ' + (S.stars >= price ? 'mint' : 'panel'), disabled: S.stars >= price ? null : '', onclick: () => buy(tab, id, name, price) }, h('i', { class: 'star-ico' }), String(price));
+    else btn = eq ? h('button', { class: 'btn small panel', disabled: '' }, 'Equipped')
+      : have ? h('button', { class: 'btn small teal', onclick: () => equip(tab, id, name) }, 'Use it')
+      : h('button', { class: 'btn small ' + (S.stars >= price ? 'mint' : 'panel'), disabled: S.stars >= price ? null : '', onclick: () => buy(tab, id, name, price) }, h('i', { class: 'star-ico' }), String(price));
+    list.append(h('div', { class: 'shop-item' + (have ? ' have' : '') + (eq ? ' eq' : '') }, img, h('b', {}, name), h('small', {}, status || ' '), btn));
+    img.src = tab === 'vehicles' ? HUB.thumb(id) : HUB.drawRocketIcon(tab === 'paint' ? id : S.hangar.paint, tab === 'decal' ? id : S.hangar.decal, tab === 'flame' ? id : null);
+  }
+  const ov = h('div', { class: 'overlay', onclick: e => { if (e.target === ov) ov.remove(); } }, h('div', { class: 'panel shop-panel' },
+    h('button', { class: 'btn small panel close', onclick: () => ov.remove() }, 'Close'),
+    h('h2', {}, '🛠️ Hangar'),
+    h('p', { class: 'shop-sub' }, h('span', {}, 'You have '), h('i', { class: 'star-ico' }), h('b', {}, ' ' + S.stars), h('span', {}, ` stars · Vehicles ${nV}/${HANGAR.vehicles.length}`)),
+    tabs, list));
+  document.body.append(ov);
+  async function buy(t, id, name, price) {
+    if (S.stars < price) return;
+    S.stars -= price; S.hangar.own.push(t + ':' + id); if (t !== 'vehicles') S.hangar[t] = id; save(); updateHUD(); refreshHangarBadge();
+    ov.remove(); SFX.coin();
+    if (t === 'vehicles') return showVehicle(id, name, true);
+    showLook(t, name, true);
+  }
+  function equip(t, id, name) { S.hangar[t] = id; save(); ov.remove(); showLook(t, name, false); }
+}
+async function showVehicle(id, name, isNew) {
+  STORY_BUSY = true; HUB.lock(true);
+  try {
+    applyHangar(id); await wait(50);
+    const p = HUB.vehiclePos(id); if (p) await HUB.focusAt(p, id === 'sat' ? 30 : id === 'rex' || id === 'mech' ? 16 : 13);
+    if (isNew) { SFX.build(); confetti(50); bolt(`Whoa! The ${name} joined ${BASE_NAME}!`, { mood: 'happy' }); } else bolt(`There's your ${name}!`);
+    await wait(3200); await HUB.overview(1000);
+  } finally { STORY_BUSY = false; HUB.lock(false); }
+}
+async function showLook(t, name, isNew) {
+  STORY_BUSY = true; HUB.lock(true);
+  try {
+    applyHangar(); await HUB.rocketView();
+    if (t === 'flame') HUB.engineTest(2.6);
+    SFX.build(); if (isNew) confetti(50);
+    bolt(t === 'flame' ? `Engine test! ${name} looks awesome!` : `Your rocket has ${name} now!`, { mood: 'happy' });
+    await wait(3000); await HUB.overview(1000);
+  } finally { STORY_BUSY = false; HUB.lock(false); }
+}
+function tapVehicle(id) { if (STORY_BUSY || CUR) return; const v = HANGAR.vehicles.find(x => x[0] === id); SFX.tap(); bolt(v ? `${v[1]}: ${pickOne(['Vroom vroom!', 'Beep beep!', 'Patrolling the base!', 'Ready for action, Commander!'])}` : 'Beep!', { ms: 2400 }); }
 
 /* =========================================================
    3D ROCKET BASE (three.js r149)
@@ -2419,6 +3379,216 @@ const HUB = (() => {
   mesh(new T.BoxGeometry(1.2, .45, .8), 0xFFD23F, { y: .5, parent: rover }); mesh(new T.BoxGeometry(.5, .35, .6), 0x7FD1FF, { y: .9, x: .2, parent: rover, emissive: 0x1B5A8F });
   [[-.4, .4], [.4, .4], [-.4, -.4], [.4, -.4]].forEach(([x, z]) => mesh(new T.CylinderGeometry(.22, .22, .16, 12), 0x4A5280, { x, y: .24, z, rx: Math.PI / 2, parent: rover, outline: .1 }));
 
+  /* =====================================================
+     CREW · GLITCH · HANGAR VEHICLES · ROCKET LOOK · FX
+     ===================================================== */
+  const bubbleLayer = $('#labels');
+  /* ---------- crew ---------- */
+  const crew = {};
+  function astronaut(color) {
+    const g = new T.Group(), body = new T.Group(); g.add(body);
+    mesh(new T.CapsuleGeometry(.36, .55, 4, 12), 0xF4F6FB, { y: .95, parent: body });
+    mesh(new T.BoxGeometry(.5, .32, .08), color, { y: 1.02, z: .34, parent: body, outline: .06 });
+    mesh(new T.BoxGeometry(.5, .62, .3), 0xC9D0E3, { y: 1.05, z: -.38, parent: body, outline: .06 });
+    const head = new T.Group(); head.position.y = 1.72; body.add(head);
+    mesh(new T.SphereGeometry(.42, 20, 14), 0xF4F6FB, { parent: head });
+    mesh(new T.SphereGeometry(.34, 20, 14, -1.2, 2.4, .7, 1.25), 0x0A2A2E, { z: .12, parent: head, outline: 0, emissive: 0x1B5A8F });
+    const legs = [-.16, .16].map(x => { const l = new T.Group(); l.position.set(x, .55, 0); body.add(l); mesh(new T.CylinderGeometry(.13, .14, .5, 10), 0xF4F6FB, { y: -.25, parent: l, outline: .08 }); mesh(new T.BoxGeometry(.24, .14, .32), 0x4A5280, { y: -.5, z: .04, parent: l, outline: .08 }); return l; });
+    const arms = [-1, 1].map(s => { const a = new T.Group(); a.position.set(s * .44, 1.25, 0); body.add(a); mesh(new T.CylinderGeometry(.11, .11, .55, 10), 0xF4F6FB, { y: -.25, parent: a, outline: .08 }); mesh(new T.SphereGeometry(.13, 10, 8), color, { y: -.55, parent: a, outline: .08 }); a.rotation.z = s * .15; return a; });
+    const jet = new T.Mesh(new T.ConeGeometry(.16, .7, 10, 1, true), new T.MeshBasicMaterial({ color: 0xFFB347, transparent: true, opacity: .9, blending: T.AdditiveBlending, depthWrite: false }));
+    jet.rotation.x = Math.PI; jet.position.set(0, .55, -.4); jet.visible = false; body.add(jet);
+    g.userData = { body, head, legs, arms, jet };
+    return g;
+  }
+  function buildCrew() {
+    STATIONS.forEach((st, k) => {
+      const a = stationAngle(k) + .2, r = 9.6;
+      const g = astronaut(st.color); g.position.set(Math.cos(a) * r, 0, Math.sin(a) * r); g.rotation.y = -a - Math.PI / 2 + Math.PI;
+      g.traverse(o => { o.userData.crew = st.id; }); g.visible = false; scene.add(g);
+      const mark = h('button', { class: 'quest-mark hidden', 'aria-label': 'Radio call', onclick: e => { e.stopPropagation(); onCrew && onCrew(st.id); } }, '!');
+      const bub = h('div', { class: 'crew-bubble hidden' });
+      bubbleLayer.append(mark, bub);
+      crew[st.id] = { g, mark, bub, home: g.position.clone(), arrive: 0, cheer: 0, quest: false, bubT: 0, wave: 0 };
+    });
+  }
+  let onCrew = null, onGlitch = null;
+  function crewVisible(id, on, animate) {
+    const c = crew[id]; if (!c) return;
+    if (on && !c.g.visible && animate) { c.leave = 0; c.g.visible = true; c.arrive = 1; c.g.position.y = 14; c.g.userData.jet.visible = true; SFX.whoosh(); }
+    else if (!on && c.g.visible && animate) { c.arrive = 0; c.leave = 1; c.g.userData.jet.visible = true; }
+    else if (!c.arrive) { c.leave = 0; c.g.visible = on; c.g.position.y = 0; c.g.userData.jet.visible = false; }
+    if (!on) c.mark.classList.add('hidden');
+  }
+  function crewSay(id, text, secs = 3.5) { const c = crew[id]; if (!c) return; c.bub.textContent = text; c.bub.classList.remove('hidden'); c.bubT = performance.now() + secs * 1000; c.wave = 1.2; }
+  function setQuest(id, on) { const c = crew[id]; if (!c) return; c.quest = on; c.mark.classList.toggle('hidden', !on || !c.g.visible); }
+  /* ---------- the Glitch ---------- */
+  const glitch = new T.Group(); scene.add(glitch);
+  { const gb = new T.Group(); glitch.add(gb); glitch.userData.gb = gb;
+    mesh(new T.SphereGeometry(1, 24, 18), 0x8E5CF7, { parent: gb, outline: .05 });
+    mesh(new T.SphereGeometry(.7, 20, 14), 0xC7B2FF, { y: -.25, z: .45, parent: gb, outline: 0 });
+    [-1, 1].forEach(s => { mesh(new T.ConeGeometry(.32, .9, 10), 0x3DDC97, { x: s * .72, y: .82, rz: -s * .55, parent: gb, outline: .08 });
+      const eye = mesh(new T.SphereGeometry(.3, 16, 12), 0xffffff, { x: s * .36, y: .22, z: .8, parent: gb, outline: .08 });
+      mesh(new T.SphereGeometry(.15, 12, 10), 0x3DDC97, { z: .2, parent: eye, outline: 0, emissive: 0x1E9A63 });
+      mesh(new T.SphereGeometry(.07, 8, 6), 0x141B3D, { z: .31, parent: eye, outline: 0 });
+      const arm = mesh(new T.CylinderGeometry(.09, .09, .7, 8), 0x8E5CF7, { x: s * 1.05, y: -.2, rz: s * 1.1, parent: gb, outline: .12 }); arm.userData.side = s; });
+    const grin = new T.Mesh(new T.TorusGeometry(.38, .07, 8, 20, Math.PI), mat(0x141B3D)); grin.rotation.z = Math.PI; grin.position.set(0, -.12, .9); gb.add(grin);
+    for (let k = 0; k < 4; k++) mesh(new T.BoxGeometry(.1, .12, .05), 0xffffff, { x: -.24 + k * .16, y: -.28, z: .92, parent: gb, outline: 0 });
+    mesh(new T.CylinderGeometry(.04, .04, .7, 6), 0x141B3D, { y: 1.25, parent: gb, outline: 0 });
+    glitch.userData.orb = mesh(new T.SphereGeometry(.17, 10, 8), 0xFF4FD8, { y: 1.62, parent: gb, emissive: 0xFF4FD8 });
+    glitch.userData.px = Array.from({ length: 10 }, (_, i) => mesh(new T.BoxGeometry(.22, .22, .22), i % 2 ? 0xFF4FD8 : 0x3DDC97, { parent: glitch, outline: 0, emissive: i % 2 ? 0xB0208F : 0x1E9A63 }));
+    glitch.position.set(-7, 13, -9); glitch.traverse(o => o.userData.glitch = 1); }
+  let glitchScale = 1.2, glitchGone = false, glitchVanish = 0;
+  const bolts = [];
+  function zap(from, to) {
+    const pts = [], n = 9; for (let i = 0; i <= n; i++) { const p = from.clone().lerp(to, i / n); if (i && i < n) p.add(new T.Vector3((Math.random() - .5) * 1.4, (Math.random() - .5) * 1.4, (Math.random() - .5) * 1.4)); pts.push(p); }
+    const l = new T.Line(new T.BufferGeometry().setFromPoints(pts), new T.LineBasicMaterial({ color: 0xFF4FD8, transparent: true, linewidth: 3 })); scene.add(l); bolts.push({ l, life: .5 });
+    const l2 = new T.Line(new T.BufferGeometry().setFromPoints(pts.map(p => p.clone().add(new T.Vector3(.08, .08, 0)))), new T.LineBasicMaterial({ color: 0xFFFFFF, transparent: true })); scene.add(l2); bolts.push({ l: l2, life: .4 });
+    SFX.zap();
+  }
+  /* ---------- fireworks ---------- */
+  const fws = [];
+  const dotTex = (() => { const cv = document.createElement('canvas'); cv.width = cv.height = 64; const x = cv.getContext('2d'); const g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(.45, 'rgba(255,255,255,.9)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); return new T.CanvasTexture(cv); })();
+  function firework(x, y, z) {
+    const g = new T.BufferGeometry(), n = 90, p = new Float32Array(n * 3), v = [];
+    const c = [0xFFD23F, 0xFF7A3D, 0x3DDC97, 0x7A5CFA, 0xFF4FD8, 0x9FD8FF][Math.floor(Math.random() * 6)];
+    x = x ?? (Math.random() - .5) * 30; y = y ?? 14 + Math.random() * 10; z = z ?? (Math.random() - .5) * 30;
+    for (let i = 0; i < n; i++) { p.set([x, y, z], i * 3); v.push(new T.Vector3().randomDirection().multiplyScalar(.12 + Math.random() * .12)); }
+    g.setAttribute('position', new T.BufferAttribute(p, 3));
+    const pts = new T.Points(g, new T.PointsMaterial({ color: c, size: .9, map: dotTex, transparent: true, depthWrite: false, blending: T.AdditiveBlending, fog: false })); scene.add(pts); fws.push({ pts, v, life: 1 });
+  }
+  /* ---------- parts blast off (opening) ---------- */
+  const blasts = [];
+  function blastParts() {
+    Object.entries(parts).forEach(([id, P], i) => { P.real.visible = true; P.ghost.visible = false;
+      blasts.push({ o: P.real, v: new T.Vector3((Math.random() - .5) * .5, .25 + Math.random() * .25, (Math.random() - .5) * .5), s: (Math.random() - .5) * .3, life: 1.4, delay: i * .08 }); });
+    SFX.boom();
+  }
+  let showAll = false;
+  /* ---------- rocket look: paint, decal, flame ---------- */
+  const rocketBody = rocket.children[0], rocketBand = rocket.children[1];
+  const PAINTS = { classic: [0xF4F6FB, 0x4A5280], lava: [0xE8473A, 0x141B3D], galaxy: [0x6A4BE0, 0xFFD23F], camo: [0x6F8F4E, 0x3F5530], gold: [0xF2C14E, 0xB5274A], ice: [0x9FE4FF, 0x2E6FE0], stealth: [0x3A3F5C, 0xFF7A3D] };
+  const FLAMES = { fire: [0xFFB347, 0xFFF3B0], plasma: [0x3D8BFF, 0xC9F0FF], toxic: [0x3DDC6A, 0xE1FFB0], purple: [0xB04DFF, 0xF3D6FF], rainbow: [0xFF5555, 0xFFFFFF] };
+  let flameKind = 'fire';
+  const decalCanvas = document.createElement('canvas'); decalCanvas.width = 512; decalCanvas.height = 384;
+  const decalTex = new T.CanvasTexture(decalCanvas);
+  const decalMesh = new T.Mesh(new T.CylinderGeometry(1.072, 1.214, 4.4, 40, 1, true, -.65, 1.3), new T.MeshBasicMaterial({ map: decalTex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }));
+  decalMesh.position.y = 3.3; decalMesh.rotation.y = -2.356; decalMesh.visible = false; rocket.add(decalMesh);
+  function drawDecal(kind, ctx = decalCanvas.getContext('2d'), W = 512, H = 384) {
+    ctx.clearRect(0, 0, W, H); ctx.lineJoin = 'round'; ctx.lineWidth = 10; ctx.strokeStyle = '#141B3D';
+    const cx = W / 2;
+    if (kind === 'bolt') { ctx.fillStyle = '#FFD23F'; ctx.beginPath(); [[cx + 30, 20], [cx - 60, 200], [cx, 200], [cx - 40, 360], [cx + 80, 150], [cx + 15, 150], [cx + 60, 20]].forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+    if (kind === 'shark') { ctx.fillStyle = '#E8473A'; ctx.beginPath(); ctx.moveTo(cx - 170, 270); ctx.quadraticCurveTo(cx, 380, cx + 170, 270); ctx.quadraticCurveTo(cx, 300, cx - 170, 270); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#fff'; for (let i = 0; i < 9; i++) { const x = cx - 140 + i * 35; ctx.beginPath(); ctx.moveTo(x - 14, 285 + Math.abs(i - 4) * -2); ctx.lineTo(x, 320); ctx.lineTo(x + 14, 285); ctx.fill(); ctx.lineWidth = 4; ctx.stroke(); }
+      ctx.lineWidth = 10; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(cx + 70, 200, 30, 0, 7); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#141B3D'; ctx.beginPath(); ctx.arc(cx + 76, 202, 13, 0, 7); ctx.fill(); }
+    if (kind === 'flames') { const fl = (c, s) => { ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(cx - 220, H); for (let i = 0; i <= 8; i++) { const x = cx - 220 + i * 55; ctx.quadraticCurveTo(x - 10, H - 160 * s - (i % 2) * 70 * s, x + 27, H - (i % 2 ? 40 : 120) * s); } ctx.lineTo(cx + 220, H); ctx.closePath(); ctx.fill(); ctx.stroke(); }; fl('#FF7A3D', 1.3); fl('#FFD23F', .8); }
+    if (kind === 'seven') { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(cx, 190, 120, 0, 7); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#E8473A'; ctx.font = '900 190px Fredoka, Arial Black, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 12; ctx.strokeText('7', cx, 200); ctx.fillText('7', cx, 200); }
+    if (kind === 'stars') { const star = (x, y, r, c) => { ctx.fillStyle = c; ctx.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * .45 : r; ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } ctx.closePath(); ctx.fill(); ctx.stroke(); }; star(cx - 90, 120, 60, '#FFD23F'); star(cx + 80, 230, 75, '#FF7A3D'); star(cx - 40, 310, 40, '#3DDC97'); star(cx + 120, 70, 35, '#9FD8FF'); }
+    if (kind === 'race') { ctx.lineWidth = 6; for (let r = 0; r < 12; r++) for (let k = 0; k < 2; k++) { ctx.fillStyle = (r + k) % 2 ? '#141B3D' : '#fff'; ctx.fillRect(cx - 64 + k * 64, r * 32, 64, 32); } ctx.strokeRect(cx - 64, 0, 128, H); }
+    if (kind === 'claw') { ctx.strokeStyle = '#141B3D'; for (let i = 0; i < 3; i++) { ctx.lineWidth = 34; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(cx - 110 + i * 80, 60); ctx.quadraticCurveTo(cx - 60 + i * 80, 190, cx - 120 + i * 80, 330); ctx.stroke(); ctx.lineWidth = 18; ctx.strokeStyle = '#3DDC97'; ctx.stroke(); ctx.strokeStyle = '#141B3D'; } }
+  }
+  function setLook({ paint = 'classic', decal = 'none', flame = 'fire' } = {}) {
+    const [b, s] = PAINTS[paint] || PAINTS.classic; rocketBody.material.color.setHex(b); rocketBand.material.color.setHex(s);
+    drawDecal(decal); decalTex.needsUpdate = true; decalMesh.visible = decal !== 'none';
+    flameKind = flame; const [f1, f2] = FLAMES[flame] || FLAMES.fire; flame0.material.color.setHex(f1); flame2.material.color.setHex(f2);
+  }
+  const flame0 = flame;
+  let engineTest = 0;
+  /* ---------- hangar vehicles ---------- */
+  const VEH = {};
+  const wheel = (parent, x, y, z, r = .3, w = .2, c = 0x4A5280) => { const wh = mesh(new T.CylinderGeometry(r, r, w, 14), c, { x, y, z, rx: Math.PI / 2, parent, outline: .08 }); mesh(new T.CylinderGeometry(r * .45, r * .45, w + .02, 10), 0xAEB8CF, { rx: 0, parent: wh, outline: 0 }); return wh; };
+  const VEH_BUILD = {
+    buggy(g) { mesh(new T.BoxGeometry(1.7, .35, 1), 0xE8473A, { y: .65, parent: g }); mesh(new T.BoxGeometry(.6, .3, .7), 0x141B3D, { x: -.2, y: .95, parent: g, outline: .06 });
+      [[-.75, .45], [.75, .45], [-.75, -.45], [.75, -.45]].forEach(([x, z]) => mesh(new T.CylinderGeometry(.05, .05, .7, 6), 0xAEB8CF, { x: x * .7, y: 1.15, z: z * 1.1, parent: g, outline: .2 }));
+      mesh(new T.BoxGeometry(1.2, .06, .9), 0xFFD23F, { y: 1.5, parent: g, outline: .1 }); g.userData.wheels = [[-.6, .55], [.6, .55], [-.6, -.55], [.6, -.55]].map(([x, z]) => wheel(g, x, .4, z, .4, .26));
+      mesh(new T.CylinderGeometry(.02, .02, 1, 4), 0xAEB8CF, { x: -.8, y: 1.6, z: -.35, parent: g, outline: 0 }); mesh(new T.PlaneGeometry(.45, .3), 0xFFD23F, { x: -.58, y: 1.95, z: -.35, parent: g, outline: 0 }).material.side = T.DoubleSide; },
+    drone(g) { mesh(new T.BoxGeometry(.8, .28, .8), 0x22C3B5, { parent: g }); mesh(new T.SphereGeometry(.2, 12, 10), 0x0A2A2E, { y: -.15, z: .3, parent: g, emissive: 0x1B8F7A });
+      g.userData.rotors = [[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([x, z]) => { mesh(new T.BoxGeometry(.7, .08, .08), 0x4A5280, { x: x * .5, z: z * .5, ry: x * z * .8, parent: g, outline: .1 }); const r = mesh(new T.CylinderGeometry(.42, .42, .03, 16), 0xEEF1F8, { x: x * .78, y: .14, z: z * .78, parent: g, outline: .05 }); r.material.transparent = true; r.material.opacity = .7; return r; }); },
+    dog(g) { const b = new T.Group(); g.add(b); g.userData.b = b; mesh(new T.BoxGeometry(1.1, .5, .55), 0xEEF1F8, { y: .85, parent: b }); mesh(new T.BoxGeometry(.5, .45, .5), 0xFF7A3D, { x: .7, y: 1.2, parent: b });
+      mesh(new T.BoxGeometry(.14, .24, .1), 0xFF7A3D, { x: .6, y: 1.5, z: .17, parent: b, outline: .1 }); mesh(new T.BoxGeometry(.14, .24, .1), 0xFF7A3D, { x: .6, y: 1.5, z: -.17, parent: b, outline: .1 });
+      mesh(new T.BoxGeometry(.1, .14, .4), 0x0A2A2E, { x: .96, y: 1.25, parent: b, outline: 0, emissive: 0x7CFFCB }); mesh(new T.CylinderGeometry(.04, .04, .5, 6), 0x4A5280, { x: -.7, y: 1.2, rz: .9, parent: b, outline: .2 });
+      g.userData.legs = [[.38, .2], [.38, -.2], [-.38, .2], [-.38, -.2]].map(([x, z]) => { const l = new T.Group(); l.position.set(x, .62, z); b.add(l); mesh(new T.CylinderGeometry(.08, .07, .55, 8), 0x4A5280, { y: -.27, parent: l, outline: .12 }); return l; }); },
+    mech(g) { const b = new T.Group(); g.add(b); g.userData.b = b; mesh(new T.BoxGeometry(1.3, 1, 1.1), 0xFFD23F, { y: 2.3, parent: b }); mesh(new T.BoxGeometry(.8, .45, .1), 0x7FD1FF, { x: 0, y: 2.45, z: .56, parent: b, outline: .05, emissive: 0x1B5A8F });
+      [-1, 1].forEach(s => { mesh(new T.BoxGeometry(.3, .9, .3), 0x4A5280, { x: s * .85, y: 2.1, parent: b, outline: .08 }); mesh(new T.BoxGeometry(.24, .2, .5), 0xF0476A, { x: s * .85, y: 1.6, z: .15, parent: b, outline: .08 }); });
+      g.userData.legs = [-1, 1].map(s => { const l = new T.Group(); l.position.set(s * .38, 1.8, 0); b.add(l); mesh(new T.BoxGeometry(.32, .95, .32), 0x4A5280, { y: -.45, parent: l, outline: .08 }); mesh(new T.BoxGeometry(.5, .2, .7), 0xFFD23F, { y: -1.05, z: .1, parent: l, outline: .08 }); return l; }); },
+    hover(g) { mesh(new T.CapsuleGeometry(.32, 1.3, 6, 14), 0x7A5CFA, { rz: Math.PI / 2, parent: g }); mesh(new T.BoxGeometry(.5, .14, .4), 0x141B3D, { x: -.15, y: .34, parent: g, outline: .08 });
+      mesh(new T.BoxGeometry(.08, .4, .6), 0xAEB8CF, { x: .55, y: .4, parent: g, outline: .1 }); const glow = mesh(new T.CylinderGeometry(.55, .55, .06, 20), 0x7CFFCB, { y: -.38, parent: g, outline: 0, emissive: 0x3DDC97 }); glow.material.transparent = true; glow.material.opacity = .8; },
+    sat(g) { mesh(new T.BoxGeometry(.9, .9, .9), 0xF2C14E, { parent: g }); [-1, 1].forEach(s => mesh(new T.BoxGeometry(2, .06, .8), 0x2E6FE0, { x: s * 1.5, parent: g, outline: .04 }));
+      const d = mesh(new T.SphereGeometry(.45, 14, 8, 0, Math.PI * 2, 0, 1.1), 0xEEF1F8, { y: .7, parent: g }); d.material.side = T.DoubleSide; },
+    ufo(g) { mesh(new T.SphereGeometry(1.2, 24, 10), 0xAEB8CF, { parent: g }).scale.set(1, .32, 1); mesh(new T.SphereGeometry(.55, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2), 0x9FE4FF, { y: .25, parent: g, emissive: 0x2E6FE0 });
+      g.userData.lights = Array.from({ length: 8 }, (_, i) => mesh(new T.SphereGeometry(.1, 8, 6), [0xFFD23F, 0xFF4FD8, 0x3DDC97][i % 3], { x: Math.cos(i * Math.PI / 4) * 1.1, z: Math.sin(i * Math.PI / 4) * 1.1, y: -.05, parent: g, outline: 0, emissive: 0xffffff }));
+      const beam = new T.Mesh(new T.ConeGeometry(1, 3.6, 20, 1, true), new T.MeshBasicMaterial({ color: 0x9FFFE0, transparent: true, opacity: .22, blending: T.AdditiveBlending, depthWrite: false })); beam.position.y = -1.9; g.add(beam); g.userData.beam = beam; },
+    rex(g) { const b = new T.Group(); g.add(b); g.userData.b = b; const C = 0x3DDC97;
+      mesh(new T.BoxGeometry(1.6, 1, .9), C, { y: 2, parent: b }); const neck = new T.Group(); neck.position.set(.8, 2.4, 0); b.add(neck); g.userData.neck = neck;
+      mesh(new T.BoxGeometry(1, .6, .7), C, { x: .5, y: .3, parent: neck }); const jaw = new T.Group(); jaw.position.set(.15, 0, 0); neck.add(jaw); mesh(new T.BoxGeometry(.85, .2, .6), 0x1E9A63, { x: .4, y: -.1, parent: jaw }); g.userData.jaw = jaw;
+      for (let k = 0; k < 4; k++) mesh(new T.ConeGeometry(.05, .14, 4), 0xffffff, { x: .25 + k * .18, y: .02, z: .25, rz: Math.PI, parent: neck, outline: 0 });
+      mesh(new T.SphereGeometry(.1, 8, 6), 0xFF4FD8, { x: .65, y: .5, z: .3, parent: neck, outline: .1, emissive: 0xB0208F });
+      const tail = mesh(new T.ConeGeometry(.4, 1.6, 8), C, { x: -1.4, y: 2.2, rz: Math.PI / 2 + .25, parent: b }); g.userData.tail = tail;
+      [-1, 1].forEach(s => mesh(new T.BoxGeometry(.3, .1, .1), 0x1E9A63, { x: .8, y: 1.8, z: s * .3, rz: -.6, parent: b, outline: .12 }));
+      for (let k = 0; k < 4; k++) mesh(new T.ConeGeometry(.16, .35, 4), 0xFF7A3D, { x: .4 - k * .4, y: 2.6, parent: b, outline: .1 });
+      g.userData.legs = [-1, 1].map(s => { const l = new T.Group(); l.position.set(-.1, 1.6, s * .32); b.add(l); mesh(new T.BoxGeometry(.4, 1.3, .32), 0x1E9A63, { y: -.6, parent: l, outline: .08 }); mesh(new T.BoxGeometry(.6, .18, .4), 0x1E9A63, { x: .15, y: -1.25, parent: l, outline: .08 }); return l; }); },
+    truck(g) { const b = new T.Group(); g.add(b); g.userData.b = b; mesh(new T.BoxGeometry(1.7, .6, 1.1), 0xFF7A3D, { y: 1.35, parent: b }); mesh(new T.BoxGeometry(.8, .5, 1), 0x7FD1FF, { x: .25, y: 1.85, parent: b, emissive: 0x1B5A8F });
+      mesh(new T.BoxGeometry(1.9, .14, 1.3), 0x141B3D, { y: 1.02, parent: b, outline: .05 }); g.userData.wheels = [[-.65, .75], [.65, .75], [-.65, -.75], [.65, -.75]].map(([x, z]) => wheel(g, x, .6, z, .6, .45, 0x2A2F4D)); },
+    shuttle(g) { const s = new T.Group(); g.add(s); g.userData.s = s; mesh(new T.CylinderGeometry(1.4, 1.5, .3, 24), 0xAEB8CF, { y: .15, parent: g });
+      mesh(new T.CapsuleGeometry(.4, 1.4, 6, 14), 0xF4F6FB, { y: 1.5, parent: s }); mesh(new T.ConeGeometry(.4, .7, 14), 0x22C3B5, { y: 2.6, parent: s });
+      [0, 1, 2].forEach(k => { const a = k * Math.PI * 2 / 3; mesh(new T.BoxGeometry(.08, .6, .5), 0x22C3B5, { x: Math.cos(a) * .4, y: .8, z: Math.sin(a) * .4, ry: -a, parent: s, outline: .1 }); });
+      const f = new T.Mesh(new T.ConeGeometry(.3, 1.3, 12, 1, true), new T.MeshBasicMaterial({ color: 0xFFB347, transparent: true, opacity: .9, blending: T.AdditiveBlending, depthWrite: false })); f.rotation.x = Math.PI; f.position.y = .2; f.visible = false; s.add(f); g.userData.f = f; },
+    tower(g) { mesh(new T.CylinderGeometry(.35, .5, 4.6, 10), 0xEEF1F8, { y: 2.3, parent: g }); const head = new T.Group(); head.position.y = 4.8; g.add(head); g.userData.head = head;
+      mesh(new T.BoxGeometry(.8, .5, .8), 0x4A5280, { parent: head }); [-1, 1].forEach(s => { const beam = new T.Mesh(new T.CylinderGeometry(.08, .9, 16, 12, 1, true), new T.MeshBasicMaterial({ color: s > 0 ? 0x9FD8FF : 0xFF4FD8, transparent: true, opacity: .18, blending: T.AdditiveBlending, depthWrite: false, side: T.DoubleSide })); beam.position.set(0, 7.5, 0); const piv = new T.Group(); piv.rotation.z = s * .5; piv.add(beam); head.add(piv); }); },
+  };
+  const VEH_PATH = { buggy: { r: 17.3, sp: .32 }, drone: { r: 6, sp: .3 }, dog: { r: 5.1, sp: -.28 }, mech: { r: 6.9, sp: .12 }, hover: { r: 15.5, sp: -.42 }, sat: { r: 24, sp: .08 }, ufo: { r: 11, sp: .05 }, rex: { r: 18.7, sp: -.07 }, truck: { r: 16.3, sp: .2 }, shuttle: { r: 16.4, sp: 0, a: .78 }, tower: { r: 17.2, sp: 0, a: 2.35 } };
+  function setVehicles(list, focusId) {
+    let at = null;
+    for (const id of list) if (!VEH[id] && VEH_BUILD[id]) { const g = new T.Group(); VEH_BUILD[id](g); g.traverse(o => o.userData.vehicle = id); scene.add(g); VEH[id] = g; g.userData.phase = Math.random() * 6; }
+    Object.entries(VEH).forEach(([id, g]) => g.visible = list.includes(id));
+    if (focusId && VEH[focusId]) at = VEH[focusId];
+    return at;
+  }
+  function tickVehicles(t, dt) {
+    for (const [id, g] of Object.entries(VEH)) { if (!g.visible) continue; const P = VEH_PATH[id], u = g.userData, ph = u.phase;
+      if (id === 'drone') { const a = t * P.sp + ph; g.position.set(Math.sin(a) * 9, 7 + Math.sin(t * 1.3) * .6, Math.sin(a) * Math.cos(a) * 9); g.rotation.y = -a; u.rotors.forEach((r, i) => r.rotation.y += dt * 30); continue; }
+      if (id === 'sat') { const a = t * P.sp + ph; g.position.set(Math.cos(a) * P.r, 19 + Math.sin(a * 2) * 2, Math.sin(a) * P.r); g.rotation.y = t * .2; continue; }
+      if (id === 'ufo') { const a = t * .09 + ph; g.position.set(Math.sin(a * 1.3) * P.r, 6.5 + Math.sin(t) * .4, Math.cos(a) * P.r * .8); g.rotation.y = t * 1.2; u.lights.forEach((l, i) => l.visible = Math.sin(t * 6 + i) > -.3); u.beam.visible = Math.sin(t * .5) > .3; continue; }
+      if (id === 'tower') { g.position.set(Math.cos(P.a) * P.r, 0, Math.sin(P.a) * P.r); u.head.rotation.y = t * .8; continue; }
+      if (id === 'shuttle') { g.position.set(Math.cos(P.a) * P.r, 0, Math.sin(P.a) * P.r); const cyc = (t + ph * 3) % 22, s = u.s; let y = 0;
+        if (cyc > 12 && cyc < 20) { const k = cyc - 12; y = k < 4 ? Math.pow(k, 2) * .9 : Math.pow(8 - k, 2) * .9; u.f.visible = true; u.f.scale.y = 1 + Math.sin(t * 40) * .2; } else u.f.visible = false;
+        s.position.y = y; s.rotation.y = cyc > 12 && cyc < 20 ? t * 2 : 0; continue; }
+      const a = t * P.sp + ph, r = P.r; g.position.set(Math.cos(a) * r, 0, Math.sin(a) * r); g.rotation.y = P.sp > 0 ? -a - Math.PI / 2 : -a + Math.PI / 2;
+      if (id === 'hover') { g.position.y = 1.3 + Math.sin(t * 2.4) * .2; g.rotation.x = Math.sin(t * 1.3) * .08; }
+      if (u.wheels) u.wheels.forEach(w => w.rotation.y += dt * 6 * Math.sign(P.sp));
+      if (u.legs) { const sw = id === 'rex' ? 2.2 : id === 'mech' ? 2 : 9; u.legs.forEach((l, i) => l.rotation.z = Math.sin(t * sw + i * Math.PI) * (id === 'dog' ? .5 : .35)); }
+      if (u.b) u.b.position.y = Math.abs(Math.sin(t * (id === 'dog' ? 9 : 2.2))) * (id === 'dog' ? .12 : .08) + (id === 'truck' ? Math.sin(t * 7) * .04 : 0);
+      if (u.jaw) u.jaw.rotation.z = -Math.max(0, Math.sin(t * 1.4)) * .5;
+      if (u.neck) u.neck.rotation.z = Math.sin(t * 1.1) * .12;
+      if (u.tail) u.tail.rotation.y = Math.sin(t * 2.2) * .25;
+    }
+  }
+  /* ---------- thumbnails for the shop (rendered once) ---------- */
+  let thumbR = null; const thumbCache = {};
+  function thumb(id) {
+    if (thumbCache[id]) return thumbCache[id];
+    try {
+      if (!thumbR) { thumbR = new T.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true }); thumbR.setSize(180, 180); thumbR.setPixelRatio(1); }
+      const sc = new T.Scene(); sc.add(new T.HemisphereLight(0xffffff, 0x6655aa, .9)); const dl = new T.DirectionalLight(0xffffff, .7); dl.position.set(4, 8, 6); sc.add(dl);
+      const g = new T.Group(); VEH_BUILD[id](g); g.traverse(o => { if (o.material && o.material.blending === T.AdditiveBlending) o.visible = false; }); sc.add(g);
+      const box = new T.Box3(); g.traverse(o => { if (o.isMesh && o.visible && o.material !== outlineMat) { o.updateWorldMatrix(true, false); box.expandByObject(o); } }); const c = box.getCenter(new T.Vector3()), s = box.getSize(new T.Vector3()).length();
+      const cm = new T.PerspectiveCamera(32, 1, .1, 100); cm.position.set(c.x + s * .95, c.y + s * .55, c.z + s * 1.25); cm.lookAt(c);
+      thumbR.render(sc, cm); thumbCache[id] = thumbR.domElement.toDataURL('image/png');
+    } catch (e) { thumbCache[id] = ''; }
+    return thumbCache[id];
+  }
+  function drawRocketIcon(paint, decal, flame) {
+    const cv = document.createElement('canvas'); cv.width = 180; cv.height = 180; const x = cv.getContext('2d');
+    const hex = n => '#' + n.toString(16).padStart(6, '0'); const [b, s] = PAINTS[paint || 'classic'];
+    x.lineJoin = 'round'; x.lineWidth = 5; x.strokeStyle = '#141B3D';
+    if (flame) { const [f1, f2] = FLAMES[flame]; const grd = x.createLinearGradient(0, 120, 0, 178); grd.addColorStop(0, flame === 'rainbow' ? '#FF5555' : hex(f1)); grd.addColorStop(.5, flame === 'rainbow' ? '#FFD23F' : hex(f1)); grd.addColorStop(1, flame === 'rainbow' ? '#3D8BFF' : hex(f2)); x.fillStyle = grd; x.beginPath(); x.moveTo(72, 128); x.quadraticCurveTo(90, 200, 108, 128); x.fill(); }
+    x.fillStyle = '#22C3B5'; [[-1], [1]].forEach(([d]) => { x.beginPath(); x.moveTo(90 + d * 22, 100); x.lineTo(90 + d * 44, 128); x.lineTo(90 + d * 22, 124); x.closePath(); x.fill(); x.stroke(); });
+    x.fillStyle = hex(b); x.beginPath(); x.moveTo(68, 128); x.lineTo(72, 58); x.lineTo(108, 58); x.lineTo(112, 128); x.closePath(); x.fill(); x.stroke();
+    x.fillStyle = '#FF7A3D'; x.beginPath(); x.moveTo(72, 58); x.quadraticCurveTo(90, 8, 108, 58); x.closePath(); x.fill(); x.stroke();
+    x.fillStyle = hex(s); x.fillRect(71, 62, 38, 8); x.strokeRect(71, 62, 38, 8);
+    if (decal && decal !== 'none') { const dc = document.createElement('canvas'); dc.width = 512; dc.height = 384; drawDecal(decal, dc.getContext('2d')); x.save(); x.beginPath(); x.moveTo(69, 126); x.lineTo(73, 72); x.lineTo(107, 72); x.lineTo(111, 126); x.closePath(); x.clip(); x.drawImage(dc, 46, 70, 88, 64); x.restore(); x.beginPath(); x.moveTo(68, 128); x.lineTo(72, 58); x.lineTo(108, 58); x.lineTo(112, 128); x.closePath(); x.stroke(); }
+    return cv.toDataURL('image/png');
+  }
+
   /* ===== camera control ===== */
   const ctl = { yaw: .35, pitch: .62, dist: 41, target: new T.Vector3(0, 1.5, 0), auto: true };
   let tween = null;
@@ -2439,10 +3609,15 @@ const HUB = (() => {
   el.addEventListener('wheel', e => { ctl.dist = Math.min(60, Math.max(22, ctl.dist + e.deltaY * .02)); }, { passive: true });
   const ray = new T.Raycaster(), mv = new T.Vector2();
   function pick(e) { const r = el.getBoundingClientRect(); mv.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1); ray.setFromCamera(mv, cam);
-    const hit = ray.intersectObjects(scene.children, true).find(x => x.object.userData.station); if (hit) enter(hit.object.userData.station); }
-  let busy = false;
+    const hits = ray.intersectObjects(scene.children, true).filter(x => x.object.visible);
+    const hc = hits.find(x => x.object.userData.crew && crew[x.object.userData.crew].g.visible); if (hc) { onCrew && onCrew(hc.object.userData.crew); return; }
+    const hg = hits.find(x => x.object.userData.glitch); if (hg && glitch.visible) { onGlitch && onGlitch(); return; }
+    const hv = hits.find(x => x.object.userData.vehicle); if (hv) { onVehicle && onVehicle(hv.object.userData.vehicle); return; }
+    const hit = hits.find(x => x.object.userData.station); if (hit) enter(hit.object.userData.station); }
+  let onVehicle = null;
+  let busy = false, lock = false;
   async function enter(id) {
-    if (busy) return; busy = true; SFX.tap();
+    if (busy || lock) return; busy = true; SFX.tap();
     if (id === 'launch') { await animateTo({ yaw: ctl.yaw, pitch: .35, dist: 18, tx: 0, ty: 4, tz: 0 }, 600); openLaunch(); }
     else { const G = groups.find(x => x.st.id === id); const a = Math.atan2(G.g.position.z, G.g.position.x); let y0 = ctl.yaw; const tgt = a + Math.PI; y0 = tgt + Math.atan2(Math.sin(y0 - tgt), Math.cos(y0 - tgt)); ctl.yaw = y0; await animateTo({ yaw: tgt, pitch: .32, dist: 11, tx: G.g.position.x, ty: 2, tz: G.g.position.z }, 650); G.st.open(); }
     busy = false;
@@ -2456,7 +3631,7 @@ const HUB = (() => {
       G.lab.innerHTML = '';
       G.lab.append(G.st.name, h('span', { class: 'sub' }, G.st.sub), h('span', { class: 'meter', style: { '--p': Math.round(p * 100) + '%' } }, h('i')), h('span', { class: 'stars' }, '★'.repeat(stars) + '☆'.repeat(3 - stars)));
     });
-    STATIONS.forEach(st => { const on = partBuilt(st.id); parts[st.id].real.visible = on; parts[st.id].ghost.visible = !on; });
+    STATIONS.forEach(st => { const on = showAll || partBuilt(st.id); parts[st.id].real.visible = on; parts[st.id].ghost.visible = !on; });
   }
   /* sparkle burst */
   const bursts = [];
@@ -2474,22 +3649,24 @@ const HUB = (() => {
       const missing = STATIONS.filter(st => !partBuilt(st.id)).map(st => st.id);
       STATIONS.forEach(st => { const on = !missing.includes(st.id); parts[st.id].real.visible = on; parts[st.id].ghost.visible = false; junk[st.id].visible = !on; });
       ctl.auto = false;
-      await animateTo({ yaw: ctl.yaw, pitch: .2, dist: 15, tx: 0, ty: 4.2, tz: 0 }, 1000);
+      const ly = 3.93; ctl.yaw = ly + Math.atan2(Math.sin(ctl.yaw - ly), Math.cos(ctl.yaw - ly));
+      await animateTo({ yaw: ly, pitch: .2, dist: 15, tx: 0, ty: 4.2, tz: 0 }, 1000);
       if (missing.length) { bolt(missing.length >= 4 ? 'Uh oh… cardboard, duct tape and a bucket. Hold on tight, Commander!' : 'Hmm, a few parts are made of junk. This could get bumpy!', { ms: 3000 }); await wait(2200); }
       else { bolt('Every part is real. All systems go!', { ms: 2500 }); await wait(1400); }
-      await animateTo({ yaw: ctl.yaw, pitch: .18, dist: 26, tx: 0, ty: 5, tz: 0 }, 800);
+      await animateTo({ yaw: ly, pitch: .18, dist: 26, tx: 0, ty: 5, tz: 0 }, 800);
       SFX.whoosh(); flame.visible = true;
       launching = { t0: performance.now(), res, missing, wob: missing.length / 8, noEngine: missing.includes('robot'), dropped: false };
     });
   }
+  function orbit() { launching = null; flame.visible = false; rocket.visible = false; smoke.splice(0).forEach(s => scene.remove(s.s)); }
   function reset() {
-    rocket.position.set(0, .6, 0); rocket.rotation.set(0, 0, 0); flame.visible = false; launching = null; ctl.auto = true;
+    rocket.visible = true; rocket.position.set(0, .6, 0); rocket.rotation.set(0, 0, 0); flame.visible = false; launching = null; ctl.auto = true;
     falling.splice(0).forEach(f => { scene.remove(f.o); rocket.add(f.o); f.o.position.copy(f.o.userData.home.p); f.o.rotation.copy(f.o.userData.home.r); });
     Object.values(junk).forEach(g => g.visible = false);
     animateTo({ yaw: ctl.yaw, pitch: .62, dist: 41, tx: 0, ty: 1.5, tz: 0 }, 900); refresh();
   }
   /* ===== loop ===== */
-  let paused = false, last = performance.now();
+  let paused = false, last = performance.now(), hideCrewUI = false;
   function resize() { const w = window.innerWidth, hh = window.innerHeight; renderer.setSize(w, hh, false); cam.aspect = w / hh; cam.fov = w < 700 ? 55 : 42; cam.updateProjectionMatrix(); }
   window.addEventListener('resize', resize);
   const tmp = new T.Vector3();
@@ -2516,6 +3693,33 @@ const HUB = (() => {
       ctl.target.y = Math.max(5, rocket.position.y + 2); ctl.dist = 26 + Math.min(20, rocket.position.y * .4);
       if (e > 5.6 && launching.res) { const r = launching.res; launching.res = null; r({ missing: launching.missing.map(m => JUNK_NAME[m]), stations: launching.missing.map(m => STATIONS.find(s => s.id === m).name) }); }
     }
+    /* crew */
+    for (const [id, c] of Object.entries(crew)) { const u = c.g.userData;
+      if (c.leave) { c.leave = Math.max(0, c.leave - dt * .6); c.g.position.y = Math.pow(1 - c.leave, 2) * 18; c.g.rotation.y += dt * 4; if (!c.leave) { c.g.visible = false; c.g.position.y = 0; u.jet.visible = false; } }
+      if (c.arrive) { c.arrive = Math.max(0, c.arrive - dt * .55); c.g.position.y = Math.pow(c.arrive, 2) * 14; u.jet.scale.y = 1 + Math.sin(t * 40) * .3; if (!c.arrive) { u.jet.visible = false; c.cheer = 1.5; } }
+      if (c.cheer > 0) { c.cheer -= dt; u.body.position.y = Math.abs(Math.sin(t * 9)) * .35; u.arms.forEach((a, i) => a.rotation.z = (i ? 1 : -1) * (2.6 + Math.sin(t * 12) * .3)); }
+      else if (c.wave > 0) { c.wave -= dt; u.arms[1].rotation.z = 2.4 + Math.sin(t * 10) * .4; u.body.position.y = 0; }
+      else { u.body.position.y = 0; u.arms[0].rotation.z = -.15; u.arms[1].rotation.z = .15 + (c.quest ? Math.max(0, Math.sin(t * 3)) * 2.2 : 0); u.head.rotation.y = Math.sin(t * .7 + id.length) * .4; }
+      const vis = c.g.visible && !launching && !paused && !hideCrewUI;
+      if (vis) { tmp.set(c.g.position.x, c.g.position.y + 2.6, c.g.position.z).project(cam); }
+      const on = vis && tmp.z < 1;
+      const sx = (tmp.x + 1) / 2 * innerWidth, sy = (1 - tmp.y) / 2 * innerHeight;
+      c.mark.classList.toggle('hidden', !(on && c.quest)); if (on && c.quest) { c.mark.style.left = sx + 'px'; c.mark.style.top = sy + 'px'; }
+      if (c.bubT && now > c.bubT) { c.bubT = 0; c.bub.classList.add('hidden'); }
+      if (c.bubT) { c.bub.classList.toggle('hidden', !on); c.bub.style.left = sx + 'px'; c.bub.style.top = (sy - (c.quest ? 46 : 4)) + 'px'; }
+    }
+    /* the Glitch */
+    if (glitch.visible) { const gb = glitch.userData.gb;
+      if (glitchVanish > 0) { glitchVanish = Math.max(0, glitchVanish - dt * .5); glitch.scale.setScalar(glitchScale * glitchVanish); glitch.rotation.y += dt * 12; glitch.position.y += dt * 3; if (!glitchVanish) glitch.visible = false; }
+      else { glitch.scale.setScalar(glitchScale * (1 + Math.sin(t * 2) * .04)); gb.position.y = Math.sin(t * 1.6) * .5; gb.rotation.y = Math.sin(t * .8) * .5; gb.rotation.z = Math.sin(t * 1.3) * .12; glitch.position.x = -7 + Math.sin(t * .23) * 3; }
+      glitch.userData.px.forEach((p, i) => { const a = t * (1.2 + i * .07) + i; p.position.set(Math.cos(a) * 1.8, Math.sin(a * 1.7) * .9, Math.sin(a) * 1.8); p.visible = Math.sin(t * 9 + i * 3) > -.5; });
+      glitch.userData.orb.visible = Math.sin(t * 6) > -.3; }
+    for (let i = bolts.length - 1; i >= 0; i--) { const b = bolts[i]; b.life -= dt; b.l.material.opacity = Math.max(0, b.life * 2); b.l.visible = Math.random() > .2; if (b.life <= 0) { scene.remove(b.l); bolts.splice(i, 1); } }
+    for (let i = fws.length - 1; i >= 0; i--) { const b = fws[i]; b.life -= dt * .55; const pa = b.pts.geometry.attributes.position; for (let k = 0; k < b.v.length; k++) { b.v[k].y -= dt * .06; pa.array[k * 3] += b.v[k].x; pa.array[k * 3 + 1] += b.v[k].y; pa.array[k * 3 + 2] += b.v[k].z; } pa.needsUpdate = true; b.pts.material.opacity = Math.max(0, b.life); if (b.life <= 0) { scene.remove(b.pts); fws.splice(i, 1); } }
+    for (let i = blasts.length - 1; i >= 0; i--) { const b = blasts[i]; if (b.delay > 0) { b.delay -= dt; continue; } b.life -= dt; b.o.position.add(b.v); b.v.y -= dt * .2; b.o.rotation.x += b.s; b.o.rotation.z += b.s * .7; b.o.scale.setScalar(Math.max(.01, Math.min(1, b.life))); if (b.life <= 0) { b.o.position.set(0, 0, 0); b.o.rotation.set(0, 0, 0); b.o.scale.setScalar(1); b.o.visible = false; blasts.splice(i, 1); } }
+    tickVehicles(t, dt);
+    if (flameKind === 'rainbow' && flame.visible) flame.material.color.setHSL((t * .8) % 1, .9, .6);
+    if (engineTest > 0) { engineTest -= dt; flame.visible = engineTest > 0; flame.scale.set(1 + Math.sin(t * 40) * .1, 1 + Math.sin(t * 33) * .2, 1); if (engineTest <= 0) flame.scale.set(1, 1, 1); }
     for (let i = smoke.length - 1; i >= 0; i--) { const s = smoke[i]; s.life -= dt * .45; s.s.position.add(s.v); s.s.scale.multiplyScalar(1 + dt * .9); s.s.material.opacity = Math.max(0, s.life * .9); if (s.life <= 0) { scene.remove(s.s); smoke.splice(i, 1); } }
     falling.forEach(f => { f.v.y -= dt * .35; f.o.position.add(f.v); f.o.rotation.x += f.spin; f.o.rotation.z += f.spin * .7; });
     placeCam();
@@ -2525,55 +3729,117 @@ const HUB = (() => {
       const vis = tmp.z < 1 && !launching; G.lab.style.display = vis ? '' : 'none';
       if (vis) { G.lab.style.left = ((tmp.x + 1) / 2 * W) + 'px'; G.lab.style.top = ((1 - tmp.y) / 2 * H) + 'px'; G.lab.style.zIndex = String(Math.round((1 - tmp.z) * 1000)); } });
   }
+  const overviewView = { pitch: .62, dist: 41, tx: 0, ty: 1.5, tz: 0 };
+  function focusStation(id, close = true) { const G = groups.find(x => x.st.id === id); if (!G) return Promise.resolve(); const a = Math.atan2(G.g.position.z, G.g.position.x); let tgt = a; ctl.yaw = tgt + Math.atan2(Math.sin(ctl.yaw - tgt), Math.cos(ctl.yaw - tgt)); ctl.auto = false;
+    return animateTo({ yaw: tgt + .35, pitch: .42, dist: close ? 17 : 26, tx: G.g.position.x * .8, ty: 2, tz: G.g.position.z * .8 }, 1000); }
+  function focusAt(p, d = 14) { const a = Math.atan2(p.z, p.x); ctl.yaw = a + Math.atan2(Math.sin(ctl.yaw - a), Math.cos(ctl.yaw - a)); ctl.auto = false; return animateTo({ yaw: a + .3, pitch: .45, dist: d, tx: p.x, ty: Math.max(1.5, p.y), tz: p.z }, 1000); }
   return {
-    init() { buildStations(); resize(); refresh(); placeCam(); requestAnimationFrame(loop); },
+    init() { buildStations(); buildCrew(); resize(); refresh(); placeCam(); requestAnimationFrame(loop); },
+    overview(ms = 900) { ctl.auto = true; return animateTo({ yaw: ctl.yaw, ...overviewView }, ms); },
+    fly: (to, ms) => { ctl.auto = false; return animateTo(to, ms); }, focusStation, focusAt, lock(v) { lock = v; },
+    crewVisible, crewSay, setQuest, crewPos: id => crew[id] ? crew[id].g.position.clone() : null, crewOn: id => !!(crew[id] && crew[id].g.visible),
+    crewCheer(secs = 3) { Object.values(crew).forEach(c => { if (c.g.visible) c.cheer = secs; }); }, crewUI(v) { hideCrewUI = !v; },
+    onCrew(f) { onCrew = f; }, onGlitch(f) { onGlitch = f; }, onVehicle(f) { onVehicle = f; },
+    glitchShow(v) { glitch.visible = v; glitchVanish = 0; glitchGone = !v; }, glitchSize(s) { glitchScale = s; }, glitchVanish() { glitchVanish = 1; },
+    glitchZap(target) { const gp = glitch.position.clone().add(glitch.userData.gb.position); zap(gp, target ? new T.Vector3(...target) : new T.Vector3(0, 5, 0)); },
+    glitchPos: () => glitch.position.clone(),
+    firework, blastParts, showAll(v) { showAll = v; refresh(); },
+    setLook, engineTest(s = 2.2) { engineTest = s; SFX.whoosh(); }, setVehicles, vehiclePos: id => VEH[id] ? VEH[id].position.clone() : null, thumb, drawRocketIcon,
+    rocketView() { ctl.auto = false; const ly = 3.93; ctl.yaw = ly + Math.atan2(Math.sin(ctl.yaw - ly), Math.cos(ctl.yaw - ly)); return animateTo({ yaw: ly, pitch: .25, dist: 15, tx: 0, ty: 4, tz: 0 }, 900); },
     pause(p) { paused = p; if (!p) last = performance.now(); if (!p) animateTo({ yaw: ctl.yaw, pitch: .62, dist: 41, tx: 0, ty: 1.5, tz: 0 }, 700); },
-    refresh, celebrate, launch, reset, enter,
+    refresh, celebrate, launch, reset, orbit, enter, labelEl: id => { const G = groups.find(x => x.st.id === id); return G && G.lab; },
   };
 })();
 function fallbackHub() {
   const box = h('div', { style: { position: 'fixed', inset: '90px 20px 140px', display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center', alignContent: 'center', zIndex: 3 } });
   document.body.append(box);
   return { init() { STATIONS.forEach(st => box.append(h('button', { class: 'btn panel', onclick: () => st.open() }, st.name))); box.append(h('button', { class: 'btn orange', onclick: openLaunch }, '🚀 Launch Day')); },
-    pause() {}, refresh() {}, celebrate() {}, launch() { return Promise.resolve(); }, reset() {}, enter() {} };
+    pause() {}, refresh() {}, celebrate() {}, orbit() {}, launch() { return Promise.resolve({ missing: [], stations: [] }); }, reset() {}, enter() {}, overview() { return Promise.resolve(); }, fly() { return Promise.resolve(); }, focusStation() { return Promise.resolve(); }, focusAt() { return Promise.resolve(); }, lock() {},
+    crewVisible() {}, crewSay() {}, setQuest() {}, crewPos() { return null; }, crewOn() { return false; }, crewCheer() {}, crewUI() {}, onCrew() {}, onGlitch() {}, onVehicle() {}, glitchShow() {}, glitchSize() {}, glitchVanish() {}, glitchZap() {}, glitchPos() { return null; },
+    firework() {}, blastParts() {}, showAll() {}, setLook() {}, engineTest() {}, setVehicles() {}, vehiclePos() { return null; }, thumb() { return ''; }, drawRocketIcon() { return ''; }, rocketView() { return Promise.resolve(); }, labelEl() { return null; } };
 }
 
 /* =============== boot =============== */
-(function boot() {
+function nextGoal() {
+  if (S.story.finale) return 'Get ★★★ everywhere!';
+  const need = STATIONS.filter(s => !partBuilt(s.id)).map(s => s.name);
+  if (!need.length) return 'All parts built! Now pass Launch Day!';
+  return need.length <= 3 ? `Still to fix: ${need.join(', ')}.` : "Fix the stations. Or tap Today's Mission!";
+}
+function openMissionPanel() {
+  SFX.tap();
+  const rows = STATIONS.map(s => { const p = s.progress(), st = starsOfP(p), C = CREW[s.id];
+    return h('tr', {}, h('td', {}, h('b', {}, s.name)), h('td', {}, partBuilt(s.id) ? h('b', { style: { color: 'var(--mint-d)' } }, '✓ ' + s.part) : h('span', { style: { color: 'var(--ink2)' } }, s.part)),
+      h('td', {}, (S.crewHome[s.id] || S.story.finale) ? `✓ ${C.name}` : '—'), h('td', { style: { color: 'var(--yellow-d)', letterSpacing: '1px' } }, '★'.repeat(st) + '☆'.repeat(3 - st))); });
+  const ov = h('div', { class: 'overlay', onclick: e => { if (e.target === ov) ov.remove(); } }, h('div', { class: 'panel' },
+    h('button', { class: 'btn small panel close', onclick: () => ov.remove() }, 'Close'),
+    h('h2', {}, 'Your mission'),
+    h('ol', { class: 'mission-steps' },
+      h('li', { class: S.story.intro ? 'ok' : '' }, 'Play at each station.'),
+      h('li', { class: crewCount() === 8 ? 'ok' : '' }, 'Bring back all 8 crew and 8 parts.'),
+      h('li', { class: S.story.finale ? 'ok' : '' }, 'Pass Launch Day to beat the Glitch!'),
+      h('li', {}, 'Get ★★★ on every station.')),
+    h('table', { class: 'report' }, h('tr', {}, h('th', {}, 'Station'), h('th', {}, 'Rocket part'), h('th', {}, 'Crew'), h('th', {}, 'Stars')), rows)));
+  document.body.append(ov);
+}
+function toggleLook() {
+  const off = document.body.classList.toggle('no-labels'); SFX.tap();
+  $$('.eye-btn small').forEach(s => s.textContent = off ? 'Signs' : 'Look');
+  $$('.eye-btn').forEach(b => b.classList.toggle('on', off));
+  HUB.crewUI(!off);
+  if (off) bolt('Tap 👁 again to bring the signs back.', { ms: 3000 });
+}
+(async function boot() {
   $('#bolt').innerHTML = BOLT_SVG;
-  $('#bolt').onclick = () => { bolt(pickOne(BOLT_TIPS), { speak: true }); };
+  $('#bolt').onclick = () => { if (STORY_BUSY) return; audioInit(); bolt(S.story.intro && Math.random() < .4 ? nextGoal() : pickOne(BOLT_TIPS), { speak: true }); };
   const hud = $('#hud');
+  const dockBtn = (icon, label, fn, cls = '', extra = null) => h('button', { class: 'dock-btn ' + cls, onclick: () => { if (!STORY_BUSY) fn(); } }, h('span', { class: 'dock-ic' }, icon), h('small', {}, label), extra);
   hud.append(h('div', { class: 'hud-top' },
     h('div', { class: 'hud-row' },
       h('div', { class: 'chip count' }, '⏱ ', h('b', { id: 'countH' }, examCountdown())),
-      h('div', { class: 'chip' }, h('i', { class: 'star-ico' }), h('span', { id: 'starsH' }, S.stars)),
-      h('div', { class: 'chip parts-chip', title: 'Rocket parts' }, '🚀', h('div', { class: 'pips', id: 'pipsH' }))),
-    h('div', { class: 'hud-row' },
-      h('button', { class: 'btn small panel', onclick: () => openReadiness(), title: 'For grown-ups' }, '📊 Readiness'),
-      h('button', { class: 'btn small panel', onclick: printList, title: 'Things to practise' }, '🛠️ Practice list'),
-      h('button', { class: 'btn icon panel', id: 'sndBtn', onclick: () => { S.sound = !S.sound; save(); $('#sndBtn').textContent = S.sound ? '🔊' : '🔇'; } }, S.sound ? '🔊' : '🔇'))),
-    h('div', { class: 'hud-mission' }, h('button', { class: 'btn orange', id: 'missionBtn', onclick: () => openMission() }, "🎯 Today's Mission"), h('div', { class: 'hud-hint' }, 'or tap any station · drag to look around')));
-  HUB.init(); updateHUD();
+      h('div', { class: 'chip star-chip' }, h('i', { class: 'star-ico' }), h('span', { id: 'starsH' }, S.stars)),
+      h('button', { class: 'mission-chip', onclick: openMissionPanel, title: 'Your mission' }, h('span', { class: 'm-crew' }), h('span', { class: 'm-goal' }))),
+    h('div', { class: 'hud-row' }, buildTray())),
+    h('div', { class: 'hud-mission' }, h('button', { class: 'btn orange', id: 'missionBtn', onclick: () => { if (!STORY_BUSY) openMission(); } }, "🎯 Today's Mission"), h('div', { class: 'hud-hint' }, 'or tap any station · drag to look around')),
+    h('div', { class: 'dock' },
+      dockBtn('👾', 'Glitch Box', openGlitch, 'glitch-btn', h('b', { class: 'glitch-count' }, '0')),
+      dockBtn('🛠️', 'Hangar', () => openHangar(), 'shop-btn', h('i', { class: 'can-dot' })),
+      dockBtn('👁', 'Look', toggleLook, 'eye-btn')));
+  HUB.init(); HUB.onCrew(tapCrew); HUB.onGlitch(tapGlitch); HUB.onVehicle(tapVehicle);
+  applyHangar(); crewSync(false); glitchSync(); updateHUD(); refreshCrewChip(); refreshGlitch(); refreshHangarBadge();
   setInterval(updateHUD, 30000);
+  if (await restoreFromLink()) return;
+  protectStorage();
+  hudShow(false);
   const built = STATIONS.filter(s => partBuilt(s.id)).length;
   const nameIn = h('input', { class: 'name-in', id: 'nameIn', type: 'text', maxlength: '16', placeholder: 'Your name', autocomplete: 'off', spellcheck: 'false', 'aria-label': 'Your name' });
   nameIn.value = S.name || '';
-  const go = () => {
+  const quiet = h('input', { type: 'checkbox', checked: S.settings.music ? null : '' });
+  const go = async () => {
     const nm = nameIn.value.trim().replace(/\s+/g, ' ');
-    if (!nm) { nameIn.classList.remove('shake'); void nameIn.offsetWidth; nameIn.classList.add('shake'); nameIn.focus(); SFX.no && SFX.no(); return; }
-    const isNew = nm !== S.name; S.name = nm.charAt(0).toUpperCase() + nm.slice(1); save();
-    tc.remove(); try { speechSynthesis.getVoices(); } catch (e) {} SFX.tap();
-    bolt(built && !isNew ? `Welcome back, Commander! Which station today?` : `Hi Commander, I'm Bolt! Tap a station to start building our rocket.`, { speak: true });
+    if (!nm) { nameIn.classList.remove('shake'); void nameIn.offsetWidth; nameIn.classList.add('shake'); nameIn.focus(); SFX.no(); return; }
+    S.name = nm.charAt(0).toUpperCase() + nm.slice(1);
+    S.settings.music = !quiet.checked; save();
+    audioInit(); if (!S.settings.music) musicStop(); else musicStart();
+    tc.remove(); try { speechSynthesis.getVoices(); } catch (e) {} SFX.win();
+    if (!S.story.intro) { await opening(); if (!S.story.toured) await baseTour(); }
+    else {
+      hudShow(true); await HUB.overview(600);
+      if (!S.story.toured) await baseTour();
+      else bolt(`Welcome back, Commander! ${nextGoal()}`, { ms: 6500 });
+    }
+    STATIONS.forEach(st => { if (partBuilt(st.id)) S.seenParts[st.id] = 1; }); save();
+    topUpQuests(); refreshHangarBadge();
   };
   nameIn.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); go(); } });
   const tc = h('div', { class: 'titlecard' },
     h('div', { class: 'mission' }, 'GRADE 4 · MIDTERM MISSION'),
     h('h1', { html: 'ROCKET<br><span>BASE</span>' }),
-    h('p', {}, built ? `Welcome back! Your rocket has ${built} of 8 parts. ${examCountdown()} until launch day.` : 'Your rocket launches on exam day: Wednesday, 28 October. Visit every station to build it, then pass the Launch Day test to blast off!'),
+    h('p', {}, built ? `Welcome back! ${built} of 8 parts built. ${examCountdown()} to go.` : 'Your rocket flies on Wednesday, 28 October. Fix the stations, then blast off!'),
     h('label', { class: 'name-row', for: 'nameIn' }, h('span', { class: 'name-lbl' }, 'Commander'), nameIn),
-    h('button', { class: 'btn orange', style: { fontSize: '28px' }, onclick: go }, built ? 'Continue mission' : 'Start mission'));
+    h('label', { class: 'quiet-row' }, quiet, ' No music'),
+    h('button', { class: 'btn orange', style: { fontSize: '28px' }, onclick: go }, built || S.story.intro ? 'Continue mission' : 'Start mission'));
   document.body.append(tc);
-  checkNewParts();
   setTimeout(() => { if (!matchMedia('(pointer:coarse)').matches) nameIn.focus(); }, 300);
 })();
 </script>
