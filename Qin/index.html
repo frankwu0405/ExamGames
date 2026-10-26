@@ -693,10 +693,13 @@ body.no-labels #hud .dock .oops-btn,body.no-labels #hud .dock .shop-btn{opacity:
     clearQ: () => clearQ,
     confetti: () => confetti,
     englishVoices: () => englishVoices,
+    exportSave: () => exportSave,
     giveCoins: () => giveCoins,
     h: () => h,
     hasPic: () => hasPic,
     hush: () => hush,
+    importSave: () => importSave,
+    isProtected: () => isProtected,
     isReplaying: () => isReplaying,
     load: () => load,
     mark: () => mark,
@@ -711,6 +714,7 @@ body.no-labels #hud .dock .oops-btn,body.no-labels #hud .dock .shop-btn{opacity:
     pipMount: () => pipMount,
     pipVisible: () => pipVisible,
     plainText: () => plainText,
+    protectStorage: () => protectStorage,
     pulse: () => pulse,
     rec: () => rec,
     renderCoins: () => renderCoins,
@@ -752,10 +756,35 @@ body.no-labels #hud .dock .oops-btn,body.no-labels #hud .dock .shop-btn{opacity:
     S.storm = Object.assign(fresh().storm, S.storm || {});
   }
   function save() {
+    S.savedAt = Date.now();
     try {
       localStorage.setItem(KEY, JSON.stringify(S));
     } catch (e) {
     }
+  }
+  async function protectStorage() {
+    try {
+      if (navigator.storage && navigator.storage.persist) return await navigator.storage.persisted() || await navigator.storage.persist();
+    } catch (e) {
+    }
+    return null;
+  }
+  async function isProtected() {
+    try {
+      return navigator.storage && navigator.storage.persisted ? await navigator.storage.persisted() : null;
+    } catch (e) {
+      return null;
+    }
+  }
+  function importSave(text) {
+    let t = String(text || "").trim();
+    if (!t) throw new Error("empty");
+    let obj;
+    if (t.startsWith("PEBBLE1:")) obj = JSON.parse(decodeURIComponent(escape(atob(t.slice(8).replace(/\s+/g, "")))));
+    else obj = JSON.parse(t);
+    if (!obj || typeof obj !== "object" || !obj.items) throw new Error("not a Pebble Town save");
+    localStorage.setItem(KEY, JSON.stringify(obj));
+    return obj;
   }
   function resetAll() {
     S = fresh();
@@ -1228,7 +1257,7 @@ body.no-labels #hud .dock .oops-btn,body.no-labels #hud .dock .shop-btn{opacity:
     el.style.width = el.style.height = size + "px";
     return el;
   }
-  var KEY, fresh, S, QCTX, REPLAYING, REPLAY, isReplaying, stripPics, restorePics, plainText, AC, master, musicGain, musicTimer, MEL, BASS, voice, speakToken, $, wait, SPEAKER_SVG, PIP_SVG, pipEl, bubbleEl, pipTimer, CHEERS, TRY, cheer, tryAgain, coinEl, CONF, streak, cleanups, hasPic, picHTML;
+  var KEY, fresh, S, exportSave, QCTX, REPLAYING, REPLAY, isReplaying, stripPics, restorePics, plainText, AC, master, musicGain, musicTimer, MEL, BASS, voice, speakToken, $, wait, SPEAKER_SVG, PIP_SVG, pipEl, bubbleEl, pipTimer, CHEERS, TRY, cheer, tryAgain, coinEl, CONF, streak, cleanups, hasPic, picHTML;
   var init_core = __esm({
     "src/core.js"() {
       init_mathgen();
@@ -1248,6 +1277,7 @@ body.no-labels #hud .dock .oops-btn,body.no-labels #hud .dock .shop-btn{opacity:
         story: { finale: 0, quests: 0 }
       });
       S = fresh();
+      exportSave = () => "PEBBLE1:" + btoa(unescape(encodeURIComponent(JSON.stringify(S))));
       QCTX = null;
       REPLAYING = false;
       REPLAY = {};
@@ -49738,6 +49768,7 @@ void main() {
         location.reload();
       } }, "\u25B6 Replay the opening")),
       h("p", { style: { margin: 0 } }, `Spelling words mastered (typed right twice): ${mastered.length} of ${SPELLING.length}. Not tried yet: ${notYet.length}.`),
+      ...sec("Keep her progress safe", backupBox()),
       ...sec(`Oops Book \u2014 mistakes to redo (${oops.length})${S.fixed ? ` \xB7 fixed so far: ${S.fixed}` : ""}`, h("p", { style: { margin: "0 0 6px", fontSize: "15px" } }, "She can redo these from the \u{1F4D5} Oops button in town. A question leaves the list when she gets it right first try."), oopsTbl),
       ...sec("Places", places2),
       ...sec("Spelling words to practise", spellTbl),
@@ -49764,6 +49795,72 @@ void main() {
     w.document.write(`<title>Practice list</title><body style="font-family:Andika,Arial;font-size:18px;line-height:1.6;padding:24px"><h1>Practice list</h1>
     <h2>Spelling words</h2><ol>${words}</ol>${sents ? `<h2>Weekly sentences</h2><ol>${sents}</ol>` : ""}<script>print()<\/script>`);
     w.document.close();
+  }
+  function backupBox() {
+    const when = S.savedAt ? new Date(S.savedAt).toLocaleString() : "\u2014";
+    const status = h("span", {}, "checking\u2026");
+    isProtected().then((p) => {
+      status.textContent = p === true ? "Yes \u2713 (the browser will not auto-clear it)" : p === false ? 'Not yet \u2014 tap "Protect"' : "This browser cannot say";
+    });
+    const msg = h("p", { style: { fontWeight: 700, minHeight: "1.3em", margin: "6px 0" } });
+    const fileName = () => `pebble-town-${(S.name || "save").toLowerCase()}-${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.txt`;
+    const download = () => {
+      const a = h("a", { href: URL.createObjectURL(new Blob([exportSave()], { type: "text/plain" })), download: fileName() });
+      document.body.append(a);
+      a.click();
+      a.remove();
+      msg.textContent = "Backup file saved to Downloads.";
+    };
+    const restore = (text) => {
+      try {
+        const o = importSave(text);
+        msg.textContent = `Restored ${o.name || "progress"} (${o.coins || 0} coins). Reloading\u2026`;
+        setTimeout(() => location.reload(), 900);
+      } catch (e) {
+        msg.textContent = "That is not a Pebble Town save code.";
+      }
+    };
+    const fileIn = h("input", { type: "file", accept: ".txt,.json,text/plain,application/json", style: { display: "none" }, onchange: (e) => {
+      const f = e.target.files[0];
+      if (!f) return;
+      f.text().then((t) => {
+        if (confirm("Replace the progress on this device with this backup?")) restore(t);
+      });
+    } });
+    const code = h("textarea", { rows: "3", placeholder: "Paste a save code here to restore", style: { width: "100%", font: "13px monospace", borderRadius: "8px", border: "2px solid #2E2A4F", padding: "6px", boxSizing: "border-box" } });
+    const btn = (cls, label, fn) => h("button", { class: "btn small " + cls, onclick: fn }, label);
+    return h(
+      "div",
+      {},
+      h("p", { style: { margin: "0 0 6px" } }, `Progress is saved automatically in this browser (last saved: ${when}). It stays unless the browser's site data is cleared, a private/incognito window is used, or (on iPhone/iPad Safari) the game isn't opened for 7 days. A different browser or device starts empty \u2014 use a backup to move it.`),
+      h("p", { style: { margin: "0 0 8px" } }, h("b", {}, "Protected from auto-clearing: "), status),
+      h(
+        "div",
+        { style: { display: "flex", gap: "10px", flexWrap: "wrap" } },
+        btn("green", "\u2B07 Save backup file", download),
+        btn("blue", "\u2B06 Load backup file", () => fileIn.click()),
+        btn("paper", "\u{1F4CB} Copy save code", async () => {
+          const c = exportSave();
+          code.value = c;
+          try {
+            await navigator.clipboard.writeText(c);
+            msg.textContent = "Save code copied. Paste it into a note or message to keep it.";
+          } catch (e) {
+            code.select();
+            msg.textContent = "Select the code above and copy it.";
+          }
+        }),
+        btn("paper", "\u{1F6E1} Protect", async () => {
+          const p = await protectStorage();
+          status.textContent = p ? "Yes \u2713 (the browser will not auto-clear it)" : "The browser said no \u2014 keep a backup file instead.";
+        }),
+        fileIn
+      ),
+      h("div", { style: { marginTop: "10px" } }, code, btn("red", "Restore from code", () => {
+        if (code.value.trim() && confirm("Replace the progress on this device with this code?")) restore(code.value);
+      })),
+      msg
+    );
   }
   var init_parent = __esm({
     "src/parent.js"() {
@@ -49861,6 +49958,7 @@ void main() {
   }
   async function boot() {
     load();
+    protectStorage();
     document.body.innerHTML = "";
     try {
       await Promise.race([Promise.all([document.fonts.load("40px Chewy"), document.fonts.load("bold 20px Andika")]), wait(1500)]);
