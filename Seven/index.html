@@ -611,6 +611,99 @@ div.panel.shop-panel{width:min(1000px,96vw)}
 }
 
 body:has(.rd-rows) #bolt,body:has(.rd-rows) #bubble{display:none}
+
+/* ============ LIFE SUPPORT LAB (science) ============ */
+.bg-lab{background:radial-gradient(circle at 20% 20%,#2E8F7A55,transparent 40%),radial-gradient(circle at 80% 80%,#3D8BFF44,transparent 45%),linear-gradient(#123A4A,#0E1F3A)}
+.secchip.s-science{background:#7CFFCB}
+.sci-card{display:flex;flex-direction:column;align-items:center;gap:12px;width:min(760px,94vw)}
+.sci-card .prompt{color:var(--ink)!important}
+.sky-wrap{display:flex;gap:22px;align-items:stretch;justify-content:center;flex-wrap:wrap;width:100%}
+.sky-col{width:min(320px,42vw);display:flex;flex-direction:column;border:4px solid var(--ink);border-radius:18px;overflow:hidden;box-shadow:0 8px 0 var(--ink)}
+.sky-band{position:relative;height:68px;display:flex;align-items:center;justify-content:center;border-bottom:2px dashed #ffffff55}
+.sky-band.done{box-shadow:inset 0 0 0 3px var(--mint)}.sky-band.nope{box-shadow:inset 0 0 0 4px var(--red);animation:shake .35s}
+.sky-earth{height:34px;background:linear-gradient(#3DDC97,#2E8F5A);font:600 14px var(--display);color:#fff;display:grid;place-items:center;text-shadow:0 1px 0 var(--ink)}
+.sky-slot,.sky-q{font:600 20px var(--display);color:#fff;opacity:.85}.sky-slot .pre{color:var(--yellow);letter-spacing:2px}
+.sky-name{font:600 21px var(--display);color:#fff;text-shadow:0 2px 0 var(--ink)}.sky-name.dim{opacity:.55;font-size:16px}.sky-name .pre{color:var(--yellow)}
+.sky-pick{font:600 18px var(--display);color:#fff;background:#0E133066;border:2px solid #fff8;border-radius:12px;padding:5px 14px}
+.sky-pick:hover{background:#0E1330AA}
+.sky-mini{position:absolute;right:6px;top:6px;width:54px;height:40px}.sky-mini svg{width:100%;height:100%}
+.sky-side{display:flex;flex-direction:column;gap:14px;align-items:center;justify-content:center;max-width:400px}
+.sky-tiles{display:flex;flex-direction:column;gap:10px;width:100%}
+.sky-tile{font:600 22px var(--display);padding:10px 16px;background:#fff;border:3px solid var(--ink);border-radius:14px;box-shadow:0 5px 0 var(--ink)}
+.sky-tile.wrong{background:#FFD0DA;animation:shake .35s}
+.mnemo{font-size:17px;color:#FFE58A;background:#0E133088;border:2px dashed #FFE58A88;border-radius:12px;padding:6px 12px}.mnemo b{color:#fff;font-size:20px}
+.sky-thing{display:flex;flex-direction:column;align-items:center;gap:8px;background:#fff;border:4px solid var(--ink);border-radius:18px;padding:14px 18px;box-shadow:0 6px 0 var(--ink);text-align:center;font-size:20px;max-width:340px}
+.sky-art{width:150px;height:110px}.sky-art svg{width:100%;height:100%}.sky-art.big{font-size:70px;display:grid;place-items:center}
+.shift-wrap{display:flex;gap:22px;align-items:center;justify-content:center;flex-wrap:wrap;width:100%}
+.beaker{display:flex;flex-direction:column;align-items:center;gap:8px;background:#fff;border:4px solid var(--ink);border-radius:20px;padding:12px;box-shadow:0 6px 0 var(--ink)}
+.beaker-cv{width:200px;height:216px}
+.therm{position:relative;width:26px;height:200px;border:3px solid var(--ink);border-radius:13px;background:#fff;overflow:hidden}
+.therm i{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(#FF7A3D,#F0476A);transition:height 1.2s}
+.therm span{position:absolute;left:30px;bottom:6px;font:600 14px var(--display);white-space:nowrap}
+.state-name{font:600 20px var(--display)}
+.opt.heat{background:#FFE0D0}.opt.cool{background:#D6F0FF}
+.test-scene{display:flex;flex-direction:column;align-items:center;gap:6px;background:#F3FBFF;border:3px dashed var(--teal-d);border-radius:14px;padding:10px 14px;width:100%}
+.test-scene p{margin:0;font-weight:700;text-align:center}
+.syr-wrap{position:relative;width:220px;height:70px}.syr-wrap svg{width:220px;height:70px}
+.syr-fill{position:absolute;left:23px;top:18px;height:34px;width:144px;border-radius:4px;transition:width 1.4s}
+.syr-fill.gases{background:radial-gradient(circle,#9FD8FF 3px,transparent 4px) 0 0/14px 12px}
+.syr-fill.liquids{background:#3D8BFFAA}.syr-fill.solids{background:#C98B4F}
+.syr-wrap.squeeze .syr-fill{animation:squeeze 2.2s ease-in-out infinite}
+.syr-wrap.stuck .syr-fill{animation:stuck 1.2s ease-in-out infinite}
+@keyframes squeeze{50%{width:70px}}@keyframes stuck{50%{transform:translateX(-3px)}}
+.pour{display:flex;align-items:flex-end;gap:16px}.pour .arrow{font-size:28px}
+.cup{position:relative;width:70px;height:80px;border:4px solid var(--ink);border-top:none;border-radius:0 0 14px 14px;background:#fff;overflow:hidden}
+.cup.b{width:110px;height:56px;border-radius:0 0 28px 28px}
+.cup i{position:absolute;left:0;right:0;bottom:0}
+.pour.keep .cup.a i{left:14px;right:14px;height:44px;background:#C98B4F;border:3px solid var(--ink)}.pour.keep .cup.b i{left:28px;right:28px;height:44px;background:#C98B4F;border:3px solid var(--ink);bottom:0}
+.pour.take .cup i{height:60%;background:#3D8BFFAA}.pour.take .cup.b i{height:70%}
+.pour.fill .cup i{top:0;background:radial-gradient(circle,#9FD8FF 3px,transparent 4px) 0 0/12px 12px}
+table.prop-chart{border-collapse:collapse;font-size:15px;background:#fff;border:3px solid var(--ink)}
+.prop-chart th,.prop-chart td{border:2px solid #D6DDEB;padding:4px 8px;text-align:center}
+.prop-chart td.y{background:#C9F5DF;font-weight:900;color:var(--mint-d)}.prop-chart td.n{background:#FFE3E8;font-weight:900;color:var(--red-d)}
+.jar-row{display:flex;gap:16px;align-items:center}
+.jar{position:relative;width:150px;height:170px;border:4px solid var(--ink);border-top-width:10px;border-radius:14px 14px 30px 30px;background:#F3FBFF;overflow:hidden}
+.jar i{position:absolute;width:14px;height:14px;border-radius:50%;border:2px solid var(--ink);animation:drift 3s ease-in-out infinite}
+@keyframes drift{50%{transform:translate(8px,-10px)}}
+.jar-list{display:flex;flex-direction:column;gap:6px}.jar-list span{font:600 16px var(--display);border-left:10px solid var(--c);padding-left:8px}
+.match{display:flex;gap:28px;justify-content:center;flex-wrap:wrap}.match-col{display:flex;flex-direction:column;gap:10px}
+.opt.sel{background:#FFE58A;transform:translateY(-3px)}.opt.gas{background:#E4F3FF}
+.matched{font-family:var(--display);color:var(--mint-d)}
+.balloon-rig{position:relative;width:200px;height:220px}
+.bottle{position:absolute;left:70px;bottom:40px;width:60px;height:110px;border:4px solid var(--ink);border-radius:18px 18px 10px 10px;background:#E8F6FFCC}
+.bottle::before{content:'';position:absolute;left:16px;top:-22px;width:20px;height:22px;border:4px solid var(--ink);border-bottom:none;background:#E8F6FF}
+.balloon{position:absolute;left:100px;bottom:170px;width:44px;height:52px;margin-left:-22px;border:4px solid var(--ink);border-radius:50% 50% 46% 46%;background:#F0476A;transform-origin:50% 100%;transition:transform 1.6s}
+.balloon-rig.hot .balloon{animation:inflate 1.6s forwards}.balloon-rig.cold .balloon{transform:scale(1.5);animation:deflate 1.6s forwards}
+@keyframes inflate{to{transform:scale(1.7)}}@keyframes deflate{from{transform:scale(1.5)}to{transform:scale(.55)}}
+.bath{position:absolute;left:20px;right:20px;bottom:0;height:70px;border:4px solid var(--ink);border-top:none;border-radius:0 0 18px 18px;font:600 15px var(--display);display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px}
+.balloon-rig.hot .bath{background:linear-gradient(#FFB34766,#FF7A3D99)}.balloon-rig.cold .bath{background:linear-gradient(#C9F0FF99,#7FD1FFCC)}
+.world-wrap{position:relative;width:min(460px,90vw);aspect-ratio:1.3;border:4px solid var(--ink);border-radius:18px;overflow:hidden;box-shadow:0 6px 0 var(--ink);background:#9FD8FF}
+.world-wrap .world{width:100%;height:100%;display:block}
+.spot{position:absolute;transform:translate(-50%,-50%);width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font:700 20px var(--display)}
+.spot.now{background:var(--yellow);border:3px solid var(--ink);box-shadow:0 0 0 6px #FFD23F66;animation:bob 1s ease-in-out infinite}
+.spot.found{background:var(--mint);border:3px solid var(--ink);width:26px;height:26px;font-size:14px}
+.inspect{display:flex;gap:20px;align-items:center}.glass{width:110px;height:134px}.glass svg{width:100%;height:100%}
+.readout{display:flex;flex-direction:column;gap:8px;font-size:20px}
+.tank{position:relative;width:150px;height:200px;border:4px solid var(--ink);border-top:none;border-radius:0 0 14px 14px;background:#fff;margin-right:150px}
+.tank .water{position:absolute;left:0;right:0;bottom:0;height:92%;background:linear-gradient(#9FD8FF,#2E6FE0)}
+.hole{position:absolute;right:-6px;width:10px;height:10px;border-radius:50%;background:var(--ink)}
+.hole.top{top:30%}.hole.mid{top:55%}.hole.bot{top:82%}
+.jet{position:absolute;left:8px;top:2px;height:6px;border-radius:3px;background:#3D8BFF;width:0;transition:width 1s}
+.tank.on .hole.top .jet{width:40px}.tank.on .hole.mid .jet{width:85px}.tank.on .hole.bot .jet{width:140px}
+.pcard{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:22px;text-align:center}.pcard .big-em{font-size:64px}
+.mem-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;width:min(900px,96vw)}
+.mem-card{position:relative;height:118px;border:3px solid var(--ink);border-radius:16px;box-shadow:0 6px 0 var(--ink);background:var(--purple);color:#fff;font:600 17px var(--display);padding:8px;perspective:600px}
+.mem-card .front{display:none}.mem-card .back{font-size:40px}
+.mem-card.up{background:#fff;color:var(--ink)}.mem-card.up .front{display:block}.mem-card.up .back{display:none}
+.mem-card.def.up{font:700 14px var(--read);line-height:1.3;background:#FFF6D6}
+.mem-card.got{background:#C9F5DF!important;box-shadow:0 3px 0 var(--ink)}
+.blast-wrap{display:flex;justify-content:center;width:100%}
+.blast-rock{position:relative;width:min(760px,94vw);background:radial-gradient(circle at 30% 30%,#B8957A,#7A5A3E);border:4px solid var(--ink);border-radius:46% 54% 50% 50%/58% 50% 50% 42%;padding:30px 40px;box-shadow:0 8px 0 var(--ink);animation:rockin .6s}
+.blast-rock .prompt{color:#fff!important;text-shadow:0 2px 0 var(--ink)}
+.blast-rock .gap{color:var(--yellow);letter-spacing:2px;border-bottom:none}
+.blast-rock.boom{animation:boom .6s forwards}.blast-rock.miss{opacity:.7}
+@keyframes rockin{from{transform:translateY(-60vh) rotate(-8deg)}}@keyframes boom{to{transform:scale(1.4);opacity:0;filter:brightness(3)}}
+@media (max-width:760px){.mem-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.sky-band{height:56px}.tank{margin-right:120px}}
 </style></head>
 <body>
 <div id="space"></div><div id="labels"></div><div id="hud"></div>
@@ -2121,7 +2214,7 @@ function openLaunch() {
     h('h2', {}, 'Launch Day'),
     h('div', { style: { fontSize: '19px', maxWidth: '560px' } }, `A 20-question practice test, in the same order as the real test. Each right answer adds fuel. Get 14 right to blast off!`),
     h('div', { style: { fontWeight: 700 } }, `Rocket parts built: ${built} / ${STATIONS.length}`),
-    built < STATIONS.length ? h('div', { class: 'why' }, `Missing parts become junk: cardboard, tape and buckets! It can still fly, but it will be bumpy.`) : h('div', { class: 'why', style: { background: '#C9F5DF' } }, 'All 8 parts built. Ready!'),
+    built < STATIONS.length ? h('div', { class: 'why' }, `Missing parts become junk: cardboard, tape and buckets! It can still fly, but it will be bumpy.`) : h('div', { class: 'why', style: { background: '#C9F5DF' } }, 'All parts built. Ready!'),
     S.best.launch ? h('div', { style: { fontWeight: 700, color: 'var(--orange-d)' } }, `Best launch: ${S.best.launch} / 20`) : null,
     h('button', { class: 'btn orange', onclick: () => start() }, 'Start the countdown')));
   bolt(built < 4 ? 'Tip: build more parts first. But you can try any time!' : 'Take your time on each question!');
@@ -2184,6 +2277,7 @@ const STATIONS = [
   { id: 'robot', name: 'Robot Repair', sub: 'Pronouns & have got', part: 'engine', color: 0xF0476A, open: openRobot, progress: () => mastery([...PRONOUNS.map((p, i) => 'pr:' + i), ...BE.map((b, i) => 'be:' + i), ...HAVEGOT.map((g, i) => 'hg:' + i), ...SHORTANS.map((x, i) => 'sa:' + i), ...FIXIT.map((x, i) => 'fx:' + i)]) },
   { id: 'comms', name: 'Comms Tower', sub: 'Journeys stories', part: 'antenna', color: 0x3DDC97, open: openComms, progress: () => mastery(JOURNEYS.flatMap(J => J.qs.map((q, k) => jqKey(J.L, k)))) },
   { id: 'signal', name: 'Signal Lab', sub: 'Reading', part: 'heat shield', color: 0x9FD8FF, open: openSignal, progress: () => mastery(PASSAGES.flatMap(p => p.qs.map((q, k) => rdKey(p.id, k)))) },
+  { id: 'science', name: 'Life Support Lab', sub: 'Science: air, water, matter', part: 'oxygen pods', color: 0x7CFFCB, open: openScience, progress: () => mastery(sciKeys()) },
   { id: 'log', name: 'Mission Log', sub: 'Essay writing', part: 'mission flag', color: 0xFFB0C8, open: openLog, progress: () => Object.keys(S.log.stages || {}).length / 6 },
 ];
 
@@ -2270,11 +2364,12 @@ for (const k of Object.keys(QB)) { const f = QB[k]; QB[k] = (...a) => { const q 
 /* ---------- rebuild the exact question for one item key (Glitch Box) ---------- */
 const GEN_BY_PREFIX = { sp: 'spellType', form: 'ending', mean: 'meaning', pic: 'picture', sent: 'sentence', pl: 'plural', pn: 'proper', ar: 'article', pr: 'pronoun', be: 'be', hg: 'haveGot', sa: 'shortAns', ct: 'container', th: 'there', cu: 'countSort', fx: 'fixType', jq: 'jMC' };
 const FORCEABLE = new Set(['spellMC', 'spellType', 'ending', 'meaning', 'picture', 'sentence', 'plural', 'proper', 'article', 'pronoun', 'be', 'haveGot', 'shortAns', 'container', 'there', 'countSort', 'fixMC', 'fixType', 'jMC', 'jType']);
-const SPECIAL_PREFIX = ['rd', 'fo', 'hk', 'up', 'sn', 'tr', 'js'];
+const SPECIAL_PREFIX = ['rd', 'fo', 'hk', 'up', 'sn', 'tr', 'js', 'sci'];
 const canReplay = key => { const p = String(key).split(':')[0]; return !!GEN_BY_PREFIX[p] || SPECIAL_PREFIX.includes(p); };
 function qForKey(key, gen) {
   const parts = String(key).split(':'), pre = parts[0];
   try {
+    if (pre === 'sci') return sciQ(key);
     if (pre === 'rd') { const p = PASSAGES.find(x => x.id === parts[1]), k = +parts[2], q = p && p.qs[k]; if (!q) return null;
       if (q.t === 'mc') return { sec: 'Reading', kind: 'Reading', passage: p, q: esc(q.q), o: shuffle([...q.o]), a: q.o[q.a], key, label: `${p.title}: ${q.q}` };
       if (q.t === 'fo') return { sec: 'Reading', kind: 'Fact or opinion?', passage: p, q: esc(q.q), o: ['Fact', 'Opinion'], a: q.a === 'fact' ? 'Fact' : 'Opinion', key, label: `${p.title}: ${q.q}`, why: q.why };
@@ -2344,7 +2439,7 @@ async function askQ(hold, q, { num, total } = {}) {
     const inp = h('input', { autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', id: 'qin' });
     const go = h('button', { class: 'btn orange' }, 'Check ➜');
     hold.append(h('div', { class: 'typein' }, inp, go)); setTimeout(() => inp.focus(), 60);
-    ok = await new Promise(res => { const sub = () => { if (!inp.value.trim()) return; inp.disabled = true; res(norm(inp.value) === q.a.toLowerCase()); }; go.onclick = sub; inp.onkeydown = e => { if (e.key === 'Enter') sub(); }; });
+    ok = await new Promise(res => { const sub = () => { if (!inp.value.trim()) return; inp.disabled = true; res((q.alts || [q.a]).some(x => norm(inp.value).replace(/[.!]$/, '') === x.toLowerCase())); }; go.onclick = sub; inp.onkeydown = e => { if (e.key === 'Enter') sub(); }; });
     inp.classList.add(ok ? 'ok' : 'no'); go.remove(); ok ? SFX.ok() : SFX.no();
     if (!ok) hold.append(h('div', { class: 'why pop' }, `Answer: ${q.a}${q.why ? '  ·  ' + q.why : ''}`));
     QGEN = q.gen || null; mark(q.key, ok, q.label, inp.value.trim()); QGEN = null;
@@ -2403,10 +2498,509 @@ function readiness() {
 }
 
 /* =========================================================
+   LIFE SUPPORT LAB — Science: matter & pressure, air, water
+   (from the Unit 13, Air and Water self-checks + glossaries)
+   ========================================================= */
+const LAYERS = [
+  { id: 'tropo', name: 'troposphere', pre: 'tropo', c: '#9FD8FF', what: 'weather' },
+  { id: 'strato', name: 'stratosphere', pre: 'strato', c: '#5E8FE0', what: 'ozone' },
+  { id: 'meso', name: 'mesosphere', pre: 'meso', c: '#4B4FB8', what: 'meteors' },
+  { id: 'thermo', name: 'thermosphere', pre: 'thermo', c: '#2A2F86', what: 'iss' },
+  { id: 'exo', name: 'exosphere', pre: 'exo', c: '#10143F', what: 'satellites' },
+];
+const SKY_THINGS = {
+  weather: { label: 'Weather (clouds and rain)', layer: 'tropo', q: 'Events related to weather take place in the ___.' },
+  ozone: { label: 'The ozone layer', layer: 'strato', q: 'The ozone layer is present in the ___.' },
+  meteors: { label: 'Meteors burning up', layer: 'meso', q: "Meteors entering the Earth's atmosphere burn up in the ___." },
+  iss: { label: 'Space shuttles and the International Space Station', layer: 'thermo', q: 'Space shuttles and the International Space Station are present in the ___.' },
+  satellites: { label: 'Satellites', layer: 'exo', q: 'Satellites orbit the Earth in the ___.' },
+};
+/* the book's self-check sentences (exactly as the test may ask them) */
+const SCI_CLOZE = [
+  ['m1', 'Matter', '___ have a definite shape, but liquids and gases do not.', ['solids']],
+  ['m2', 'Matter', 'Solids and liquids have a definite ___ and cannot be compressed.', ['volume']],
+  ['m3', 'Matter', '___ do not have a definite volume and can be compressed.', ['gases']],
+  ['m3b', 'Matter', 'Gases do not have a definite volume and can be ___.', ['compressed']],
+  ['m4', 'Matter', 'Solids do not ___, but liquids and gases can flow easily.', ['flow']],
+  ['m5', 'Matter', 'The push exerted by air on an object is called ___.', ['air pressure']],
+  ['m6', 'Matter', 'The push exerted by liquids on an object is called ___.', ['liquid pressure']],
+  ['m7', 'Matter', 'As depth increases, liquid pressure ___.', ['increases']],
+  ['m8', 'Matter', 'Air pressure and liquid pressure have many useful applications such as drinking ___ and water jets.', ['straws']],
+  ['m9', 'Matter', 'Air pressure and liquid pressure have many useful applications such as drinking straws and water ___.', ['jets']],
+  ['a1', 'Air', 'Air is ___ and has the same properties as gases.', ['matter']],
+  ['a2', 'Air', 'Air ___ on heating and contracts on cooling.', ['expands']],
+  ['a3', 'Air', 'Air expands on heating and ___ on cooling.', ['contracts']],
+  ['a4', 'Air', 'Air is made up of ___, oxygen, carbon dioxide, water vapour and small amounts of other gases.', ['nitrogen']],
+  ['a5', 'Air', 'Air is made up of nitrogen, oxygen, carbon dioxide, ___ and small amounts of other gases.', ['water vapour', 'water vapor']],
+  ['a6', 'Air', 'Oxygen is needed for ___ and burning.', ['respiration']],
+  ['a7', 'Air', 'Oxygen is needed for respiration and ___.', ['burning']],
+  ['a8', 'Air', 'Plants need the gas ___ to make their food.', ['carbon dioxide']],
+  ['a9', 'Air', 'Some bacteria can change nitrogen in air into a ___ that plants can use.', ['nutrient']],
+  ['a10', 'Air', 'The layer of air surrounding the Earth is called the ___.', ['atmosphere']],
+  ['a11', 'Air', 'The ___ helps to keep the Earth warm by trapping some heat from the Sun.', ['atmosphere']],
+  ['a12', 'Air', "The ___ is the layer of the atmosphere closest to the Earth's surface.", ['troposphere']],
+  ['a13', 'Air', "The ___ is the layer of the atmosphere farthest from the Earth's surface.", ['exosphere']],
+  ['a14', 'Air', 'Events related to weather take place in the ___.', ['troposphere']],
+  ['a15', 'Air', 'The ozone layer is present in the ___.', ['stratosphere']],
+  ['a16', 'Air', "Meteors entering the Earth's atmosphere burn up in the ___.", ['mesosphere']],
+  ['a17', 'Air', 'Space shuttles and the International Space Station are present in the ___.', ['thermosphere']],
+  ['a18', 'Air', 'Satellites orbit the Earth in the ___.', ['exosphere']],
+  ['w1', 'Water', 'Pure water is ___, odourless and tasteless.', ['colourless', 'colorless']],
+  ['w2', 'Water', 'Pure water is colourless, ___ and tasteless.', ['odourless', 'odorless']],
+  ['w3', 'Water', 'Pure water is colourless, odourless and ___.', ['tasteless']],
+  ['w4', 'Water', 'Water can exist in the solid, liquid or ___ state.', ['gaseous']],
+  ['w5', 'Water', 'Water can change from one state to another when it is heated or ___.', ['cooled']],
+  ['w6', 'Water', 'The change of state from ice to liquid water is called ___.', ['melting']],
+  ['w7', 'Water', 'The change of state from liquid water to ice is called ___.', ['freezing']],
+  ['w8', 'Water', 'When liquid water changes into water vapour at the boiling point, it is called ___.', ['boiling']],
+  ['w9', 'Water', 'When water vapour changes into liquid water, it is called ___.', ['condensation']],
+  ['w10', 'Water', "Water on the Earth's surface is present in the form of oceans, lakes, rivers, ice sheets, ___, underground water and water vapour in air.", ['glaciers']],
+  ['w11', 'Water', 'Water for drinking must not look ___ or have a bad smell.', ['turbid', 'murky']],
+  ['w12', 'Water', 'Water for drinking must not look turbid or have a bad ___.', ['smell', 'odour', 'odor']],
+  ['w13', 'Water', 'Water from natural resources is treated in water ___ plants to make it safe for drinking.', ['treatment']],
+].map(([id, unit, s, a]) => ({ id, unit, s, a }));
+const SCI_GLOSS = [
+  ['Air pressure', 'Push exerted by air on an object'], ['Compressed', 'Reduced the volume of a substance'], ['Definite shape', 'Fixed shape of its own'],
+  ['Definite volume', 'Fixed volume of its own'], ['Inflated', 'Filled with air'], ['Liquid pressure', 'Push exerted by liquids on objects that are placed in them'],
+  ['Boiling', 'Change of state from liquid to gas at a specific temperature'], ['Boiling point', 'The temperature at which a liquid boils and changes into the gaseous state'],
+  ['Condensation', 'Change of state from gas to liquid which can take place at any temperature'], ['Evaporation', 'Change of state from liquid to gas which can take place at any temperature'],
+  ['Freezing', 'Change of state from liquid to solid at a specific temperature'], ['Freezing point', 'The temperature at which a liquid changes into the solid state'],
+  ['Glaciers', 'Masses of ice which flow slowly over land'], ['Ice sheets', 'Layers of ice covering large areas'],
+  ['Melting', 'Change of state from solid to liquid at a specific temperature'], ['Melting point', 'The temperature at which a solid changes into the liquid state'],
+  ['Murky', 'Cloudy'], ['Odour', 'Smell'], ['Odourless', 'Having no smell'], ['Polar regions', 'Regions around the North pole and South pole of the Earth'],
+  ['Purpose', 'Use'], ['Treat', 'Make changes to make the quality of something better'], ['Turbidity', 'How clear or cloudy a liquid appears'],
+  ['Water quality', 'Characteristics of water that determine whether it is suitable for certain uses'], ['Water treatment plant', 'Place where water is treated'], ['Water vapour', 'Water in the gaseous state'],
+].map(([t, d]) => ({ t, d }));
+const CHANGES = [
+  { id: 'melting', from: 'solid', to: 'liquid', act: 'heat', story: 'An ice cube sits in the hot sun.' },
+  { id: 'freezing', from: 'liquid', to: 'solid', act: 'cool', story: 'A cup of water goes into the freezer.' },
+  { id: 'boiling', from: 'liquid', to: 'gas', act: 'heat', story: 'Water is heated to its boiling point, 100°C.' },
+  { id: 'condensation', from: 'gas', to: 'liquid', act: 'cool', story: 'Water vapour touches a cold glass. Drops appear!' },
+  { id: 'evaporation', from: 'liquid', to: 'gas', act: 'heat', story: 'A puddle slowly dries up on a warm day. No boiling!' },
+];
+const PROPS = [
+  { id: 'shape', q: s => `Do ${s} have a definite shape?`, yes: ['solids'], test: 'Move it to a new container' },
+  { id: 'volume', q: s => `Do ${s} have a definite volume?`, yes: ['solids', 'liquids'], test: 'Does the amount stay the same?' },
+  { id: 'compress', q: s => `Can ${s} be compressed?`, yes: ['gases'], test: 'Squeeze it in a syringe' },
+  { id: 'flow', q: s => `Can ${s} flow?`, yes: ['liquids', 'gases'], test: 'Pour it' },
+];
+const WATER_SPOTS = [
+  { id: 'oceans', name: 'Oceans', x: 18, y: 78 }, { id: 'lakes', name: 'Lakes', x: 62, y: 66 }, { id: 'rivers', name: 'Rivers', x: 44, y: 62 },
+  { id: 'icesheets', name: 'Ice sheets', x: 10, y: 34 }, { id: 'glaciers', name: 'Glaciers', x: 78, y: 32 }, { id: 'underground', name: 'Underground water', x: 66, y: 90 },
+  { id: 'vapour', name: 'Water vapour in air', x: 46, y: 12 },
+];
+const WATER_SAMPLES = [
+  { id: 'clear', look: 'clear', smell: false, safe: true, why: 'Pure water is colourless, odourless and tasteless.' },
+  { id: 'turbid', look: 'murky', smell: false, safe: false, why: 'It looks turbid (murky). Turbidity tells how clear or cloudy water is.' },
+  { id: 'odour', look: 'clear', smell: true, safe: false, why: 'It has a bad odour (smell).' },
+  { id: 'both', look: 'murky', smell: true, safe: false, why: 'It is turbid (murky) AND has a bad odour.' },
+];
+const PRESSURE_CARDS = [
+  { id: 'straw', t: 'Drinking juice with a straw', a: 'Air pressure' }, { id: 'jets', t: 'Water jets shooting out of a fountain', a: 'Liquid pressure' },
+  { id: 'diver', t: 'A diver feels a bigger push deep under water', a: 'Liquid pressure' }, { id: 'balloon', t: 'An inflated balloon pushes out', a: 'Air pressure' },
+  { id: 'tyre', t: 'Air inside a bicycle tyre keeps it hard', a: 'Air pressure' }, { id: 'dam', t: 'A dam is thicker at the bottom', a: 'Liquid pressure' },
+];
+
+/* ---------- small illustrations ---------- */
+const SCI_ART = {
+  weather: '<svg viewBox="0 0 80 60"><g stroke="#141B3D" stroke-width="3"><path d="M18 38a12 12 0 0 1 4-23 16 16 0 0 1 30 2 11 11 0 0 1 10 21z" fill="#fff"/><path d="M24 44l-4 10M38 44l-4 10M52 44l-4 10" stroke="#2E6FE0" stroke-linecap="round"/></g></svg>',
+  ozone: '<svg viewBox="0 0 80 60"><path d="M4 40Q40 4 76 40" fill="none" stroke="#7CFFCB" stroke-width="10" opacity=".7"/><path d="M4 40Q40 4 76 40" fill="none" stroke="#141B3D" stroke-width="3"/><text x="40" y="44" text-anchor="middle" font-family="Fredoka,Arial" font-weight="700" font-size="16" fill="#141B3D">O₃</text><circle cx="62" cy="10" r="7" fill="#FFD23F" stroke="#141B3D" stroke-width="3"/></svg>',
+  meteors: '<svg viewBox="0 0 80 60"><path d="M8 6L48 38" stroke="#FFB347" stroke-width="12" stroke-linecap="round" opacity=".8"/><path d="M14 8L48 36" stroke="#FFF3B0" stroke-width="5" stroke-linecap="round"/><circle cx="52" cy="40" r="11" fill="#9C6B4A" stroke="#141B3D" stroke-width="3"/><circle cx="49" cy="37" r="3" fill="#7A5A3E"/></svg>',
+  iss: '<svg viewBox="0 0 80 60"><g stroke="#141B3D" stroke-width="2.5"><rect x="6" y="18" width="16" height="24" fill="#2E6FE0"/><rect x="58" y="18" width="16" height="24" fill="#2E6FE0"/><rect x="22" y="28" width="36" height="5" fill="#AEB8CF"/><rect x="32" y="22" width="16" height="17" rx="4" fill="#F4F6FB"/></g><path d="M6 26h16M6 34h16M58 26h16M58 34h16" stroke="#9FD8FF" stroke-width="1.5"/></svg>',
+  satellites: '<svg viewBox="0 0 80 60"><g stroke="#141B3D" stroke-width="2.5"><rect x="30" y="22" width="20" height="18" fill="#F2C14E"/><rect x="6" y="24" width="22" height="14" fill="#2E6FE0"/><rect x="52" y="24" width="22" height="14" fill="#2E6FE0"/><path d="M40 22v-8" /><circle cx="40" cy="11" r="4" fill="#F0476A"/></g></svg>',
+  glass: (murky, smell) => `<svg viewBox="0 0 90 110"><path d="M18 18h54l-7 84H25z" fill="${murky ? '#A8875A' : '#CFEFFF'}" stroke="#141B3D" stroke-width="3.5" stroke-linejoin="round" opacity=".95"/>${murky ? '<circle cx="35" cy="70" r="3" fill="#6E5432"/><circle cx="52" cy="82" r="4" fill="#6E5432"/><circle cx="58" cy="56" r="2.5" fill="#6E5432"/>' : '<path d="M28 30l6 60" stroke="#fff" stroke-width="4" opacity=".7"/>'}${smell ? '<path d="M30 14q-6-6 0-12M45 14q-6-6 0-12M60 14q-6-6 0-12" stroke="#5E9A3A" stroke-width="3" fill="none" stroke-linecap="round"/>' : ''}</svg>`,
+  syringe: '<svg viewBox="0 0 220 70" class="syr"><rect x="20" y="15" width="150" height="40" rx="6" fill="#EEF8FF" stroke="#141B3D" stroke-width="3"/><rect x="170" y="27" width="40" height="16" rx="3" fill="#AEB8CF" stroke="#141B3D" stroke-width="3"/><rect x="6" y="22" width="16" height="26" rx="3" fill="#AEB8CF" stroke="#141B3D" stroke-width="3"/></svg>',
+};
+
+/* ---------- item keys & rebuildable questions (Glitch Box, crew calls) ---------- */
+const sciKeys = () => [...SCI_CLOZE.map(f => 'sci:f:' + f.id), ...SCI_GLOSS.map(g => 'sci:g:' + g.t), ...LAYERS.map(l => 'sci:L:' + l.id), ...Object.keys(SKY_THINGS).map(k => 'sci:where:' + k),
+  ...CHANGES.map(c => 'sci:chg:' + c.id), ...['solids', 'liquids', 'gases'].flatMap(s => PROPS.map(p => `sci:prop:${s}:${p.id}`)), ...WATER_SPOTS.map(w => 'sci:wsrc:' + w.id),
+  ...WATER_SAMPLES.map(w => 'sci:wq:' + w.id), ...PRESSURE_CARDS.map(p => 'sci:pr:' + p.id), 'sci:pr:depth', 'sci:need:respiration', 'sci:need:plants', 'sci:need:nutrient', 'sci:air:recipe', 'sci:air:heat', 'sci:air:cool'];
+const sciAccept = (f, text) => f.a.some(x => norm(text).replace(/[.!]$/, '') === x);
+function sciQ(key) {
+  const p = key.split(':'), kind = p[1], id = p.slice(2).join(':');
+  const L = id => LAYERS.find(l => l.id === id);
+  const base = { sec: 'Science', key };
+  if (kind === 'f') { const f = SCI_CLOZE.find(x => x.id === id); if (!f) return null;
+    return { ...base, kind: `Science · ${f.unit} · fill in`, t: 'type', q: esc(f.s).replace('___', '<span class="gap">&nbsp;</span>'), a: f.a[0], alts: f.a, label: f.s.replace('___', f.a[0]) }; }
+  if (kind === 'g') { const g = SCI_GLOSS.find(x => x.t === id); if (!g) return null;
+    return { ...base, kind: 'Science · Glossary', q: `What does <b>${esc(g.t)}</b> mean?`, o: four(g.d, shuffle(SCI_GLOSS.filter(x => x !== g)).map(x => x.d)), a: g.d, label: `${g.t}: ${g.d}` }; }
+  if (kind === 'sp') { const l = LAYERS.find(x => x.id === id); if (!l) return null; const k = LAYERS.indexOf(l);
+    return { ...base, kind: 'Science · Spell the layer', t: 'type', q: `Layer number ${k + 1} from the Earth's surface. Spell it!`, a: l.name, alts: [l.name], label: l.name, why: `${l.pre} + sphere` }; }
+  if (kind === 'L') { const k = LAYERS.findIndex(l => l.id === id); if (k < 0) return null;
+    return { ...base, kind: 'Science · Layers of air', q: `Counting up from the Earth's surface, which layer is number ${k + 1}?`, o: four(LAYERS[k].name, LAYERS.filter((x, j) => j !== k).map(x => x.name)), a: LAYERS[k].name, label: `layer ${k + 1}: ${LAYERS[k].name}`, why: 'The Strong Man Throws Eggs: troposphere, stratosphere, mesosphere, thermosphere, exosphere.' }; }
+  if (kind === 'where') { const t = SKY_THINGS[id]; if (!t) return null;
+    return { ...base, kind: 'Science · Layers of air', q: esc(t.q).replace('___', '<span class="gap">&nbsp;</span>'), o: four(L(t.layer).name, LAYERS.filter(x => x.id !== t.layer).map(x => x.name)), a: L(t.layer).name, label: t.q.replace('___', L(t.layer).name) }; }
+  if (kind === 'chg') { const c = CHANGES.find(x => x.id === id); if (!c) return null;
+    return { ...base, kind: 'Science · Changes of state', q: `${esc(c.story)}<br>What is this change called?`, o: four(c.id, CHANGES.filter(x => x !== c).map(x => x.id)), a: c.id, label: `${c.from} → ${c.to}: ${c.id}` }; }
+  if (kind === 'prop') { const [s, pid] = id.split(':'), pr = PROPS.find(x => x.id === pid); if (!pr) return null; const yes = pr.yes.includes(s);
+    return { ...base, kind: 'Science · Solids, liquids, gases', q: pr.q(s), o: ['Yes', 'No'], a: yes ? 'Yes' : 'No', label: pr.q(s) + ' ' + (yes ? 'Yes' : 'No') }; }
+  if (kind === 'wsrc') { const w = WATER_SPOTS.find(x => x.id === id); if (!w) return null;
+    const g = { glaciers: 'Masses of ice which flow slowly over land are called ___.', icesheets: 'Layers of ice covering large areas are called ___.', vapour: 'Water in the gaseous state is called ___.' }[id];
+    if (g) return { ...base, kind: 'Science · Water on Earth', q: esc(g).replace('___', '<span class="gap">&nbsp;</span>'), o: four(w.name.replace(' in air', ''), ['Glaciers', 'Ice sheets', 'Water vapour', 'Oceans', 'Underground water'].filter(x => x !== w.name.replace(' in air', ''))), a: w.name.replace(' in air', ''), label: w.name };
+    return { ...base, kind: 'Science · Water on Earth', q: `Which of these is a form of water on the Earth's surface?`, o: four(w.name, ['Sand dunes', 'Volcanoes', 'Deserts', 'Clouds of dust']), a: w.name, label: w.name }; }
+  if (kind === 'wq') { const w = WATER_SAMPLES.find(x => x.id === id); if (!w) return null;
+    return { ...base, kind: 'Science · Water quality', q: `A glass of water ${w.look === 'murky' ? 'looks cloudy' : 'looks clear'}${w.smell ? ' and smells bad' : ' and has no smell'}. Is it safe to drink?`, o: ['Yes, it is safe', 'No, it must be treated first'], a: w.safe ? 'Yes, it is safe' : 'No, it must be treated first', label: w.why, why: w.why }; }
+  if (kind === 'pr') {
+    if (id === 'depth') return { ...base, kind: 'Science · Pressure', q: 'As depth increases, liquid pressure <span class="gap">&nbsp;</span>.', o: ['increases', 'decreases', 'stays the same'], a: 'increases', label: 'As depth increases, liquid pressure increases.' };
+    const c = PRESSURE_CARDS.find(x => x.id === id); if (!c) return null;
+    return { ...base, kind: 'Science · Pressure', q: `${esc(c.t)}.<br>Air pressure or liquid pressure?`, o: ['Air pressure', 'Liquid pressure'], a: c.a, label: `${c.t}: ${c.a.toLowerCase()}` }; }
+  if (kind === 'need') { const m = { respiration: ['Oxygen is needed for respiration and burning. Which gas?', 'Oxygen'], plants: ['Plants need this gas to make their food.', 'Carbon dioxide'], nutrient: ['Some bacteria change this gas into a nutrient that plants can use.', 'Nitrogen'] }[id]; if (!m) return null;
+    return { ...base, kind: 'Science · Air', q: m[0], o: four(m[1], ['Oxygen', 'Carbon dioxide', 'Nitrogen', 'Water vapour'].filter(x => x !== m[1])), a: m[1], label: m[0] + ' ' + m[1] }; }
+  if (kind === 'air') {
+    if (id === 'recipe') return { ...base, kind: 'Science · Air', q: 'Which of these is NOT in air?', o: four('Sand', ['Nitrogen', 'Oxygen', 'Carbon dioxide', 'Water vapour']), a: 'Sand', label: 'Air: nitrogen, oxygen, carbon dioxide, water vapour, other gases' };
+    if (id === 'heat') return { ...base, kind: 'Science · Air', q: 'Air <span class="gap">&nbsp;</span> on heating.', o: ['expands', 'contracts'], a: 'expands', label: 'Air expands on heating.' };
+    if (id === 'cool') return { ...base, kind: 'Science · Air', q: 'Air <span class="gap">&nbsp;</span> on cooling.', o: ['expands', 'contracts'], a: 'contracts', label: 'Air contracts on cooling.' };
+  }
+  return null;
+}
+QB.sci = () => { const k = choose(sciKeys().filter(k => !k.startsWith('sci:f:') && !k.startsWith('sci:wq:')), 1, x => x)[0]; return sciQ(k); };
+
+/* =========================================================
+   THE STATION
+   ========================================================= */
+function openScience() {
+  const scr = openScreen({ id: 'science', title: 'Life Support Lab', icon: '🧪', bgClass: 'bg-lab' });
+  const M = keys => mastery(keys);
+  const menu = () => missionMenu(scr, 'Keep the crew alive! Learn about air, water and matter.', [
+    { name: 'Sky Layers', desc: 'Stack the 5 layers of air', em: '🌍', color: '#C9E8FF', meter: M(LAYERS.map(l => 'sci:L:' + l.id)), go: skyStack },
+    { name: "Who's Up There?", desc: 'Send each thing to its layer', em: '🛰️', meter: M(Object.keys(SKY_THINGS).map(k => 'sci:where:' + k)), go: whoUp },
+    { name: 'State Shifter', desc: 'Heat it, cool it, name the change', em: '🧊', color: '#FFE58A', meter: M(CHANGES.map(c => 'sci:chg:' + c.id)), go: shifter },
+    { name: 'Matter Tester', desc: 'Squeeze it, pour it, test it', em: '🔬', meter: M(['solids', 'liquids', 'gases'].flatMap(s => PROPS.map(p => `sci:prop:${s}:${p.id}`))), go: tester },
+    { name: 'Air Mixer', desc: 'What is air made of?', em: '🫧', meter: M(['sci:air:recipe', 'sci:need:respiration', 'sci:need:plants', 'sci:need:nutrient', 'sci:air:heat', 'sci:air:cool']), go: airMixer },
+    { name: 'Find the Water', desc: 'Where is water on Earth?', em: '🌊', meter: M(WATER_SPOTS.map(w => 'sci:wsrc:' + w.id)), go: findWater },
+    { name: 'Water Inspector', desc: 'Is it safe to drink?', em: '🚰', meter: M(WATER_SAMPLES.map(w => 'sci:wq:' + w.id)), go: inspector },
+    { name: 'Pressure Lab', desc: 'Air pressure, liquid pressure', em: '💦', meter: M(['sci:pr:depth', ...PRESSURE_CARDS.map(p => 'sci:pr:' + p.id)]), go: pressure },
+    { name: 'Memory Match', desc: 'Match words to meanings', em: '🃏', color: '#E4D6FF', meter: M(SCI_GLOSS.map(g => 'sci:g:' + g.t)), go: memory },
+    { name: 'Term Blaster', desc: 'Type the missing word, like the test', em: '☄️', color: '#FFD0DA', tag: 'test style', meter: M(SCI_CLOZE.map(f => 'sci:f:' + f.id)), go: blaster },
+  ]);
+  scr._menu = menu;
+  const done = (hold, ok, extra) => { feedback(hold, ok, extra); };
+
+  /* ----- Sky Layers: stack, build the word, spell it ----- */
+  function skyColumn(fillFn) {
+    const col = h('div', { class: 'sky-col' });
+    [...LAYERS].reverse().forEach(l => col.append(h('div', { class: 'sky-band', 'data-id': l.id, style: { background: l.c } }, fillFn ? fillFn(l) : null)));
+    col.append(h('div', { class: 'sky-earth' }, "Earth's surface"));
+    return col;
+  }
+  function skyStack() {
+    runRound(scr, { n: 3, again: skyStack, back: menu, ask: async (i, hold) => {
+      const mode = ['order', 'prefix', 'spell'][i];
+      if (mode === 'spell') {
+        const l = choose(LAYERS, 1, x => 'sci:sp:' + x.id)[0], k = LAYERS.indexOf(l);
+        const col = skyColumn(x => x === l ? h('span', { class: 'sky-q' }, '?') : h('span', { class: 'sky-name dim' }, x.name));
+        const box = h('div', { class: 'plate lcard sci-card' }); hold.append(h('div', { class: 'sky-wrap' }, col, box));
+        const q = { sec: 'Science', kind: 'Science · Spell the layer', t: 'type', q: `Layer number ${k + 1} from the ground. Spell it!`, a: l.name, alts: [l.name], key: 'sci:sp:' + l.id, label: l.name, why: `${l.pre} + sphere` };
+        const ok = await askQ(box, q); await wait(ok ? 900 : 2200); return ok;
+      }
+      let next = 0, misses = 0;
+      const col = skyColumn(l => h('span', { class: 'sky-slot' }, mode === 'prefix' ? h('span', {}, h('b', { class: 'pre' }, '_____'), 'sphere') : '?'));
+      const tiles = h('div', { class: 'sky-tiles' });
+      const tip = h('div', { class: 'hint-line', style: { color: '#DDE6FF' } }, mode === 'order' ? 'Start at the bottom! Tap the layer closest to Earth first.' : 'Build each word! Tap the start of the word, bottom first.');
+      hold.append(h('div', { class: 'sky-wrap' }, col, h('div', { class: 'sky-side' }, tip, tiles, h('div', { class: 'mnemo' }, '🥚 Memory trick: ', h('b', {}, 'T'), 'he ', h('b', {}, 'S'), 'trong ', h('b', {}, 'M'), 'an ', h('b', {}, 'T'), 'hrows ', h('b', {}, 'E'), 'ggs'))));
+      return await new Promise(res => {
+        shuffle(LAYERS).forEach(l => tiles.append(h('button', { class: 'sky-tile', onclick: e => {
+          const b = e.currentTarget, want = LAYERS[next];
+          if (l === want) {
+            SFX.ok(); b.remove(); const band = col.querySelector(`[data-id="${l.id}"]`); band.classList.add('done');
+            band.firstChild.replaceWith(h('span', { class: 'sky-name pop' }, mode === 'prefix' ? h('span', {}, h('b', { class: 'pre' }, l.pre), 'sphere') : l.name));
+            mark('sci:L:' + l.id, true, `layer ${next + 1}: ${l.name}`); speak(l.name); next++;
+            if (next === LAYERS.length) { confetti(40); SFX.win(); setTimeout(() => res(misses <= 1), 900); }
+          } else { SFX.no(); misses++; b.classList.add('wrong'); setTimeout(() => b.classList.remove('wrong'), 400); mark('sci:L:' + want.id, false, `layer ${next + 1}: ${want.name}`, l.name); bolt(`Not yet! Layer ${next + 1} starts with "${want.name[0].toUpperCase()}". The Strong Man Throws Eggs!`, { ms: 3000 }); }
+        } }, mode === 'prefix' ? l.pre : l.name)));
+      });
+    } });
+  }
+  /* ----- Who's up there? ----- */
+  function whoUp() {
+    const items = [...shuffle(Object.keys(SKY_THINGS)), 'closest', 'farthest'];
+    runRound(scr, { n: items.length, again: whoUp, back: menu, ask: async (i, hold) => {
+      const it = items[i], thing = SKY_THINGS[it];
+      const want = thing ? thing.layer : it === 'closest' ? 'tropo' : 'exo';
+      const label = thing ? thing.label : it === 'closest' ? "The layer CLOSEST to the Earth's surface" : "The layer FARTHEST from the Earth's surface";
+      const card = h('div', { class: 'sky-thing pop' }, thing ? h('span', { class: 'sky-art', html: SCI_ART[it] }) : h('span', { class: 'sky-art big' }, it === 'closest' ? '⬇️' : '⬆️'), h('b', {}, label));
+      let picked = null;
+      const col = skyColumn(l => h('button', { class: 'sky-pick', onclick: () => { if (picked) return; picked = l; resolve(); } }, l.name));
+      let resolve; const p = new Promise(r => resolve = r);
+      hold.append(h('div', { class: 'sky-wrap' }, col, h('div', { class: 'sky-side' }, h('div', { class: 'hint-line', style: { color: '#DDE6FF' } }, 'Tap the layer where this belongs:'), card)));
+      readOut(label); await p;
+      const ok = picked.id === want, band = col.querySelector(`[data-id="${want}"]`);
+      band.classList.add('done'); if (thing) band.append(h('span', { class: 'sky-mini', html: SCI_ART[it] }));
+      if (!ok) col.querySelector(`[data-id="${picked.id}"]`).classList.add('nope');
+      ok ? SFX.ok() : SFX.no();
+      mark(thing ? 'sci:where:' + it : 'sci:L:' + want, ok, thing ? thing.q.replace('___', LAYERS.find(l => l.id === want).name) : label, picked.name);
+      done(card.parentNode, ok, ok ? null : `${label}: ${LAYERS.find(l => l.id === want).name}`);
+      await wait(ok ? 1000 : 2400); return ok;
+    } });
+  }
+  /* ----- State Shifter: particles in a beaker ----- */
+  function beaker(state) {
+    const cv = h('canvas', { class: 'beaker-cv', width: 240, height: 260 }), ctx = cv.getContext('2d');
+    const N = 30, P = Array.from({ length: N }, (_, i) => ({ x: 120, y: 200, vx: 0, vy: 0, i }));
+    let st = state, temp = { solid: -10, liquid: 25, gas: 100 }[state], alive = true;
+    const grid = i => ({ x: 70 + (i % 6) * 20, y: 230 - Math.floor(i / 6) * 20 });
+    P.forEach(p => { const g = grid(p.i); if (st === 'solid') { p.x = g.x; p.y = g.y; } else if (st === 'liquid') { p.x = 50 + Math.random() * 140; p.y = 170 + Math.random() * 70; } else { p.x = 40 + Math.random() * 160; p.y = 40 + Math.random() * 200; } p.vx = (Math.random() - .5) * 2; p.vy = (Math.random() - .5) * 2; });
+    const draw = () => {
+      if (!alive || !cv.isConnected && performance.now() > t0 + 2000) return;
+      ctx.clearRect(0, 0, 240, 260);
+      ctx.fillStyle = st === 'gas' ? '#E8F6FF' : '#D7EEFF'; ctx.strokeStyle = '#141B3D'; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(30, 20); ctx.lineTo(30, 248); ctx.quadraticCurveTo(30, 255, 38, 255); ctx.lineTo(202, 255); ctx.quadraticCurveTo(210, 255, 210, 248); ctx.lineTo(210, 20); ctx.stroke();
+      for (const p of P) {
+        if (st === 'solid') { const g = grid(p.i); p.x += (g.x - p.x) * .15 + (Math.random() - .5) * 1.2; p.y += (g.y - p.y) * .15 + (Math.random() - .5) * 1.2; }
+        else if (st === 'liquid') { p.vy += .25; p.vx += (Math.random() - .5) * .6; p.vx *= .92; p.vy *= .92; p.x += p.vx; p.y += p.vy; if (p.y > 242) { p.y = 242; p.vy *= -.3; } if (p.y < 165) p.vy += .4; }
+        else { p.x += p.vx * 2.4; p.y += p.vy * 2.4; if (Math.hypot(p.vx, p.vy) < 1.2) { p.vx *= 1.1; p.vy *= 1.1; } if (p.y < 30 || p.y > 245) p.vy *= -1; }
+        p.x = Math.max(40, Math.min(200, p.x)); p.y = Math.max(28, Math.min(245, p.y)); if (p.x <= 40 || p.x >= 200) p.vx *= -1;
+        ctx.fillStyle = st === 'solid' ? '#9FD8FF' : st === 'liquid' ? '#3D8BFF' : '#C9E8FF'; ctx.beginPath(); ctx.arc(p.x, p.y, 9, 0, 7); ctx.fill(); ctx.lineWidth = 2.5; ctx.stroke();
+      }
+      requestAnimationFrame(draw);
+    };
+    const t0 = performance.now(); requestAnimationFrame(draw);
+    const therm = h('div', { class: 'therm' }, h('i', { style: { height: '40%' } }), h('span', {}, temp + '°C'));
+    const setT = (s, t) => { st = s; temp = t; therm.firstChild.style.height = Math.max(8, Math.min(100, (t + 20) / 1.3)) + '%'; therm.lastChild.textContent = t + '°C'; if (s === 'gas') P.forEach(p => { p.vx = (Math.random() - .5) * 3; p.vy = -2 - Math.random() * 2; }); };
+    setT(state, temp);
+    const name = h('div', { class: 'state-name' }, state === 'gas' ? 'gas (water vapour)' : state === 'solid' ? 'solid (ice)' : 'liquid (water)');
+    onClear(() => alive = false);
+    return { el: h('div', { class: 'beaker' }, h('div', { style: { display: 'flex', alignItems: 'flex-end', gap: '10px' } }, cv, therm), name), set(s, t) { setT(s, t); name.textContent = s === 'gas' ? 'gas (water vapour)' : s === 'solid' ? 'solid (ice)' : 'liquid (water)'; }, stop() { alive = false; } };
+  }
+  const onClear = f => { const o = scr._clears || (scr._clears = []); o.push(f); };
+  function shifter() {
+    const tasks = shuffle(CHANGES);
+    runRound(scr, { n: tasks.length, again: shifter, back: menu, ask: async (i, hold) => {
+      const c = tasks[i], B = beaker(c.from);
+      const ask = h('div', { class: 'sci-card plate' }, h('div', { class: 'prompt' }, speakBtn(c.story), h('span', {}, c.story)), h('div', { class: 'hint-line' }, `Make the ${c.from === 'gas' ? 'water vapour' : c.from === 'solid' ? 'ice' : 'water'} change. Heat it or cool it?`));
+      const btns = h('div', { class: 'opts' }); ask.append(btns);
+      hold.append(h('div', { class: 'shift-wrap' }, B.el, ask)); readOut(c.story);
+      let first = true;
+      await new Promise(res => [['heat', '🔥 Heat it'], ['cool', '❄️ Cool it']].forEach(([a, t]) => btns.append(h('button', { class: 'opt ' + a, onclick: e => {
+        if (a === c.act) { SFX.whoosh(); B.set(c.to, c.to === 'gas' ? (c.id === 'boiling' ? 100 : 35) : c.to === 'liquid' ? (c.id === 'condensation' ? 15 : 10) : -5); e.currentTarget.classList.add('right'); res(); }
+        else { first = false; SFX.no(); e.currentTarget.classList.add('wrong'); bolt(a === 'heat' ? 'Hot makes it go the other way! Try cooling.' : 'Brrr! Cold makes it go the other way. Try heating.', { ms: 2600 }); }
+      } }, t))));
+      await wait(1500);
+      ask.append(h('div', { class: 'prompt', style: { fontSize: '22px' } }, 'What is this change called?'));
+      const wrap = h('div', { class: 'opts' }); ask.append(wrap);
+      let picked; const ok2 = await askChoice(ask, { options: shuffle(CHANGES.map(x => x.id)), answer: c.id, wrap, onPick: (k, o) => picked = o });
+      const ok = ok2 && first;
+      mark('sci:chg:' + c.id, ok2, `${c.from} → ${c.to}: ${c.id}`, picked);
+      const gl = SCI_GLOSS.find(g => g.t.toLowerCase() === c.id);
+      ask.append(h('div', { class: 'why pop' }, h('b', {}, c.id + ': '), gl ? gl.d.toLowerCase() : ''));
+      await nextBtn(ask); B.stop(); return ok;
+    } });
+  }
+  /* ----- Matter Tester: predict, then test ----- */
+  function tester() {
+    const cells = shuffle(['solids', 'liquids', 'gases'].flatMap(s => PROPS.map(p => [s, p]))).slice(0, 6);
+    const chart = {};
+    runRound(scr, { n: cells.length, again: tester, back: menu, ask: async (i, hold) => {
+      const [s, p] = cells[i], yes = p.yes.includes(s);
+      const card = h('div', { class: 'sci-card plate' }, h('div', { class: 'secrow' }, h('span', { class: 'secchip s-science' }, '🔬 Test: ' + p.test)), h('div', { class: 'prompt' }, speakBtn(p.q(s)), h('span', {}, p.q(s))), h('div', { class: 'hint-line' }, 'Predict first!'));
+      hold.append(card); readOut(p.q(s));
+      const wrap = h('div', { class: 'opts' }); card.append(wrap);
+      let picked; const ok = await askChoice(card, { options: ['Yes', 'No'], answer: yes ? 'Yes' : 'No', wrap, onPick: (k, o) => picked = o });
+      mark(`sci:prop:${s}:${p.id}`, ok, p.q(s) + ' ' + (yes ? 'Yes' : 'No'), picked);
+      card.append(testScene(s, p.id));
+      chart[s + p.id] = yes;
+      card.append(chartEl(chart));
+      await nextBtn(card); return ok;
+    } });
+  }
+  function testScene(s, pid) {
+    const icon = { solids: '🧱 a wooden block', liquids: '💧 water', gases: '💨 air' }[s];
+    const d = h('div', { class: 'test-scene pop' });
+    if (pid === 'compress') {
+      const sy = h('div', { class: 'syr-wrap' + (s === 'gases' ? ' squeeze' : ' stuck') }, h('span', { html: SCI_ART.syringe }), h('div', { class: 'syr-fill ' + s }));
+      d.append(sy, h('p', {}, s === 'gases' ? `The plunger goes in! ${icon} can be squeezed into less space. Gases can be compressed.` : `The plunger will not move. ${icon} cannot be compressed.`));
+    } else if (pid === 'shape' || pid === 'volume' || pid === 'flow') {
+      const cls = { solids: 'keep', liquids: 'take', gases: 'fill' }[s];
+      d.append(h('div', { class: 'pour ' + cls }, h('div', { class: 'cup a' }, h('i')), h('div', { class: 'arrow' }, '➜'), h('div', { class: 'cup b' }, h('i'))),
+        h('p', {}, pid === 'shape' ? { solids: 'The block keeps its own shape. Solids have a definite shape.', liquids: 'The water takes the shape of the new container.', gases: 'The air spreads out to fill the whole container.' }[s]
+          : pid === 'volume' ? { solids: 'Same amount, same size. Solids have a definite volume.', liquids: 'Same amount of water. Liquids have a definite volume.', gases: 'The air spreads to fill ANY container. Gases do not have a definite volume.' }[s]
+          : { solids: 'The block does not flow.', liquids: 'Water pours and flows easily.', gases: 'Air flows easily too, like wind!' }[s]));
+    }
+    return d;
+  }
+  function chartEl(chart) {
+    const t = h('table', { class: 'prop-chart' }, h('tr', {}, h('th', {}), ...PROPS.map(p => h('th', {}, { shape: 'definite shape', volume: 'definite volume', compress: 'can be compressed', flow: 'can flow' }[p.id]))));
+    ['solids', 'liquids', 'gases'].forEach(s => t.append(h('tr', {}, h('th', {}, s), ...PROPS.map(p => { const v = chart[s + p.id]; return h('td', { class: v == null ? '' : v ? 'y' : 'n' }, v == null ? '?' : v ? '✓' : '✗'); }))));
+    return t;
+  }
+  /* ----- Air Mixer ----- */
+  function airMixer() {
+    const steps = ['recipe', 'needs', 'heat', 'cool', 'atmos'];
+    runRound(scr, { n: steps.length, again: airMixer, back: menu, ask: async (i, hold) => {
+      const st = steps[i];
+      if (st === 'recipe') {
+        const GAS = [['Nitrogen', '#7A5CFA'], ['Oxygen', '#3D8BFF'], ['Carbon dioxide', '#8D93A1'], ['Water vapour', '#9FE4FF'], ['Other gases', '#FFB0C8']], DECOY = ['Sand', 'Sugar', 'Gold'];
+        const jar = h('div', { class: 'jar' }), list = h('div', { class: 'jar-list' });
+        const card = h('div', { class: 'sci-card plate' }, h('div', { class: 'prompt' }, 'Make AIR! Put every gas that air is made of into the jar.'), h('div', { class: 'jar-row' }, jar, list));
+        const bins = h('div', { class: 'opts' }); card.append(bins); hold.append(card);
+        let got = 0, miss = 0;
+        return await new Promise(res => shuffle([...GAS.map(g => g[0]), ...DECOY]).forEach(n => bins.append(h('button', { class: 'opt', onclick: e => {
+          const b = e.currentTarget; const g = GAS.find(x => x[0] === n);
+          if (g) { SFX.ok(); b.disabled = true; b.classList.add('right'); for (let k = 0; k < (n === 'Nitrogen' ? 14 : n === 'Oxygen' ? 6 : 2); k++) jar.append(h('i', { style: { background: g[1], left: 8 + Math.random() * 80 + '%', top: 8 + Math.random() * 80 + '%', animationDelay: -Math.random() * 3 + 's' } })); list.append(h('span', { style: { '--c': g[1] } }, n)); got++;
+            if (got === GAS.length) { mark('sci:air:recipe', miss === 0, 'Air: nitrogen, oxygen, carbon dioxide, water vapour, other gases'); card.append(h('div', { class: 'why pop', style: { background: '#C9F5DF' } }, 'That is air! Most of it is nitrogen. Air is matter too.')); setTimeout(() => res(miss === 0), 1500); } }
+          else { SFX.no(); miss++; b.classList.add('wrong'); bolt(`${n} is not in air!`, { ms: 2000 }); }
+        } }, n))));
+      }
+      if (st === 'needs') {
+        const pairs = [['🫁 Breathing (respiration)', 'Oxygen', 'respiration'], ['🔥 Burning', 'Oxygen', 'respiration'], ['🌱 Plants make food', 'Carbon dioxide', 'plants'], ['🦠 Bacteria make a nutrient for plants', 'Nitrogen', 'nutrient']];
+        const card = h('div', { class: 'sci-card plate' }, h('div', { class: 'prompt' }, 'Which gas is needed? Tap a job, then tap its gas.'));
+        const left = h('div', { class: 'match-col' }), right = h('div', { class: 'match-col' });
+        card.append(h('div', { class: 'match' }, left, right)); hold.append(card);
+        let sel = null, done = 0, miss = 0;
+        return await new Promise(res => {
+          pairs.forEach(p => left.append(h('button', { class: 'opt', onclick: e => { $$('.sel', left).forEach(x => x.classList.remove('sel')); sel = { p, b: e.currentTarget }; e.currentTarget.classList.add('sel'); } }, p[0])));
+          ['Oxygen', 'Carbon dioxide', 'Nitrogen'].forEach(g => right.append(h('button', { class: 'opt gas', onclick: e => {
+            if (!sel) { bolt('Tap a job first!', { ms: 1500 }); return; }
+            const ok = sel.p[1] === g; mark('sci:need:' + sel.p[2], ok, `${sel.p[0]} → ${sel.p[1]}`, g);
+            if (ok) { SFX.ok(); sel.b.classList.remove('sel'); sel.b.classList.add('right'); sel.b.disabled = true; sel.b.append(h('small', { class: 'matched' }, ' → ' + g)); sel = null; done++; if (done === pairs.length) setTimeout(() => res(miss <= 1), 700); }
+            else { SFX.no(); miss++; e.currentTarget.classList.add('wrong'); setTimeout(() => e.currentTarget.classList.remove('wrong'), 400); }
+          } }, g)));
+        });
+      }
+      if (st === 'heat' || st === 'cool') {
+        const card = h('div', { class: 'sci-card plate' });
+        const bal = h('div', { class: 'balloon-rig ' + (st === 'heat' ? 'hot' : 'cold') }, h('div', { class: 'balloon' }), h('div', { class: 'bottle' }), h('div', { class: 'bath' }, st === 'heat' ? 'hot water' : 'ice water'));
+        card.append(h('div', { class: 'prompt' }, st === 'heat' ? 'A balloon on a bottle goes into HOT water. Watch!' : 'Now the bottle goes into ICE water. Watch!'), bal);
+        hold.append(card); await wait(1800);
+        card.append(h('div', { class: 'prompt', style: { fontSize: '22px' } }, st === 'heat' ? 'Air ___ on heating.' : 'Air ___ on cooling.'));
+        const wrap = h('div', { class: 'opts' }); card.append(wrap);
+        let picked; const ok = await askChoice(card, { options: ['expands', 'contracts'], answer: st === 'heat' ? 'expands' : 'contracts', wrap, onPick: (k, o) => picked = o });
+        mark('sci:air:' + st, ok, st === 'heat' ? 'Air expands on heating.' : 'Air contracts on cooling.', picked);
+        done(card, ok, st === 'heat' ? 'Hot air takes up more space. The balloon grows!' : 'Cold air takes up less space. The balloon shrinks!');
+        await nextBtn(card); return ok;
+      }
+      const card = h('div', { class: 'sci-card plate' }); hold.append(card);
+      const ok = await askQ(card, sciQ(pickOne(['sci:f:a10', 'sci:f:a11', 'sci:f:a1'])));
+      await nextBtn(card); return ok;
+    } });
+  }
+  /* ----- Find the Water ----- */
+  const WORLD = `<svg viewBox="0 0 100 100" preserveAspectRatio="none" class="world">
+<rect width="100" height="60" fill="#9FD8FF"/><rect y="56" width="100" height="44" fill="#8B6A4A"/><rect y="84" width="100" height="16" fill="#6E5432"/>
+<path d="M50 96q10-3 20 0t20 0" stroke="#3D8BFF" stroke-width="3" fill="none"/><path d="M52 92h30" stroke="#3D8BFF" stroke-width="2" stroke-dasharray="3 2"/>
+<path d="M0 60q12-4 30 0v40H0z" fill="#2E6FE0"/><path d="M0 28h22v14q-11 4-22 0z" fill="#F4FBFF" stroke="#141B3D" stroke-width=".6"/>
+<path d="M60 58L78 22L96 58z" fill="#7D8597" stroke="#141B3D" stroke-width=".6"/><path d="M72 34l6-12 6 12-6 22z" fill="#F4FBFF" stroke="#141B3D" stroke-width=".5"/>
+<ellipse cx="62" cy="66" rx="10" ry="3" fill="#3D8BFF" stroke="#141B3D" stroke-width=".5"/><path d="M30 60q8 2 14 2t14 4" stroke="#3D8BFF" stroke-width="2.5" fill="none"/>
+<g fill="#fff" stroke="#141B3D" stroke-width=".5"><ellipse cx="44" cy="12" rx="8" ry="3.5"/><ellipse cx="50" cy="10" rx="6" ry="3.5"/></g><circle cx="12" cy="10" r="5" fill="#FFD23F" stroke="#141B3D" stroke-width=".6"/></svg>`;
+  function findWater() {
+    const order = shuffle(WATER_SPOTS);
+    runRound(scr, { n: order.length, again: findWater, back: menu, ask: async (i, hold) => {
+      const w = order[i];
+      const scene = h('div', { class: 'world-wrap', html: WORLD });
+      WATER_SPOTS.forEach(s => scene.append(h('span', { class: 'spot' + (s === w ? ' now' : order.indexOf(s) < i ? ' found' : ''), style: { left: s.x + '%', top: s.y + '%' } }, order.indexOf(s) < i ? '✓' : s === w ? '?' : '')));
+      const card = h('div', { class: 'sci-card plate' }, h('div', { class: 'prompt' }, 'Where is the water? What is the place with the "?" called?'));
+      const wrap = h('div', { class: 'opts' }); card.append(wrap);
+      hold.append(h('div', { class: 'shift-wrap' }, scene, card));
+      let picked; const ok = await askChoice(card, { options: four(w.name, WATER_SPOTS.filter(x => x !== w).map(x => x.name)), answer: w.name, wrap, onPick: (k, o) => picked = o });
+      mark('sci:wsrc:' + w.id, ok, w.name, picked);
+      const gl = SCI_GLOSS.find(g => w.name.startsWith(g.t)); if (gl) card.append(h('div', { class: 'why pop' }, h('b', {}, gl.t + ': '), gl.d));
+      await wait(gl ? 2400 : 1100); return ok;
+    } });
+  }
+  /* ----- Water Inspector ----- */
+  function inspector() {
+    const list = shuffle(WATER_SAMPLES);
+    runRound(scr, { n: list.length + 1, again: inspector, back: menu, ask: async (i, hold) => {
+      const card = h('div', { class: 'sci-card plate' }); hold.append(card);
+      if (i === list.length) { const ok = await askQ(card, sciQ(pickOne(['sci:f:w13', 'sci:f:w11', 'sci:f:w1']))); await nextBtn(card); return ok; }
+      const w = list[i];
+      card.append(h('div', { class: 'inspect' }, h('div', { class: 'glass', html: SCI_ART.glass(w.look === 'murky', w.smell) }),
+        h('div', { class: 'readout' }, h('div', {}, '👁 Looks: ', h('b', {}, w.look === 'murky' ? 'cloudy' : 'clear')), h('div', {}, '👃 Smell: ', h('b', {}, w.smell ? 'yuck, a bad smell!' : 'no smell')))),
+        h('div', { class: 'prompt', style: { fontSize: '22px' } }, 'Is this water safe to drink?'));
+      const wrap = h('div', { class: 'opts' }); card.append(wrap);
+      let picked; const ok1 = await askChoice(card, { options: ['Yes, safe to drink', 'No, send it for treatment'], answer: w.safe ? 'Yes, safe to drink' : 'No, send it for treatment', wrap, onPick: (k, o) => picked = o });
+      let ok2 = true;
+      if (!w.safe) {
+        card.append(h('div', { class: 'prompt', style: { fontSize: '20px' } }, 'Which word describes the problem?'));
+        const w2 = h('div', { class: 'opts' }); card.append(w2);
+        const ans = w.id === 'odour' ? 'bad odour' : 'turbid (murky)';
+        ok2 = await askChoice(card, { options: shuffle(['turbid (murky)', 'bad odour', 'tasteless']), answer: ans, wrap: w2 });
+      }
+      const ok = ok1 && ok2;
+      mark('sci:wq:' + w.id, ok, w.why, picked);
+      card.append(h('div', { class: 'why pop' }, w.why + (w.safe ? '' : ' It goes to a water treatment plant to be treated.')));
+      await nextBtn(card); return ok;
+    } });
+  }
+  /* ----- Pressure Lab ----- */
+  function pressure() {
+    const cards = shuffle(PRESSURE_CARDS).slice(0, 4);
+    runRound(scr, { n: 2 + cards.length, again: pressure, back: menu, ask: async (i, hold) => {
+      const card = h('div', { class: 'sci-card plate' }); hold.append(card);
+      if (i === 0) {
+        const tank = h('div', { class: 'tank' }, h('div', { class: 'water' }), ...['top', 'mid', 'bot'].map(k => h('span', { class: 'hole ' + k }, h('i', { class: 'jet' }))));
+        card.append(h('div', { class: 'prompt' }, 'A tall tank of water has 3 holes. Which hole will squirt the FARTHEST?'), tank);
+        const wrap = h('div', { class: 'opts' }); card.append(wrap);
+        let picked; const ok = await askChoice(card, { options: ['The top hole', 'The middle hole', 'The bottom hole'], answer: 'The bottom hole', wrap, onPick: (k, o) => picked = o });
+        tank.classList.add('on'); mark('sci:pr:depth', ok, 'As depth increases, liquid pressure increases.', picked);
+        card.append(h('div', { class: 'why pop' }, 'Deeper water pushes harder. As depth increases, liquid pressure increases!'));
+        await nextBtn(card); return ok;
+      }
+      if (i === 1) { const ok = await askQ(card, sciQ('sci:f:m6')); await nextBtn(card); return ok; }
+      const c = cards[i - 2];
+      card.append(h('div', { class: 'pcard pop' }, h('span', { class: 'big-em' }, { straw: '🥤', jets: '⛲', diver: '🤿', balloon: '🎈', tyre: '🚲', dam: '🏞️' }[c.id]), h('b', {}, c.t)), h('div', { class: 'prompt', style: { fontSize: '22px' } }, 'Air pressure or liquid pressure?'));
+      const wrap = h('div', { class: 'opts' }); card.append(wrap);
+      let picked; const ok = await askChoice(card, { options: ['Air pressure', 'Liquid pressure'], answer: c.a, wrap, onPick: (k, o) => picked = o });
+      mark('sci:pr:' + c.id, ok, `${c.t}: ${c.a.toLowerCase()}`, picked);
+      await wait(ok ? 900 : 1800); return ok;
+    } });
+  }
+  /* ----- Memory Match ----- */
+  function memory() {
+    scr.clear(); scr.onBack = menu;
+    const pick = choose(SCI_GLOSS, 6, g => 'sci:g:' + g.t);
+    const cards = shuffle(pick.flatMap(g => [{ g, side: 't' }, { g, side: 'd' }]));
+    const missed = new Set(); let open = [], matched = 0, tries = 0, lock = false;
+    const grid = h('div', { class: 'mem-grid' });
+    const status = h('div', { class: 'intro-line' }, 'Flip two cards. Find a word and its meaning!');
+    scr.stage.append(status, grid);
+    cards.forEach(c => {
+      const el = h('button', { class: 'mem-card' + (c.side === 'd' ? ' def' : '') }, h('span', { class: 'back' }, '🧪'), h('span', { class: 'front' }, c.side === 't' ? c.g.t : c.g.d));
+      el.onclick = () => {
+        if (lock || el.classList.contains('up')) return;
+        el.classList.add('up'); SFX.tap(); open.push({ c, el });
+        if (open.length === 2) {
+          tries++; const [a, b] = open; open = [];
+          if (a.c.g === b.c.g) { SFX.ok(); a.el.classList.add('got'); b.el.classList.add('got'); matched++; speak(a.c.g.t + '. ' + a.c.g.d);
+            mark('sci:g:' + a.c.g.t, !missed.has(a.c.g.t), `${a.c.g.t}: ${a.c.g.d}`);
+            if (matched === pick.length) setTimeout(() => showResult(scr, { right: pick.length - missed.size, n: pick.length, missed: [...missed], again: memory, back: menu }), 900); }
+          else { lock = true; missed.add(a.c.g.t); missed.add(b.c.g.t); setTimeout(() => { a.el.classList.remove('up'); b.el.classList.remove('up'); lock = false; }, 1100); }
+        }
+      };
+      grid.append(el);
+    });
+  }
+  /* ----- Term Blaster: the book's fill-in sentences ----- */
+  function blaster() {
+    const list = choose(SCI_CLOZE, 8, f => 'sci:f:' + f.id);
+    runRound(scr, { n: list.length, again: blaster, back: menu, ask: async (i, hold) => {
+      const f = list[i];
+      const rock = h('div', { class: 'blast-rock' }, h('div', { class: 'secrow' }, h('span', { class: 'secchip s-science' }, '🧪 ' + f.unit)), h('div', { class: 'prompt', html: esc(f.s).replace('___', `<span class="gap">${f.a[0].replace(/[a-z]/gi, '_ ').trim()}</span>`) }));
+      const inp = h('input', { id: 'qin', autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false' }), go = h('button', { class: 'btn orange' }, '🔫 Blast');
+      const fb = h('div');
+      hold.append(h('div', { class: 'blast-wrap' }, rock), h('div', { class: 'typein' }, inp, go), fb);
+      readOut(f.s.replace('___', 'blank')); setTimeout(() => inp.focus(), 60);
+      let tries = 0;
+      const ok = await new Promise(res => { const sub = () => { const v = inp.value.trim(); if (!v) return; tries++;
+        if (sciAccept(f, v)) { res(tries === 1); return; }
+        SFX.no(); inp.classList.add('no'); setTimeout(() => inp.classList.remove('no'), 400);
+        if (tries === 1) { fb.innerHTML = ''; fb.append(h('div', { class: 'why pop' }, `Hint: it starts with "${f.a[0][0]}" and has ${f.a[0].replace(/ /g, '').length} letters.`)); inp.select(); }
+        else { fb.innerHTML = ''; fb.append(h('div', { class: 'why pop' }, 'Answer: ', h('b', {}, f.a[0]))); inp.disabled = true; setTimeout(() => res(false), 2200); }
+      }; go.onclick = sub; inp.onkeydown = e => { if (e.key === 'Enter') sub(); }; });
+      mark('sci:f:' + f.id, ok, f.s.replace('___', f.a[0]), inp.value.trim());
+      if (ok || tries) { rock.classList.add(ok ? 'boom' : 'miss'); if (ok) { SFX.laser(); flash('BOOM!'); } }
+      await wait(ok ? 900 : 300); return ok;
+    } });
+  }
+  menu();
+}
+
+/* =========================================================
    TODAY'S MISSION — a guided ~15-minute session through the weakest areas
    ========================================================= */
 const SEC_ORDER = ['Vocabulary', 'Grammar', 'Journeys', 'Reading', 'Writing'];
-const SEC_ICON = { Vocabulary: '🔤', Grammar: '🧩', Journeys: '🪐', Reading: '🛰️', Writing: '✍️' };
+const SEC_ICON = { Vocabulary: '🔤', Grammar: '🧩', Journeys: '🪐', Reading: '🛰️', Writing: '✍️', Science: '🧪' };
 const todayKey = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
 function missionPlan() {
   const R = readiness();
@@ -2504,6 +3098,10 @@ function openReadiness() {
         h('span', { class: 'rd-bar' }, h('i', { class: c, style: { width: Math.max(2, Math.round(x.cov * 100)) + '%' } })),
         h('b', { class: 'rd-pct' }, x.seen ? Math.round(x.acc * 100) + '%' : '–'), h('span', { class: 'rd-lvl ' + c }, t),
         h('span', { class: 'rd-sub' }, (x.extra ? x.extra + ' · ' : `practised ${x.seen} of ${x.total} items (${Math.round(x.cov * 100)}%) · `) + (x.seen ? `${Math.round(x.acc * 100)}% of his answers correct` : 'not started'))); })),
+    (() => { const K = sciKeys(), its = K.map(k => S.items[k]).filter(Boolean), r = its.reduce((t, x) => t + x.r, 0), w = its.reduce((t, x) => t + x.w, 0), x = { cov: its.length / K.length, acc: r + w ? r / (r + w) : 0, seen: its.length }, [t, c] = lvl(x);
+      lines.push(`Science (Life Support Lab): practised ${Math.round(x.cov * 100)}%, ${Math.round(x.acc * 100)}% correct (${t})`);
+      return h('div', { class: 'rd-rows' }, h('div', { class: 'rd-row' }, h('span', { class: 'secchip s-science' }, '🧪 Science'), h('span', { class: 'rd-bar' }, h('i', { class: c, style: { width: Math.max(2, Math.round(x.cov * 100)) + '%' } })),
+        h('b', { class: 'rd-pct' }, x.seen ? Math.round(x.acc * 100) + '%' : '–'), h('span', { class: 'rd-lvl ' + c }, t), h('span', { class: 'rd-sub' }, `Air, water, matter (Life Support Lab) · practised ${x.seen} of ${K.length} items` + (x.seen ? ` · ${Math.round(x.acc * 100)}% correct` : ' · not started')))); })(),
     h('div', { class: 'why', style: { textAlign: 'left', maxWidth: 'none' } }, h('b', {}, `Next step (weakest: ${weakest}): `), advice),
     h('div', { class: 'rd-grid' },
       h('div', {}, h('h3', { class: 'rd-h' }, 'Biggest trouble spots'),
@@ -2608,7 +3206,7 @@ function grownupExtras() {
       h('div', { class: 'gu-row' }, h('button', { class: 'btn small teal', onclick: printList }, '🛠️ Practice list'), reset)),
   ];
 }
-const AREA_NAME = { control: 'Launch Control', starmap: 'Star Map', cargo: 'Cargo Bay', docking: 'Docking Bay', robot: 'Robot Repair', comms: 'Comms Tower', signal: 'Signal Lab', log: 'Mission Log', launch: 'Launch Day', mission: "Today's Mission", crew: 'Crew radio', glitch: 'Glitch Box' };
+const AREA_NAME = { control: 'Launch Control', starmap: 'Star Map', cargo: 'Cargo Bay', docking: 'Docking Bay', robot: 'Robot Repair', comms: 'Comms Tower', signal: 'Signal Lab', log: 'Mission Log', science: 'Life Support Lab', launch: 'Launch Day', mission: "Today's Mission", crew: 'Crew radio', glitch: 'Glitch Box' };
 
 /* ---------- printing (certificate, practice list) ---------- */
 function printEl(el) {
@@ -2757,7 +3355,7 @@ function openGlitch() {
     const groups = {};
     for (const e of list) { const q = qForKey(e.key, e.gen); const s = q ? q.sec : 'Other'; (groups[s] = groups[s] || []).push(e); }
     const cards = [{ name: 'Zap them all', desc: `${list.length} to fix`, em: '⚡', color: '#FFD0DA', noTrack: true, go: () => round(list) }];
-    for (const s of SEC_ORDER) if (groups[s]) cards.push({ name: s, desc: `${groups[s].length} to fix`, em: SEC_ICON[s], noTrack: true, go: () => round(groups[s]) });
+    for (const s of [...SEC_ORDER, 'Science']) if (groups[s]) cards.push({ name: s, desc: `${groups[s].length} to fix`, em: SEC_ICON[s], noTrack: true, go: () => round(groups[s]) });
     missionMenu(scr, 'Get each one right to zap it!', cards);
     bolt('Fix your mistakes. The Glitch gets smaller!');
   };
@@ -2808,6 +3406,16 @@ const HELP = [
   ['log', /Sense/, 'Sense scanner', ['Read the detail.', 'Which sense is it: see, hear, smell, taste or feel?']],
   ['log', /Power/, 'Power words', ['Read the underlined words.', 'Pick the vocab word that can replace them.']],
   ['log', /Write/, 'Write your log', ['Pick a topic.', 'Plan: hook, 3 details, conclusion.', 'Write it. Then check the list.']],
+  ['science', /Sky Layers/, 'Sky Layers', ['Tap the layer closest to Earth first.', 'Then the next one up, and the next.', 'Memory trick: The Strong Man Throws Eggs!']],
+  ['science', /Up There/, "Who's Up There?", ['Look at the picture.', 'Tap the layer where it belongs.']],
+  ['science', /State/, 'State Shifter', ['Read what happens.', 'Heat it or cool it?', 'Then name the change.']],
+  ['science', /Matter/, 'Matter Tester', ['Read the question.', 'Guess Yes or No.', 'Then watch the test!']],
+  ['science', /Air/, 'Air Mixer', ['Put every gas in air into the jar.', 'Match each job to its gas.', 'Watch the balloon!']],
+  ['science', /Find/, 'Find the Water', ['Look at the "?" on the picture.', 'Tap its name.']],
+  ['science', /Inspector/, 'Water Inspector', ['Look at the water and smell it.', 'Is it safe to drink?']],
+  ['science', /Pressure/, 'Pressure Lab', ['Deeper water pushes harder.', 'Air pressure or liquid pressure?']],
+  ['science', /Memory/, 'Memory Match', ['Flip two cards.', 'Find a word and its meaning.', 'Remember where the cards are!']],
+  ['science', /Blaster/, 'Term Blaster', ['Read the sentence.', 'Type the missing word.', 'Spell it right to blast it!']],
   ['launch', /./, 'Launch Day', ['20 questions, like the real test.', 'Right answers zap meteors.', 'Get 14 right to blast off!']],
   ['mission', /./, "Today's Mission", ['The hardest parts come first.', 'Do them all in one go.']],
   ['glitch', /./, 'Glitch Box', ['These are questions you missed.', 'Get one right to zap it!']],
@@ -2909,6 +3517,7 @@ const CREW = {
   robot: { name: 'Gizmo', role: 'Robot Mechanic', lines: ['He HAS got. They HAVE got.', 'I fixed 12 robots before lunch!', 'Grandpa → He. Lisa and I → We.'] },
   comms: { name: 'Sparky', role: 'Radio Officer', lines: ['Full sentences, please. Over!', 'Capital at the start. Full stop at the end!', 'Over and out!'] },
   signal: { name: 'Dr. Ray', role: 'Signal Scientist', lines: ['Read the whole story first!', 'A fact can be checked. An opinion can\'t.', 'Answers come in story order.'] },
+  science: { name: 'Dr. Nia', role: 'Science Officer', lines: ['The Strong Man Throws Eggs! T-S-M-T-E!', 'Deeper water pushes harder!', 'Ice → water is melting. Water → ice is freezing!'] },
   log: { name: 'Scout', role: 'Mission Writer', lines: ['Hook, 3 details, conclusion!', 'Use your 5 senses!', 'In conclusion… I love writing!'] },
 };
 const crewWants = id => !!S.story.finale || !!S.crewHome[id] || STATIONS.find(s => s.id === id).progress() >= .25;
@@ -2926,11 +3535,11 @@ function crewSync(animate) {
 const crewCount = () => STATIONS.filter(s => S.crewHome[s.id] || S.story.finale).length;
 function refreshCrewChip() {
   const parts = STATIONS.filter(s => partBuilt(s.id)).length;
-  $$('.m-crew').forEach(e => e.innerHTML = `<b>${crewCount()}</b>/8 crew`);
-  $$('.m-goal').forEach(e => { e.className = 'm-goal' + (parts === 8 && !S.story.finale ? ' go' : ''); e.textContent = S.story.finale ? 'Base saved! 🎉' : parts === 8 ? 'Launch Day!' : `🚀 ${parts}/8 parts`; });
+  $$('.m-crew').forEach(e => e.innerHTML = `<b>${crewCount()}</b>/${STATIONS.length} crew`);
+  $$('.m-goal').forEach(e => { e.className = 'm-goal' + (parts === STATIONS.length && !S.story.finale ? ' go' : ''); e.textContent = S.story.finale ? 'Base saved! 🎉' : parts === STATIONS.length ? 'Launch Day!' : `🚀 ${parts}/${STATIONS.length} parts`; });
 }
 const QUESTS = new Set();
-const QUEST_KINDS = ['spellMC', 'meaning', 'ending', 'plural', 'proper', 'article', 'pronoun', 'be', 'haveGot', 'countSort', 'there', 'fixMC', 'factOp'];
+const QUEST_KINDS = ['sci', 'sci', 'spellMC', 'meaning', 'ending', 'plural', 'proper', 'article', 'pronoun', 'be', 'haveGot', 'countSort', 'there', 'fixMC', 'factOp'];
 function topUpQuests() {
   if (STORY_BUSY) return;
   const home = STATIONS.filter(s => HUB.crewOn(s.id)).map(s => s.id);
@@ -2964,7 +3573,7 @@ function tapCrew(id) {
 const GLITCH_TAUNTS = () => [
   'Hee hee! You can\'t spell "impassable"!', 'My meteors are coming on Launch Day!', 'Bucket engine! Hee hee!',
   S.glitch.length ? `I hid ${S.glitch.length} mistakes in my box. Bet you can't fix them!` : 'You fixed all my glitches?! Grrr!',
-  'One mouse, two… mouses? Hee hee!', 'An unicorn! A hour! Hee hee!'];
+  'One mouse, two… mouses? Hee hee!', 'An unicorn! A hour! Hee hee!', 'Is it evaporation or condensation? Hee hee!'];
 function glitchSync() {
   if (S.story.finale) { HUB.glitchShow(false); return; }
   const parts = STATIONS.filter(s => partBuilt(s.id)).length;
@@ -3032,7 +3641,7 @@ async function baseTour() {
   STORY_BUSY = true; HUB.lock(true);
   try {
     await HUB.overview(600);
-    await spot('.mission-chip', 'Bring back all 8 crew and 8 parts!');
+    await spot('.mission-chip', 'Bring back all the crew and rocket parts!');
     const mid = () => STATIONS.map(s => HUB.labelEl(s.id)).filter(l => l && l.style.display !== 'none').map(l => { const r = l.getBoundingClientRect(); return { l, d: Math.hypot(r.left + r.width / 2 - innerWidth / 2, r.top + r.height / 2 - innerHeight * .45) + (r.left < 0 || r.right > innerWidth ? 9999 : 0) }; }).sort((x, y) => x.d - y.d)[0];
     await spot(() => (mid() || {}).l, 'Tap a station to play.');
     await spot('.star-chip', 'Right answers give you stars ⭐');
@@ -3072,7 +3681,7 @@ async function celebrateReturn(snap) {
     glitchSync();
     if (STATIONS.every(s => partBuilt(s.id)) && !S.story.finale && !S.story.allParts) {
       S.story.allParts = 1; save(); await HUB.rocketView();
-      await talk('nova', 'All 8 parts are built! Now pass Launch Day!'); talkEnd();
+      await talk('nova', 'All the parts are built! Now pass Launch Day!'); talkEnd();
     }
     if (changed.length || arrived.length) await HUB.overview(1100);
   } finally { STORY_BUSY = false; HUB.lock(false); updateHUD(); refreshCrewChip(); setTimeout(topUpQuests, 400); }
@@ -3271,7 +3880,7 @@ const HUB = (() => {
   mesh(new T.CylinderGeometry(3.6, 3.9, .6, 40), 0xAEB8CF, { y: .3, parent: pad });
   const stripe = new T.Mesh(new T.TorusGeometry(3.25, .14, 8, 48), mat(0xFFD23F)); stripe.rotation.x = Math.PI / 2; stripe.position.y = .62; pad.add(stripe);
   // tower
-  const tower = new T.Group(); tower.position.set(-3, 0, -1.4); pad.add(tower);
+  const tower = new T.Group(); tower.position.set(-3, 0, 1.3); pad.add(tower);
   for (const [x, z] of [[-.5, -.5], [.5, -.5], [-.5, .5], [.5, .5]]) mesh(new T.BoxGeometry(.16, 9.2, .16), 0xF0476A, { x, y: 4.6, z, parent: tower, outline: .2 });
   for (let y = 1; y < 9.5; y += 1.4) mesh(new T.BoxGeometry(1.15, .12, 1.15), 0xF0476A, { y, parent: tower, outline: .12 });
   const arm = mesh(new T.BoxGeometry(2.1, .18, .3), 0xAEB8CF, { x: 1.4, y: 6.4, parent: tower, outline: .12 });
@@ -3304,13 +3913,14 @@ const HUB = (() => {
     x.fillStyle = '#141B3D'; x.beginPath(); x.arc(64, 64, 62, 0, 7); x.fill(); x.fillStyle = '#FFD23F'; x.beginPath(); x.arc(64, 64, 54, 0, 7); x.fill(); x.fillStyle = '#7A5CFA'; x.beginPath(); x.arc(64, 64, 46, 0, 7); x.fill();
     x.fillStyle = '#fff'; x.font = 'bold 26px sans-serif'; x.textAlign = 'center'; x.fillText('G4', 64, 58); x.font = 'bold 16px sans-serif'; x.fillText('MIDTERM', 64, 80);
     const tex = new T.CanvasTexture(c); const p = new T.Mesh(new T.CircleGeometry(.62, 32), new T.MeshBasicMaterial({ map: tex })); p.position.set(1.17, 3.1, .25); p.rotation.y = Math.PI / 2 - .2; g.add(p); });
+  part('science', g => { [2.356, -.785].forEach(a => { const x = Math.cos(a) * 1.22, z = Math.sin(a) * 1.22; mesh(new T.SphereGeometry(.38, 16, 12), 0xEEF1F8, { x, y: 4.05, z, parent: g }); mesh(new T.SphereGeometry(.24, 12, 10), 0x7CFFCB, { x: x * 1.12, y: 4.05, z: z * 1.12, parent: g, outline: .06, emissive: 0x1E9A63 }); }); });
   const flame = new T.Mesh(new T.ConeGeometry(.8, 3.4, 20, 1, true), new T.MeshBasicMaterial({ color: 0xFFB347, transparent: true, opacity: .9, blending: T.AdditiveBlending, depthWrite: false }));
   flame.rotation.x = Math.PI; flame.position.y = -1.6; flame.visible = false; rocket.add(flame);
   const flame2 = new T.Mesh(new T.ConeGeometry(.45, 2.2, 16, 1, true), new T.MeshBasicMaterial({ color: 0xFFF3B0, transparent: true, opacity: .95, blending: T.AdditiveBlending, depthWrite: false }));
   flame2.rotation.x = Math.PI; flame2.position.y = -1; flame.add(flame2);
 
   /* ===== junk stand-ins for parts he hasn't earned (only shown at launch) ===== */
-  const junk = {}, JUNK_NAME = { control: 'a crooked cardboard nose cone', starmap: 'taped-over windows', cargo: 'one wobbly soda-can fuel tank', docking: 'bent scrap-metal fins', robot: 'a bucket instead of an engine', comms: 'a coat-hanger antenna', signal: 'duct tape instead of a heat shield', log: 'no mission patch' };
+  const junk = {}, JUNK_NAME = { control: 'a crooked cardboard nose cone', starmap: 'taped-over windows', cargo: 'one wobbly soda-can fuel tank', docking: 'bent scrap-metal fins', science: 'two soda bottles for air tanks', robot: 'a bucket instead of an engine', comms: 'a coat-hanger antenna', signal: 'duct tape instead of a heat shield', log: 'no mission patch' };
   function junkPart(id, build) { const g = new T.Group(); g.visible = false; rocket.add(g); build(g); junk[id] = g; g.userData.home = { p: g.position.clone(), r: g.rotation.clone() }; }
   junkPart('control', g => { mesh(new T.ConeGeometry(.95, 1.7, 6), 0xB98A5A, { x: .18, y: 6.75, rz: .28, parent: g, outline: .05 }); mesh(new T.BoxGeometry(1.5, .14, .06), 0xC9CED8, { x: .1, y: 6.2, z: .95, rz: -.2, parent: g, outline: 0 }); });
   junkPart('starmap', g => { [4.6, 3.3].forEach(y => { [.8, -.8].forEach(r => mesh(new T.BoxGeometry(.95, .18, .06), 0x8D93A1, { y, z: 1.1, rz: r, parent: g, outline: .1 })); }); });
@@ -3320,6 +3930,7 @@ const HUB = (() => {
   junkPart('comms', g => { mesh(new T.CylinderGeometry(.03, .03, .9, 6), 0xAEB8CF, { y: 8.6, rz: .5, x: -.2, parent: g, outline: .3 }); mesh(new T.CylinderGeometry(.03, .03, .7, 6), 0xAEB8CF, { y: 9.1, x: -.55, rz: -.9, parent: g, outline: .3 }); });
   junkPart('signal', g => { mesh(new T.CylinderGeometry(1.25, 1.25, .38, 24), 0x8D93A1, { y: 1.35, rx: .1, parent: g, outline: .04 }); mesh(new T.CylinderGeometry(1.22, 1.22, .22, 24), 0xB4BAC6, { y: 1.75, rx: -.08, parent: g, outline: .04 }); });
   junkPart('log', g => {});
+  junkPart('science', g => { [2.356, -.785].forEach(a => { mesh(new T.CylinderGeometry(.22, .22, .8, 10), 0x66C27A, { x: Math.cos(a) * 1.25, y: 4.1, z: Math.sin(a) * 1.25, rz: .3, parent: g, outline: .08 }); mesh(new T.CylinderGeometry(.08, .1, .25, 8), 0xE8473A, { x: Math.cos(a) * 1.25 + .12, y: 4.6, z: Math.sin(a) * 1.25, parent: g, outline: .1 }); }); });
   const falling = [];
 
   /* ===== stations ===== */
@@ -3347,6 +3958,13 @@ const HUB = (() => {
     signal(g, c) { mesh(new T.CylinderGeometry(1.8, 1.9, 1.8, 6), 0xEEF1F8, { y: .9, parent: g }); mesh(new T.CylinderGeometry(1.95, 1.95, .3, 6), c, { y: 1.95, parent: g });
       [-.8, 0, .8].forEach((x, k) => { mesh(new T.CylinderGeometry(.05, .05, 1.4 + k * .4, 6), 0xAEB8CF, { x, y: 2.8 + k * .2, parent: g, outline: .3 }); mesh(new T.SphereGeometry(.16, 10, 8), 0x7A5CFA, { x, y: 3.5 + k * .4, parent: g, emissive: 0x7A5CFA }); });
       mesh(new T.BoxGeometry(1.4, .5, .06), 0x7A5CFA, { y: 1.1, z: 1.62, parent: g, outline: .04, emissive: 0x3B2C86 }); },
+    science(g, c) { mesh(new T.CylinderGeometry(2, 2.1, .5, 28), 0xEEF1F8, { y: .25, parent: g });
+      const dome = new T.Mesh(new T.SphereGeometry(1.9, 28, 16, 0, Math.PI * 2, 0, Math.PI / 2), new T.MeshToonMaterial({ color: 0x9FFFE0, gradientMap: grad, transparent: true, opacity: .35, depthWrite: false })); dome.position.y = .5; g.add(dome);
+      const ring = new T.Mesh(new T.TorusGeometry(1.9, .09, 8, 40), mat(c)); ring.rotation.x = Math.PI / 2; ring.position.y = .52; g.add(ring);
+      mesh(new T.CylinderGeometry(.12, .16, 1, 8), 0x8A5A3B, { x: -.6, y: 1, parent: g, outline: .12 }); mesh(new T.SphereGeometry(.6, 12, 10), 0x3DDC97, { x: -.6, y: 1.7, parent: g, outline: .05 }); mesh(new T.SphereGeometry(.4, 12, 10), 0x5CC27A, { x: -.25, y: 2, z: .2, parent: g, outline: .05 });
+      const tank = mesh(new T.CylinderGeometry(.45, .45, 1.3, 16), 0x9FD8FF, { x: .7, y: 1.15, parent: g, outline: .06, emissive: 0x2E6FE0 }); tank.material.transparent = true; tank.material.opacity = .85;
+      mesh(new T.CylinderGeometry(.48, .48, .12, 16), 0xAEB8CF, { x: .7, y: 1.85, parent: g, outline: .1 });
+      g.userData.bubble = mesh(new T.SphereGeometry(.12, 8, 6), 0xffffff, { x: .7, y: 1, parent: g, outline: 0 }); },
     log(g, c) { const pod = mesh(new T.CapsuleGeometry(.95, 2.2, 6, 16), 0xEEF1F8, { y: 1, rz: Math.PI / 2, parent: g });
       mesh(new T.CylinderGeometry(.97, .97, .4, 16), c, { y: 1, rz: Math.PI / 2, parent: g, outline: .03 });
       mesh(new T.CylinderGeometry(.05, .05, 3, 6), 0xAEB8CF, { x: 1.9, y: 1.5, z: .6, parent: g, outline: .3 });
@@ -3354,7 +3972,7 @@ const HUB = (() => {
   };
   const labelLayer = $('#labels');
   const R = 12.2;
-  const stationAngle = k => -Math.PI / 2 + k * Math.PI * 2 / 8 + Math.PI / 8;
+  const stationAngle = k => -Math.PI / 2 + k * Math.PI * 2 / STATIONS.length + Math.PI / STATIONS.length;
   function buildStations() {
     STATIONS.forEach((st, k) => {
       const a = stationAngle(k), g = new T.Group();
@@ -3655,7 +4273,7 @@ const HUB = (() => {
       else { bolt('Every part is real. All systems go!', { ms: 2500 }); await wait(1400); }
       await animateTo({ yaw: ly, pitch: .18, dist: 26, tx: 0, ty: 5, tz: 0 }, 800);
       SFX.whoosh(); flame.visible = true;
-      launching = { t0: performance.now(), res, missing, wob: missing.length / 8, noEngine: missing.includes('robot'), dropped: false };
+      launching = { t0: performance.now(), res, missing, wob: missing.length / STATIONS.length, noEngine: missing.includes('robot'), dropped: false };
     });
   }
   function orbit() { launching = null; flame.visible = false; rocket.visible = false; smoke.splice(0).forEach(s => scene.remove(s.s)); }
@@ -3677,7 +4295,7 @@ const HUB = (() => {
     if (tween) tween(now); else if (ctl.auto && !launching) ctl.yaw += dt * .05;
     const t = now / 1000;
     groups.forEach(G => { const u = G.g.userData; if (u.spin) u.spin.rotation.y = t * .6; if (u.ring) u.ring.rotation.z = t * .5; if (u.shuttle) u.shuttle.position.y = 3 + Math.sin(t * 1.4) * .12;
-      if (u.arm) u.arm.rotation.z = Math.sin(t * 1.2) * .5; if (u.blink) u.blink.visible = Math.sin(t * 5) > 0; if (u.flag) u.flag.rotation.y = Math.sin(t * 3) * .25; if (u.scope) u.scope.rotation.z = Math.sin(t * .4) * .3; });
+      if (u.arm) u.arm.rotation.z = Math.sin(t * 1.2) * .5; if (u.bubble) u.bubble.position.y = .6 + ((t * .6) % 1) * 1.1; if (u.blink) u.blink.visible = Math.sin(t * 5) > 0; if (u.flag) u.flag.rotation.y = Math.sin(t * 3) * .25; if (u.scope) u.scope.rotation.z = Math.sin(t * .4) * .3; });
     beacon.visible = Math.sin(t * 4) > -.2;
     const ra = t * .12; rover.position.set(Math.cos(ra) * 8.4, 0, Math.sin(ra) * 8.4); rover.rotation.y = -ra - Math.PI / 2 + Math.PI;
     sky.userData.earth.rotation.y = t * .05;
@@ -3776,7 +4394,7 @@ function openMissionPanel() {
     h('h2', {}, 'Your mission'),
     h('ol', { class: 'mission-steps' },
       h('li', { class: S.story.intro ? 'ok' : '' }, 'Play at each station.'),
-      h('li', { class: crewCount() === 8 ? 'ok' : '' }, 'Bring back all 8 crew and 8 parts.'),
+      h('li', { class: crewCount() === STATIONS.length ? 'ok' : '' }, 'Bring back all the crew and rocket parts.'),
       h('li', { class: S.story.finale ? 'ok' : '' }, 'Pass Launch Day to beat the Glitch!'),
       h('li', {}, 'Get ★★★ on every station.')),
     h('table', { class: 'report' }, h('tr', {}, h('th', {}, 'Station'), h('th', {}, 'Rocket part'), h('th', {}, 'Crew'), h('th', {}, 'Stars')), rows)));
@@ -3835,7 +4453,7 @@ function toggleLook() {
   const tc = h('div', { class: 'titlecard' },
     h('div', { class: 'mission' }, 'GRADE 4 · MIDTERM MISSION'),
     h('h1', { html: 'ROCKET<br><span>BASE</span>' }),
-    h('p', {}, built ? `Welcome back! ${built} of 8 parts built. ${examCountdown()} to go.` : 'Your rocket flies on Wednesday, 28 October. Fix the stations, then blast off!'),
+    h('p', {}, built ? `Welcome back! ${built} of ${STATIONS.length} parts built. ${examCountdown()} to go.` : 'Your rocket flies on Wednesday, 28 October. Fix the stations, then blast off!'),
     h('label', { class: 'name-row', for: 'nameIn' }, h('span', { class: 'name-lbl' }, 'Commander'), nameIn),
     h('label', { class: 'quiet-row' }, quiet, ' No music'),
     h('button', { class: 'btn orange', style: { fontSize: '28px' }, onclick: go }, built || S.story.intro ? 'Continue mission' : 'Start mission'));
