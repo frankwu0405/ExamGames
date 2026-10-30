@@ -5,12 +5,14 @@ import { makeCast } from './chars.js';
 const rnd = (s => () => (s = (s * 16807) % 2147483647) / 2147483647)(7);
 function tree(b, x, z, s = 1) { b.cyl(0.12 * s, 0.16 * s, 1 * s, 0x7A5236, x, 0.5 * s, z); b.cone(0.7 * s, 1.5 * s, 0x4FA35A, x, 1.6 * s, z); b.cone(0.55 * s, 1.1 * s, 0x5DBB66, x, 2.2 * s, z); }
 function ferris(b, x, y, z, s = 1) {
-  const g = new THREE.Group(); g.position.set(x, y, z); g.scale.setScalar(s); b.group.add(g); const fb = builder(g);
-  fb.box(0.12, 3, 0.12, 0xFFFDF4, -0.7, 1.4, 0, { rz: -0.25 }); fb.box(0.12, 3, 0.12, 0xFFFDF4, 0.7, 1.4, 0, { rz: 0.25 });
-  const w = new THREE.Group(); w.position.y = 2.9; g.add(w); const wb = builder(w);
-  wb.torus(1.8, 0.07, 0xFFFDF4, 0, 0, 0, { seg: 36 });
-  [0xEF5B4C, 0xFFC94A, 0x4AA3DF, 0x5DBB4A, 0xB57EDC, 0xF28C38].forEach((c, i) => { const a = i / 6 * Math.PI * 2; wb.box(0.04, 1.8, 0.04, 0xFFFDF4, Math.cos(a) * 0.9, Math.sin(a) * 0.9, 0, { rz: a + Math.PI / 2, line: 0 }); wb.box(0.36, 0.3, 0.3, c, Math.cos(a) * 1.8, Math.sin(a) * 1.8, 0, { line: 0.02 }); });
-  onTick((t, dt) => { w.rotation.z += dt * 0.3; });
+  const RED = 0xD93A35, g = new THREE.Group(); g.position.set(x, y, z); g.scale.setScalar(s); b.group.add(g); const fb = builder(g);
+  fb.box(0.14, 3, 0.14, RED, -0.7, 1.4, 0, { rz: -0.25 }); fb.box(0.14, 3, 0.14, RED, 0.7, 1.4, 0, { rz: 0.25 }); fb.box(0.12, 3, 0.12, RED, -0.7, 1.4, -0.5, { rz: -0.25 }); fb.box(0.12, 3, 0.12, RED, 0.7, 1.4, -0.5, { rz: 0.25 });
+  const w = new THREE.Group(); w.position.set(0, 2.9, -0.25); g.add(w); const wb = builder(w);
+  wb.torus(1.8, 0.08, RED, 0, 0, 0.12, { seg: 36 }); wb.torus(1.8, 0.08, RED, 0, 0, -0.12, { seg: 36 }); wb.cyl(0.18, 0.18, 0.4, RED, 0, 0, 0, { rx: Math.PI / 2 });
+  const cabs = [];
+  for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; wb.box(0.05, 1.8, 0.05, RED, Math.cos(a) * 0.9, Math.sin(a) * 0.9, 0.12, { rz: a + Math.PI / 2, line: 0 }); wb.box(0.05, 1.8, 0.05, RED, Math.cos(a) * 0.9, Math.sin(a) * 0.9, -0.12, { rz: a + Math.PI / 2, line: 0 });
+    const cb = new THREE.Group(); cb.position.set(Math.cos(a) * 1.8, Math.sin(a) * 1.8, 0); w.add(cb); builder(cb).box(0.34, 0.3, 0.3, i % 2 ? 0xFFF4D6 : 0xFFC94A, 0, -0.2, 0, { line: 0.02 }); cabs.push(cb); }
+  onTick((t, dt) => { w.rotation.z += dt * 0.3; cabs.forEach(c => c.rotation.z = -w.rotation.z); });
   return g;
 }
 function cart(b, x, y, z) {
@@ -84,6 +86,7 @@ export function buildMap(S, onPick) {
     const disc = mb.cyl(0.62, 0.62, 0.14, done ? 0xFFC94A : next ? 0xEF5B4C : 0xFFFDF4, 0, 2.3, 0, { rx: Math.PI / 2, line: 0.03, seg: 24 });
     const num = textPlane(String(s.n), 1.2, { w: 160, h: 160, font: '120px Chewy, sans-serif', fg: done || next ? '#fff' : '#2E2A4F' }); num.position.set(0, 2.3, 0.09); g.add(num);
     const back = num.clone(); back.position.z = -0.09; back.rotation.y = Math.PI; g.add(back);
+    if (S.captain && S.captain[s.n]) { const an = textPlane('⚓', 0.8, { w: 128, h: 128, font: '100px sans-serif', fg: '#2E2A4F' }); an.position.set(-0.55, 2.9, 0.1); g.add(an); }
     if (S.stars[s.n]) { const st = textPlane('★', 0.7, { w: 128, h: 128, font: '110px sans-serif', fg: '#FFC94A' }); st.position.set(0.55, 2.9, 0.1); g.add(st); }
     if (next) { const gem = mb.add(new THREE.OctahedronGeometry(0.3), toon(0x5AD1FF, { emissive: 0x2AA8E8, emissiveIntensity: 0.6 }), 0, 3.3, 0, { line: 0.02 }); onTick(t => { gem.rotation.y = t * 2; gem.position.y = 3.3 + Math.sin(t * 3) * 0.15; }); }
     onTick(() => { g.rotation.y = Math.atan2(camPos().x - g.position.x, camPos().z - g.position.z); });
@@ -108,7 +111,13 @@ export function buildMeadow() {
   // the hill and the cave mouth
   const hill = b.rock(6.5, 0x8B8F9E, 0, 2.2, -14, { line: 0.06 }); hill.scale.set(1.4, 0.9, 0.8);
   b.rock(2.4, 0x7C8090, -6.5, 1, -11.5); b.rock(1.8, 0x9A9EAC, 6, 0.7, -11);
-  const mouth = new THREE.Mesh(new THREE.CircleGeometry(2.2, 24, 0, Math.PI), new THREE.MeshBasicMaterial({ color: 0x14151F })); mouth.position.set(0, 0.02, -9.25); mouth.scale.set(1, 1.15, 1); w.add(mouth);
+  // a real opening: a dark tunnel going back into the hill, framed by rocks
+  const mouth = new THREE.Group(); mouth.position.set(0, 0, -8.4); w.add(mouth);
+  const dark = new THREE.MeshBasicMaterial({ color: 0x0B0C13, side: THREE.DoubleSide });
+  const arch = new THREE.Mesh(new THREE.CylinderGeometry(2.0, 2.0, 4, 20, 1, true, -Math.PI / 2, Math.PI), dark); arch.rotation.x = Math.PI / 2; arch.rotation.y = 0; arch.position.set(0, 0, -2); arch.scale.set(1, 1, 1.15); mouth.add(arch);
+  const back = new THREE.Mesh(new THREE.CircleGeometry(2.0, 20, 0, Math.PI), dark); back.position.z = -3.9; back.scale.y = 1.15; mouth.add(back);
+  const sill = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), new THREE.MeshBasicMaterial({ color: 0x23262F })); sill.rotation.x = -Math.PI / 2; sill.position.set(0, 0.03, -2); mouth.add(sill);
+  const face = new THREE.Mesh(new THREE.RingGeometry(2.0, 4.6, 24, 1, 0, Math.PI), toon(0x8B8F9E)); face.scale.y = 1.15; face.position.z = 0.02; mouth.add(face); outline(face, 0.03);
   // pond and bush (where the other tracks go)
   const pond = new THREE.Mesh(new THREE.CircleGeometry(2.2, 24), toon(0x5BB8E8)); pond.rotation.x = -Math.PI / 2; pond.position.set(-9, 0.03, -2); pond.scale.set(1.3, 1, 1); w.add(pond);
   [[9, -3.5], [10.2, -2.8], [8.6, -2.2]].forEach(([x, z], i) => b.ball(1.1 - i * 0.15, 0x4FA35A, x, 0.8, z));
@@ -130,18 +139,19 @@ export function buildMeadow() {
   cast.leo.g.position.set(-1.2, 0, 5); cast.mia.g.position.set(1.2, 0, 5.2); cast.toby.g.position.set(0.2, 0, 3.6);
   // letters on the stones around the cave mouth (for spelling "enter")
   const stones = [];
-  [[-3.6, 1.2], [-2.6, 2.6], [-1.2, 3.3], [0.3, 3.5], [1.8, 3.1], [3.0, 2.2], [3.8, 0.9]].forEach(([x, y]) => { const s = b.rock(0.55, 0xA7ABB8, x, y, -9.1, { line: 0.03 }); s.scale.z = 0.5; stones.push(s); });
+  [[-2.9, 0.5], [-2.6, 1.7], [-1.8, 2.6], [-0.6, 3.0], [0.7, 3.0], [1.9, 2.6], [2.7, 1.7], [2.95, 0.5]].forEach(([x, y]) => { const s = b.rock(0.5, 0xA7ABB8, x, y, -8.2, { line: 0.03 }); s.scale.z = 0.5; stones.push(s); });
   return { w, cast, trails, stones, mouth };
 }
 
 // ================================================================ stop 2: the glowing stone chamber
 export function buildChamber() {
   const w = newWorld({ sky: 0x06070D, ambient: 0x8090C0, ambientI: 0.25, sunI: 0.0 }); const b = builder(w);
-  const shell = new THREE.Mesh(new THREE.SphereGeometry(14, 22, 14), toon(0x3A3F55, { side: THREE.BackSide })); shell.scale.set(1.2, 0.55, 1); shell.position.y = 2; w.add(shell);
+  const shell = new THREE.Mesh(new THREE.SphereGeometry(14, 24, 16), toon(0x3A3F55, { side: THREE.BackSide })); shell.scale.set(1.2, 0.55, 1); shell.position.y = 2; w.add(shell);
   const floorG = new THREE.Group(); w.add(floorG); const fb = builder(floorG);
   const floor = new THREE.Mesh(new THREE.CircleGeometry(13, 30), toon(0x4A4F63)); floor.rotation.x = -Math.PI / 2; floorG.add(floor);
-  for (let i = 0; i < 26; i++) { const a = rnd() * Math.PI * 2, r = 7 + rnd() * 5; fb.rock(0.4 + rnd() * 0.8, 0x565B70, Math.cos(a) * r, 0.2, Math.sin(a) * r); }
-  for (let i = 0; i < 18; i++) { const a = rnd() * Math.PI * 2, r = 3 + rnd() * 9; const st = b.cone(0.25 + rnd() * 0.3, 1.5 + rnd() * 2, 0x4A4F63, Math.cos(a) * r, 7.4, Math.sin(a) * r, { rx: Math.PI }); }
+  for (let i = 0; i < 26; i++) { const a = rnd() * Math.PI * 2, r = 8.5 + rnd() * 4; fb.rock(0.4 + rnd() * 0.8, 0x565B70, Math.cos(a) * r, 0.2, Math.sin(a) * r); }
+  // stalactites hanging from the roof (some can break off)
+  const stal = []; for (let i = 0; i < 22; i++) { const a = rnd() * Math.PI * 2, r = 2 + rnd() * 9; const h2 = 1.2 + rnd() * 1.8; const st = b.cone(0.22 + rnd() * 0.25, h2, 0x4A4F63, Math.cos(a) * r, 7.3 - h2 / 2 + 0.4, Math.sin(a) * r, { rx: Math.PI }); st.userData.h = h2; stal.push(st); }
   // the stone on its rock
   const ped = fb.rock(0.9, 0x5B6075, 0, 0.5, -5); ped.scale.set(1.2, 0.7, 1);
   const gem = fb.add(new THREE.OctahedronGeometry(0.42), toon(0x5AD1FF, { emissive: 0x2AA8E8, emissiveIntensity: 0.9 }), 0, 1.45, -5, { line: 0.02 }); gem.scale.y = 1.6;
@@ -149,17 +159,45 @@ export function buildChamber() {
   onTick(t => { gem.rotation.y = t; });
   // flashlight (follows her finger)
   const spot = new THREE.SpotLight(0xFFF2CC, 60, 30, 0.32, 0.5, 1.2); spot.position.set(0, 3, 8); w.add(spot); w.add(spot.target);
-  // rusty cart on rails by the tunnel
-  const rails = builder(floorG); for (let i = 0; i < 9; i++) rails.box(1.6, 0.06, 0.18, 0x5A3A24, 4.2 + i * 0.25, 0.04, -1 - i * 0.9, { ry: 0.27, line: 0 });
-  [-0.35, 0.35].forEach(o => rails.box(0.05, 0.06, 8.5, 0x77787E, 5.2 + o, 0.1, -4.6, { ry: 0.27, line: 0 }));
-  const theCart = cart(builder(floorG), 4.4, 0, -1.6); theCart.rotation.y = 0.27 + Math.PI;
-  const tunnelMouth = new THREE.Mesh(new THREE.CircleGeometry(2, 20), new THREE.MeshBasicMaterial({ color: 0x000000 })); tunnelMouth.position.set(7.3, 1.4, -9.6); tunnelMouth.rotation.y = -0.6; w.add(tunnelMouth);
+  // one curved track from the cart to the dark tunnel in the wall
+  const track = new THREE.CatmullRomCurve3([[2.2, 0, 2.2], [3.2, 0, -0.4], [4.4, 0, -3.4], [5.8, 0, -6.6], [6.9, 0, -9.6], [7.5, 0, -12.6]].map(p => new THREE.Vector3(...p)));
+  const up = new THREE.Vector3(0, 1, 0), tf = t => { const p = track.getPointAt(t), tg = track.getTangentAt(t), side = new THREE.Vector3().crossVectors(tg, up).normalize(); return { p, tg, side }; };
+  const railMat = toon(0x8E9099);
+  [-0.38, 0.38].forEach(o => { const rp = []; for (let i = 0; i <= 60; i++) { const { p, side } = tf(i / 60); rp.push(p.clone().addScaledVector(side, o).setY(0.1)); } floorG.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(rp), 120, 0.045, 5), railMat)); });
+  for (let i = 0; i <= 26; i++) { const { p, tg } = tf(i / 26); const tie = fb.box(1.4, 0.06, 0.2, 0x5A3A24, p.x, 0.04, p.z, { line: 0 }); tie.rotation.y = Math.atan2(tg.x, tg.z); }
+  const theCart = cart(builder(floorG), 0, 0, 0);
+  const placeCart = t => { const { p, tg } = tf(t); theCart.position.set(p.x, 0.02, p.z); theCart.rotation.y = Math.atan2(tg.x, tg.z); };
+  placeCart(0.1);
+  // the tunnel mouth where the track ends
+  const end = tf(1); const tm = new THREE.Group(); tm.position.copy(end.p); tm.rotation.y = Math.atan2(end.tg.x, end.tg.z) + Math.PI; floorG.add(tm);
+  const tdark = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide });
+  const tun = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 1.8, 5, 16, 1, true, -Math.PI / 2, Math.PI), tdark); tun.rotation.x = Math.PI / 2; tun.position.z = -2.4; tm.add(tun);
+  const tback = new THREE.Mesh(new THREE.CircleGeometry(1.8, 16, 0, Math.PI), tdark); tback.position.z = -4.8; tm.add(tback);
+  const tface = new THREE.Mesh(new THREE.RingGeometry(1.8, 4.5, 20, 1, 0, Math.PI), toon(0x3A3F55, { side: THREE.DoubleSide })); tm.add(tface);
+  // glowing cracks that will spread from the stone's rock across the floor
+  const crackMat = new THREE.MeshBasicMaterial({ color: 0x8FE9FF }); const cracks = [];
+  const crack = (ang, len, from = new THREE.Vector3(0, 0, -5)) => { let p = from.clone(), a = ang; const segs = [];
+    for (let i = 0; i < len; i++) { a += (rnd() - 0.5) * 0.9; const l = 0.5 + rnd() * 0.5; const q = p.clone().add(new THREE.Vector3(Math.sin(a) * l, 0, Math.cos(a) * l));
+      const m = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.02, l), crackMat); m.position.copy(p).lerp(q, 0.5).setY(0.03); m.rotation.y = a; m.scale.z = 0.001; floorG.add(m); segs.push(m); p = q; }
+    cracks.push(segs); };
+  [0.4, 0.9, 1.6, 2.4, -0.4, -1.1, 3.0, 1.2].forEach((a, i) => crack(a, 6 + (i % 3) * 3));
   const cast = makeCast(floorG);
   cast.leo.g.position.set(-1, 0, 6); cast.mia.g.position.set(1, 0, 6.2); cast.toby.g.position.set(0.9, 0, -4.6); cast.toby.pose('sit'); cast.toby.g.rotation.y = -0.5;
+  // loose rocks in the roof (they carry letters later)
+  const loose = []; [[-0.4, 3.9, -2.4], [0.9, 4.3, -3.0], [2.2, 3.8, -2.2], [3.4, 4.2, -2.8], [1.5, 3.5, -1.4], [-1.5, 4.1, -2.9]].forEach(([x, y, z]) => { const r = b.rock(0.45, 0x6B7086, x, y, z, { line: 0.03 }); loose.push(r); });
   // words hidden on the cave walls: only seen in the flashlight beam
   const words = [];
   const place = (text, x, y, z) => { const m = textPlane(text, 2.4, { w: 512, h: 150, font: '82px Chewy, sans-serif', fg: '#BFF3FF', glow: '#5AD1FF' }); m.position.set(x, y, z); m.lookAt(0, y, 0); m.material.opacity = 0; m.userData.word = text; w.add(m); words.push(m); return m; };
-  return { w, cast, gem, gemLight, spot, floorG, cart: theCart, words, place, shell };
+  // real falling rocks: gravity, a bounce, dust
+  const drop = (x, z, size = 0.35, y = 6.8, onHit) => {
+    const r = b.rock(size, 0x5E6377, x, y, z, { line: 0.025 }); const v = new THREE.Vector3((rnd() - 0.5) * 0.6, 0, (rnd() - 0.5) * 0.6); let hits = 0;
+    const off = onTick((t, dt) => { v.y -= 22 * dt; r.position.addScaledVector(v, dt); r.rotation.x += dt * 4; r.rotation.z += dt * 3;
+      const floorY = size * 0.8 + floorTilt(r.position);
+      if (r.position.y < floorY) { r.position.y = floorY; if (hits === 0 && onHit) onHit(r); hits++; v.y = -v.y * 0.3; v.x *= 0.6; v.z *= 0.6; if (hits > 2) { off(); } } });
+    return r;
+  };
+  const floorTilt = p => { const n = new THREE.Vector3(0, 1, 0).applyEuler(floorG.rotation); return -(n.x * p.x + n.z * p.z) / n.y; };
+  return { w, cast, gem, gemLight, spot, floorG, cart: theCart, placeCart, words, place, shell, cracks, stal, loose, drop };
 }
 
 // ================================================================ stop 3: the tunnel ride

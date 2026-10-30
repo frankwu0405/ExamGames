@@ -2,7 +2,7 @@
 // Uses its own save key so it can never touch Pebble Town's progress.
 const KEY = 'theCave_v1';
 const fresh = () => ({ name: '', stops: {}, cards: {}, stars: {}, misses: {}, ep: 1,
-  settings: { read: true, sfx: true, rate: 0.85, voice: '' } });
+  settings: { read: true, sfx: true, music: true, rate: 0.85, voice: '' } });
 export let S = fresh();
 export function load() {
   try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(fresh(), JSON.parse(raw)); } catch (e) { }
@@ -18,7 +18,9 @@ export function audioInit() {
   if (AC) { if (AC.state === 'suspended') AC.resume(); return; }
   try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
   master = AC.createGain(); master.gain.value = 0.55; master.connect(AC.destination);
+  if (audioReady) audioReady(AC, master);
 }
+let audioReady = null; export const onAudio = f => { audioReady = f; if (AC) f(AC, master); };
 function tone(f, t0, dur, { type = 'sine', vol = 0.3, to = null, attack = 0.005 } = {}) {
   if (!AC) return; const o = AC.createOscillator(), g = AC.createGain();
   o.type = type; o.frequency.setValueAtTime(f, t0); if (to) o.frequency.exponentialRampToValueAtTime(to, t0 + dur);
@@ -83,8 +85,8 @@ export function say(text, { force, onWord } = {}) {
     if (!voice) pickVoice(); if (voice) u.voice = voice;
     u.lang = (voice && voice.lang) || 'en-US'; u.rate = S.settings.rate; u.pitch = 1.05;
     if (onWord) u.onboundary = e => { if (e.name === 'word' || e.charIndex != null) onWord(e.charIndex); };
-    let done = false; const fin = () => { if (!done) { done = true; res(); } };
-    u.onend = fin; u.onerror = fin; setTimeout(fin, 2500 + text.length * 110);
+    let done = false; const fin = () => { if (!done) { done = true; if (window.__duck) window.__duck(false); res(); } };
+    if (window.__duck) window.__duck(true); const fin0 = fin; u.onend = () => { if (window.__duck) window.__duck(false); fin0(); }; u.onerror = u.onend; setTimeout(fin, 2500 + text.length * 110);
     setTimeout(() => { if (my === speakToken) speechSynthesis.speak(u); }, 40);
   });
 }

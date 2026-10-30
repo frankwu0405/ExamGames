@@ -2,7 +2,8 @@
 import { S, load, save, audioInit, sfx, say, h, $, wait, englishVoices, setVoice, currentVoice } from './core.js';
 import { init, camera, setCam, flyCam, pickAt, renderer, onTick, stopFollow, THREE } from './gfx.js';
 import { buildMap, STOPS, setCamRef } from './sets.js';
-import { mountUI, openBinder, hideStory, hideTask } from './ui.js';
+import { mountUI, openBinder, hideStory, hideTask, MODE, dueCards, ownedCount } from './ui.js';
+import { playMusic, setMusic } from './music.js';
 import { stop1, stop2, stop3, sumUp } from './ep1.js';
 
 const PLAY = { 1: stop1, 2: stop2, 3: stop3 };
@@ -11,9 +12,12 @@ let hud;
 function buildHud(mode) {
   if (hud) hud.remove();
   const readBtn = h('button', { class: 'hud-btn', onclick: () => { S.settings.read = !S.settings.read; save(); readBtn.textContent = S.settings.read ? '🔊 Read to me' : '🔈 Reading off'; sfx('tap'); } }, S.settings.read ? '🔊 Read to me' : '🔈 Reading off');
+  const musicBtn = h('button', { class: 'hud-btn', 'aria-label': 'Music', onclick: () => { setMusic(!S.settings.music); save(); musicBtn.textContent = S.settings.music ? '🎵' : '🔇'; sfx('tap'); } }, S.settings.music ? '🎵' : '🔇');
+  const due = dueCards().length;
   hud = h('div', { class: 'hud' },
-    mode === 'stop' ? h('button', { class: 'hud-btn', onclick: () => { sessionStorage.setItem('cave_skipTitle', '1'); location.reload(); } }, '🗺 Map') : h('button', { class: 'hud-btn', onclick: () => { sfx('tap'); openBinder(); } }, '🃏 Word cards ' + Object.keys(S.cards).length + '/4'),
-    h('div', { class: 'hud-right' }, mode === 'map' ? h('button', { class: 'hud-btn', onclick: () => { sfx('tap'); voicePanel(); } }, '🗣 Voice') : null, readBtn));
+    mode === 'stop' ? h('button', { class: 'hud-btn', onclick: () => { sessionStorage.setItem('cave_skipTitle', '1'); location.reload(); } }, '🗺 Map')
+      : h('button', { class: 'hud-btn' + (due ? ' glow' : ''), onclick: () => { sfx('tap'); openBinder(() => buildHud('map')); } }, '🃏 Word cards ' + ownedCount() + '/4' + (due ? ` · ✨${due}` : '')),
+    h('div', { class: 'hud-right' }, mode === 'map' ? h('button', { class: 'hud-btn', onclick: () => { sfx('tap'); voicePanel(); } }, '🗣 Voice') : null, musicBtn, readBtn));
   document.body.append(hud);
 }
 
@@ -32,7 +36,7 @@ function voicePanel() {
 }
 
 async function showMap(focusNext = true) {
-  buildHud('map');
+  buildHud('map'); playMusic('map');
   const { markers, reached } = buildMap(S, null);
   const next = STOPS[Math.min(reached, 3) - 1];
   setCam([-2, 40, 40], [0, 0, 0]);
@@ -50,18 +54,36 @@ async function showMap(focusNext = true) {
     const hit = pickAt(e.clientX, e.clientY, markers); if (!hit) return; const s = hit.obj.userData.stop;
     const can = s.n === 1 || (S.stops[s.n - 1] && S.stops[s.n - 1].done);
     if (!can) { sfx('bad'); say('Finish stop ' + (s.n - 1) + ' first!', { force: true }); return; }
-    sfx('pop'); cv.removeEventListener('pointerdown', pd); cv.removeEventListener('pointermove', pm); cv.removeEventListener('pointerup', pu);
-    banner.remove(); await flyCam([s.p[0] + 1, s.p[1] + 4, s.p[2] + 5], [s.p[0], s.p[1], s.p[2]], 1100); play(s.n); };
+    sfx('pop');
+    let captain = false;
+    if (S.stops[s.n] && S.stops[s.n].done) { captain = await chooseMode(s); if (captain === null) return; }
+    cv.removeEventListener('pointerdown', pd); cv.removeEventListener('pointermove', pm); cv.removeEventListener('pointerup', pu);
+    banner.remove(); await flyCam([s.p[0] + 1, s.p[1] + 4, s.p[2] + 5], [s.p[0], s.p[1], s.p[2]], 1100); play(s.n, captain); };
   cv.addEventListener('pointerdown', pd); cv.addEventListener('pointermove', pm); cv.addEventListener('pointerup', pu);
 }
 
-async function play(n) {
+// A stop she has finished can be replayed (new versions of each activity) or played in Captain mode.
+function chooseMode(s) {
+  return new Promise(res => {
+    const close = v => { ov.remove(); res(v); };
+    const ov = h('div', { class: 'mode-pick', onclick: e => { if (e.target === ov) close(null); } }, h('div', { class: 'mode-card' },
+      h('h3', {}, s.name), h('div', {}, S.captain && S.captain[s.n] ? '⚓ Captain stamp earned!' : 'You have been here before. New puzzles are waiting!'),
+      h('button', { class: 'mode-opt', onclick: () => close(false) }, h('b', {}, '▶ Play again'), 'New words and new puzzles, with Toby\u2019s help.'),
+      h('button', { class: 'mode-opt cap', onclick: () => close(true) }, h('b', {}, '⚓ Captain mode'), 'Read the story yourself, bonus challenges on, only one hint. Get everything right the first time to earn the Captain stamp!')));
+    document.body.append(ov);
+  });
+}
+
+async function play(n, captain = false) {
+  MODE.captain = captain; MODE.perfect = true;
   buildHud('stop'); stopFollow(); document.querySelectorAll('.map-banner').forEach(e => e.remove());
   const veil = h('div', { class: 'veil' }); document.body.append(veil); await wait(350);
   const stopName = STOPS[n - 1].name;
   const card = h('div', { class: 'stop-title' }, h('small', {}, 'Stop ' + n), stopName); document.body.append(card);
   const go = PLAY[n](); setTimeout(() => veil.classList.add('out'), 200); setTimeout(() => { veil.remove(); card.classList.add('out'); }, 1500); setTimeout(() => card.remove(), 2600);
   await go; hideStory(); hideTask();
+  if (captain) { const ok = MODE.perfect; const ov = h('div', { class: 'ep-done' }, h('div', { class: 'ep-done-in' }, h('div', { class: 'stamp' }, ok ? '⚓ Captain' : 'Captain mode'), h('h2', {}, ok ? 'Captain stamp earned!' : 'Great sailing!'), h('p', {}, ok ? 'Everything right the first time!' : 'Try again to get every answer right the first time.'), h('button', { class: 'btn gold', onclick: () => { ov.remove(); r(); } }, 'Back to the map'))); let r; const p = new Promise(x => r = x); document.body.append(ov); sfx(ok ? 'great' : 'good'); await p; }
+  MODE.captain = false;
   if (n === 3 && !S.ep1) { await sumUp(); await episodeDone(); }
   const v2 = h('div', { class: 'veil' }); document.body.append(v2); await wait(400); showMap(); v2.classList.add('out'); setTimeout(() => v2.remove(), 900);
 }
@@ -69,7 +91,7 @@ async function play(n) {
 async function episodeDone() {
   sfx('great');
   const ov = h('div', { class: 'ep-done' }, h('div', { class: 'ep-done-in' }, h('div', { class: 'stamp' }, 'Episode 1'), h('h2', {}, 'You finished The Cave!'),
-    h('p', {}, `Word cards: ${Object.keys(S.cards).length} of 4 · Bonus stars: ${Object.keys(S.stars).length} of 3`), h('button', { class: 'btn gold', onclick: () => { ov.remove(); done(); } }, 'Back to the map')));
+    h('p', {}, `Word cards: ${ownedCount()} of 4 · Bonus stars: ${Object.keys(S.stars).length} of 3`), h('button', { class: 'btn gold', onclick: () => { ov.remove(); done(); } }, 'Back to the map')));
   let done; const p = new Promise(r => done = r); document.body.append(ov); say('You finished Episode 1! Well done!', { force: S.settings.read }); return p;
 }
 
