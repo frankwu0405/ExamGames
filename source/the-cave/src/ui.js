@@ -1,7 +1,7 @@
 // Story panel, activity widgets, hints and keyword cards.
 import { S, save, say, hush, sfx, h, $, wait, shuffle, shake, miss } from './core.js';
 import { CARD_IMG } from './cards.gen.js';
-import { THREE, pickAt, rayFrom, renderer, camera, onTick, toScreen, sparkles, textTexture, snapshot } from './gfx.js';
+import { THREE, pickAt, rayFrom, renderer, camera, onTick, toScreen, sparkles, textTexture, snapshot, tween } from './gfx.js';
 
 // ---------------------------------------------------------------- story panel
 let panel, textEl, nextBtn, taskEl, tobyEl, layer;
@@ -235,6 +235,10 @@ export const CARDS = {
   tunnel: { ep: 3, line: 'It was a dark tunnel and the only way out.', tip: 'tunnel = a long hole to go through', more: ['The train went into a dark {_}.', 'Leo crawled through the muddy {_}.'] },
   cliff: { ep: 3, line: 'He was standing on a high cliff.', tip: 'cliff = a high, rocky edge', more: ['Don’t stand too close to the {_}!', 'They climbed up the rocky {_}.'] },
   fetch: { ep: 3, line: 'Mia paddled over to fetch him.', tip: 'fetch = go and get', more: ['Toby loves to {_} the ball.', 'Can you {_} my shoes, please?'] },
+  island: { ep: 4, line: 'They were on a wild, lost island in the middle of the sea!', tip: 'island = land with water all around', more: ['Palm trees grow on the {_}.', 'They sailed away from the {_}.'] },
+  flag: { ep: 4, line: 'Toby pulled out a giant, old pirate flag.', tip: 'flag = cloth that waves on a pole', more: ['The {_} waved in the wind.', 'The pirate ship had a black {_}.'] },
+  clear: { ep: 4, line: 'The ocean water was very clear.', tip: 'clear = you can see through it', more: ['The window is so {_} I can see the sea.', 'The sky was {_} and blue.'] },
+  sign: { ep: 4, line: 'They saw a sign stuck between the rocks.', tip: 'sign = a board with words on it (quiet g)', more: ['The {_} said KEEP OUT.', 'Read the {_} before you go in.'] },
   flush: { ep: 2, line: 'The water helped them flush out of the dark cave.', tip: 'flush = wash out fast with water', more: ['The rain will {_} the mud off the rocks.', 'The waves {_} the sand away.'] },
 };
 const cardSrc = w => CARD_IMG[w] || `cave-cards/ep${CARDS[w].ep}/${w}.webp`;
@@ -296,7 +300,7 @@ export function openBinder(onClose) {
   const ov = h('div', { class: 'binder', onclick: e => { if (e.target === ov) close(); } },
     h('div', { class: 'binder-page' }, h('button', { class: 'btn ghost close', onclick: () => close() }, '✕'),
       h('h2', {}, 'My Word Cards'), h('div', { class: 'binder-sub' }, due.length ? `✨ ${due.length} card${due.length > 1 ? 's' : ''} ready to polish. Polish cards to make them Silver, then Gold!` : 'Cards go Bronze → Silver → Gold when you polish them on later days.'),
-      ...[...new Set(Object.values(CARDS).map(c => c.ep))].filter(ep => ep <= (window.__maxEp || 99)).flatMap(ep => [h('h3', { class: 'binder-ep' }, ep === 1 ? 'Episode 1 · The Cave' : ep === 3 ? 'Episode 3 · Leo’s Side' : `Episode ${ep} · The Cave ${ep}`),
+      ...[...new Set(Object.values(CARDS).map(c => c.ep))].filter(ep => ep <= (window.__maxEp || 99)).flatMap(ep => [h('h3', { class: 'binder-ep' }, ep === 1 ? 'Episode 1 · The Cave' : ep === 3 ? 'Episode 3 · Leo’s Side' : ep === 4 ? 'Episode 4 · The Lost Island' : `Episode ${ep} · The Cave ${ep}`),
         h('div', { class: 'binder-grid' }, ...Object.entries(CARDS).filter(([w, c]) => c.ep === ep).map(([w, c]) => { const el = cardEl(w, c, S.cards[w]);
         if (S.cards[w]) el.onclick = () => { if (isDue(S.cards[w])) { ov.remove(); polish(w, () => openBinder(onClose)); } else say(`${w}. ${c.line}`, { force: true }); }; return el; }))])));
   const close = () => { ov.remove(); onClose && onClose(); };
@@ -336,5 +340,36 @@ export function steer({ prompt, clue, answer, hints = [], word }) {
       h('button', { class: 'tile steer-btn', 'data-side': 'right', onclick: e => go('right', e.currentTarget) }, 'Right ➡'));
     window.__solve = () => go(answer, row.querySelector(`[data-side="${answer}"]`));
     task(prompt, h('div', { class: 'task-sentence' }, clue), row);
+  });
+}
+
+// ---------------------------------------------------------------- activity: look through a spyglass (drag to look around, find the thing, tap)
+export function spyglass({ prompt, target, hints = [], word, fov = 16 }) {
+  return new Promise(res => {
+    const L = ladder(hints, word); const cam = camera; const fov0 = cam.fov;
+    const dir = new THREE.Vector3(); cam.getWorldDirection(dir);
+    let yaw = Math.atan2(dir.x, dir.z), pitch = Math.asin(dir.y), found = false, heldOn = 0;
+    const ring = h('div', { class: 'spy-ring' }), hint = h('div', { class: 'spy-tap' }, 'Tap!');
+    const ov = h('div', { class: 'spy' }, h('div', { class: 'spy-mask' }), ring, hint);
+    document.body.append(ov); tween(500, e => { cam.fov = fov0 + (fov - fov0) * e; cam.updateProjectionMatrix(); });
+    task(prompt);
+    const tgt = new THREE.Vector3(); let drag = null, moved = 0;
+    const off = onTick((t, dt) => {
+      const d = new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
+      cam.lookAt(cam.position.clone().add(d));
+      target.getWorldPosition(tgt); const to = tgt.clone().sub(cam.position).normalize(); const ang = Math.acos(Math.min(1, to.dot(d)));
+      const on = ang < 0.055; ring.classList.toggle('on', on); hint.classList.toggle('on', on);
+      if (on) { heldOn += dt; if (heldOn > 1.6) win2(); } else heldOn = 0;
+    });
+    const pd = e => { drag = { x: e.clientX, y: e.clientY }; moved = 0; };
+    const pm = e => { if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; moved += Math.abs(dx) + Math.abs(dy); drag = { x: e.clientX, y: e.clientY };
+      yaw -= dx * 0.0022 * (fov / 20); pitch = Math.max(-0.6, Math.min(0.5, pitch + dy * 0.0022 * (fov / 20))); };
+    const pu = () => { const wasTap = moved < 10; drag = null; if (!wasTap) return; if (ring.classList.contains('on')) win2(); else { sfx('bad'); L.wrong(() => aimAt()); } };
+    const aimAt = () => { target.getWorldPosition(tgt); const to = tgt.clone().sub(cam.position).normalize(); const y1 = Math.atan2(to.x, to.z), p1 = Math.asin(to.y), y0 = yaw, p0 = pitch;
+      let dy = y1 - y0; while (dy > Math.PI) dy -= 2 * Math.PI; while (dy < -Math.PI) dy += 2 * Math.PI; tween(1200, e => { yaw = y0 + dy * e; pitch = p0 + (p1 - p0) * e; }); };
+    ov.addEventListener('pointerdown', pd); ov.addEventListener('pointermove', pm); ov.addEventListener('pointerup', pu);
+    const bk = h('button', { class: 'tile small', onclick: () => aimAt() }, 'Help me look'); const bkWrap = h('div', { class: 'backup hidden' }, bk); taskEl.append(bkWrap); setTimeout(() => bkWrap.classList.remove('hidden'), 14000);
+    window.__solve = () => { aimAt(); setTimeout(win2, 1300); };
+    async function win2() { if (found) return; found = true; off(); sfx('good'); ov.classList.add('done'); await win(); tween(500, e => { cam.fov = fov + (fov0 - fov) * e; cam.updateProjectionMatrix(); }); setTimeout(() => ov.remove(), 600); hideTask(); res({ first: L.first }); }
   });
 }

@@ -163,3 +163,11 @@ body.aim .task-prompt { font-size: clamp(15px, 2vw, 18px); }
 .tbc.end { background: radial-gradient(circle, rgba(46,42,79,.82), rgba(6,7,13,.95)); text-align: center; transition: opacity .8s; } .tbc.end.fade { opacity: 0; }
 .end-ep { font-size: .45em; color: var(--gold); letter-spacing: 3px; }
 .veil.memory { background: radial-gradient(circle, #FFFFFF 0, #F1ECFF 55%, #D9D2F5 100%); }
+.spy { position: fixed; inset: 0; z-index: 15; touch-action: none; cursor: grab; }
+.spy-mask { position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, transparent 0 31vmin, rgba(10,12,20,.92) 31.4vmin); pointer-events: none; transition: opacity .5s; }
+.spy-ring { position: absolute; left: 50%; top: 50%; width: 62vmin; height: 62vmin; transform: translate(-50%,-50%); border-radius: 50%; border: 1.6vmin solid #8A5A3B; box-shadow: inset 0 0 0 .6vmin #C9A46A; pointer-events: none; transition: border-color .2s; }
+.spy-ring::before, .spy-ring::after { content: ''; position: absolute; background: rgba(255,255,255,.5); left: 50%; top: 50%; transform: translate(-50%,-50%); }
+.spy-ring::before { width: 6vmin; height: 2px; } .spy-ring::after { width: 2px; height: 6vmin; }
+.spy-ring.on { border-color: var(--gold); }
+.spy-tap { position: absolute; left: 50%; top: calc(50% + 34vmin); transform: translateX(-50%); font-family: var(--display); font-size: 30px; color: var(--gold); opacity: 0; transition: opacity .2s; pointer-events: none; text-shadow: 2px 2px 0 var(--ink); }
+.spy-tap.on { opacity: 1; } .spy.done .spy-mask { opacity: 0; } .spy.done .spy-ring { opacity: 0; transition: opacity .5s; }

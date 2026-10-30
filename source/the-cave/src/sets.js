@@ -3,8 +3,8 @@ import { THREE, builder, toon, outline, newWorld, onTick, textPlane, textTexture
 import { makeCast } from './chars.js';
 
 export const rnd = (s => () => (s = (s * 16807) % 2147483647) / 2147483647)(7);
-function tree(b, x, z, s = 1) { b.cyl(0.12 * s, 0.16 * s, 1 * s, 0x7A5236, x, 0.5 * s, z); b.cone(0.7 * s, 1.5 * s, 0x4FA35A, x, 1.6 * s, z); b.cone(0.55 * s, 1.1 * s, 0x5DBB66, x, 2.2 * s, z); }
-function ferris(b, x, y, z, s = 1) {
+export function tree(b, x, z, s = 1) { b.cyl(0.12 * s, 0.16 * s, 1 * s, 0x7A5236, x, 0.5 * s, z); b.cone(0.7 * s, 1.5 * s, 0x4FA35A, x, 1.6 * s, z); b.cone(0.55 * s, 1.1 * s, 0x5DBB66, x, 2.2 * s, z); }
+export function ferris(b, x, y, z, s = 1) {
   const RED = 0xD93A35, g = new THREE.Group(); g.position.set(x, y, z); g.scale.setScalar(s); b.group.add(g); const fb = builder(g);
   fb.box(0.14, 3, 0.14, RED, -0.7, 1.4, 0, { rz: -0.25 }); fb.box(0.14, 3, 0.14, RED, 0.7, 1.4, 0, { rz: 0.25 }); fb.box(0.12, 3, 0.12, RED, -0.7, 1.4, -0.5, { rz: -0.25 }); fb.box(0.12, 3, 0.12, RED, 0.7, 1.4, -0.5, { rz: 0.25 });
   const w = new THREE.Group(); w.position.set(0, 2.9, -0.25); g.add(w); const wb = builder(w);
@@ -34,15 +34,17 @@ export const STOPS = [
   { n: 7, name: 'The Rock Shelf', ep: 3, p: [-12.2, -1.8, 3.4] },
   { n: 8, name: 'The Crack', ep: 3, p: [-8.8, -2.0, 1.6] },
   { n: 9, name: 'The Rainbow Cliff', ep: 3, p: [-5.4, -1.6, 1.0] },
-  { n: 10, name: 'The Lost Island', ep: 4, p: [2, 1.6, 2] },
-  { n: 11, name: 'The Ice', ep: 5, p: [10, 0.3, -5] },
-  { n: 12, name: 'The Gray Shore', ep: 6, p: [18, 0.6, -11] },
-  { n: 13, name: 'Out of the Fog', ep: 7, p: [23, 0.3, -2] },
-  { n: 14, name: 'The Chase', ep: 8, p: [18, 0.3, 8] },
-  { n: 15, name: "Varn's Story", ep: 9, p: [27, 0.6, 12] },
+  { n: 10, name: 'The Lost Island', ep: 4, p: [2.6, 1.8, 1.4] },
+  { n: 11, name: 'Toby’s Dig', ep: 4, p: [0.2, 0.7, 3.9] },
+  { n: 12, name: 'The Clear Sea', ep: 4, p: [7.5, 0.3, -2.4] },
+  { n: 13, name: 'The Ice', ep: 5, p: [11, 0.3, -6] },
+  { n: 14, name: 'The Gray Shore', ep: 6, p: [18, 0.6, -11] },
+  { n: 15, name: 'Out of the Fog', ep: 7, p: [23, 0.3, -2] },
+  { n: 16, name: 'The Chase', ep: 8, p: [18, 0.3, 8] },
+  { n: 17, name: "Varn's Story", ep: 9, p: [27, 0.6, 12] },
 ];
-export const EPISODES = { 1: { title: 'The Cave', stops: [1, 2, 3] }, 2: { title: 'The Cave 2', stops: [4, 5, 6] }, 3: { title: 'The Cave 3: Leo’s Side', stops: [7, 8, 9] } };
-export const MAX_EP = 3;
+export const EPISODES = { 1: { title: 'The Cave', stops: [1, 2, 3] }, 2: { title: 'The Cave 2', stops: [4, 5, 6] }, 3: { title: 'The Cave 3: Leo’s Side', stops: [7, 8, 9] }, 4: { title: 'The Cave 4: The Lost Island', stops: [10, 11, 12] } };
+export const MAX_EP = 4;
 export function buildMap(S, onPick) {
   const w = newWorld({ sky: 0xBFE6F7, ambientI: 1.5, sunI: 1.5, fog: [0xBFE6F7, 70, 140] }); const b = builder(w);
   // sea with a dark seabed under it, so the secret tunnel shows through the water
@@ -110,7 +112,7 @@ export function buildMap(S, onPick) {
   }
   // fog over places not yet open
   const fogMat = toon(0xF4F7FB, { transparent: true, opacity: 0.8 });
-  for (let i = 0; i < 40; i++) { const x = 3.5 + rnd() * 28, z = -15 + rnd() * 30; const m = new THREE.Mesh(new THREE.SphereGeometry(1.0 + rnd() * 1.3, 10, 8), fogMat); m.position.set(x, 1.2 + rnd() * 1.2, z); m.scale.y = 0.55; w.add(m);
+  for (let i = 0; i < 40; i++) { const x = (MAX_EP >= 4 ? 10.5 : 3.5) + rnd() * (MAX_EP >= 4 ? 22 : 28), z = -15 + rnd() * 30; const m = new THREE.Mesh(new THREE.SphereGeometry(1.0 + rnd() * 1.3, 10, 8), fogMat); m.position.set(x, 1.2 + rnd() * 1.2, z); m.scale.y = 0.55; w.add(m);
     const ph = rnd() * 6; onTick(t => { m.position.y = 1.4 + Math.sin(t * 0.4 + ph) * 0.25; }); }
   // markers
   const markers = [];
