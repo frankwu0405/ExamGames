@@ -31,16 +31,18 @@ export const STOPS = [
   { n: 4, name: 'The Drop', ep: 2, p: [-6.6, -2.0, 5.4] },
   { n: 5, name: 'Crystal Loop', ep: 2, p: [-3.6, -1.6, 4] },
   { n: 6, name: 'The Swift River', ep: 2, p: [-0.8, -0.6, 2.8] },
-  { n: 7, name: "Leo's Side", ep: 3, p: [-6.5, -1.6, 0.8] },
-  { n: 8, name: 'The Lost Island', ep: 4, p: [2, 1.6, 2] },
-  { n: 9, name: 'The Ice', ep: 5, p: [10, 0.3, -5] },
-  { n: 10, name: 'The Gray Shore', ep: 6, p: [18, 0.6, -11] },
-  { n: 11, name: 'Out of the Fog', ep: 7, p: [23, 0.3, -2] },
-  { n: 12, name: 'The Chase', ep: 8, p: [18, 0.3, 8] },
-  { n: 13, name: "Varn's Story", ep: 9, p: [27, 0.6, 12] },
+  { n: 7, name: 'The Rock Shelf', ep: 3, p: [-12.2, -1.8, 3.4] },
+  { n: 8, name: 'The Crack', ep: 3, p: [-8.8, -2.0, 1.6] },
+  { n: 9, name: 'The Rainbow Cliff', ep: 3, p: [-5.4, -1.6, 1.0] },
+  { n: 10, name: 'The Lost Island', ep: 4, p: [2, 1.6, 2] },
+  { n: 11, name: 'The Ice', ep: 5, p: [10, 0.3, -5] },
+  { n: 12, name: 'The Gray Shore', ep: 6, p: [18, 0.6, -11] },
+  { n: 13, name: 'Out of the Fog', ep: 7, p: [23, 0.3, -2] },
+  { n: 14, name: 'The Chase', ep: 8, p: [18, 0.3, 8] },
+  { n: 15, name: "Varn's Story", ep: 9, p: [27, 0.6, 12] },
 ];
-export const EPISODES = { 1: { title: 'The Cave', stops: [1, 2, 3] }, 2: { title: 'The Cave 2', stops: [4, 5, 6] } };
-export const MAX_EP = 2;
+export const EPISODES = { 1: { title: 'The Cave', stops: [1, 2, 3] }, 2: { title: 'The Cave 2', stops: [4, 5, 6] }, 3: { title: 'The Cave 3: Leo’s Side', stops: [7, 8, 9] } };
+export const MAX_EP = 3;
 export function buildMap(S, onPick) {
   const w = newWorld({ sky: 0xBFE6F7, ambientI: 1.5, sunI: 1.5, fog: [0xBFE6F7, 70, 140] }); const b = builder(w);
   // sea with a dark seabed under it, so the secret tunnel shows through the water

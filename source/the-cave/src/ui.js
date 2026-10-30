@@ -231,6 +231,10 @@ export const CARDS = {
   drop: { ep: 2, line: 'It was the longest drop of their lives.', tip: 'drop = a fall down', more: ['Don\u2019t {_} the blue stone!', 'One more {_} and the cart was on the track.'] },
   loop: { ep: 2, line: 'The track went up in a giant loop.', tip: 'loop = a big circle', more: ['The cart went round the {_} upside down!', 'Tie the rope in a {_}.'] },
   swift: { ep: 2, line: 'The swift water quickly helped them out.', tip: 'swift = very fast', more: ['Toby is a {_} little dog.', 'The {_} river pushed the cart along.'] },
+  thick: { ep: 3, line: 'He rolled under a thick, strong rock shelf.', tip: 'thick = big and fat, not thin', more: ['Leo hid under a {_} rock.', 'The ice was too {_} to break.'] },
+  tunnel: { ep: 3, line: 'It was a dark tunnel and the only way out.', tip: 'tunnel = a long hole to go through', more: ['The train went into a dark {_}.', 'Leo crawled through the muddy {_}.'] },
+  cliff: { ep: 3, line: 'He was standing on a high cliff.', tip: 'cliff = a high, rocky edge', more: ['Don’t stand too close to the {_}!', 'They climbed up the rocky {_}.'] },
+  fetch: { ep: 3, line: 'Mia paddled over to fetch him.', tip: 'fetch = go and get', more: ['Toby loves to {_} the ball.', 'Can you {_} my shoes, please?'] },
   flush: { ep: 2, line: 'The water helped them flush out of the dark cave.', tip: 'flush = wash out fast with water', more: ['The rain will {_} the mud off the rocks.', 'The waves {_} the sand away.'] },
 };
 const cardSrc = w => CARD_IMG[w] || `cave-cards/ep${CARDS[w].ep}/${w}.webp`;
@@ -292,7 +296,7 @@ export function openBinder(onClose) {
   const ov = h('div', { class: 'binder', onclick: e => { if (e.target === ov) close(); } },
     h('div', { class: 'binder-page' }, h('button', { class: 'btn ghost close', onclick: () => close() }, '✕'),
       h('h2', {}, 'My Word Cards'), h('div', { class: 'binder-sub' }, due.length ? `✨ ${due.length} card${due.length > 1 ? 's' : ''} ready to polish. Polish cards to make them Silver, then Gold!` : 'Cards go Bronze → Silver → Gold when you polish them on later days.'),
-      ...[...new Set(Object.values(CARDS).map(c => c.ep))].filter(ep => ep <= (window.__maxEp || 99)).flatMap(ep => [h('h3', { class: 'binder-ep' }, ep === 1 ? 'Episode 1 · The Cave' : `Episode ${ep} · The Cave ${ep}`),
+      ...[...new Set(Object.values(CARDS).map(c => c.ep))].filter(ep => ep <= (window.__maxEp || 99)).flatMap(ep => [h('h3', { class: 'binder-ep' }, ep === 1 ? 'Episode 1 · The Cave' : ep === 3 ? 'Episode 3 · Leo’s Side' : `Episode ${ep} · The Cave ${ep}`),
         h('div', { class: 'binder-grid' }, ...Object.entries(CARDS).filter(([w, c]) => c.ep === ep).map(([w, c]) => { const el = cardEl(w, c, S.cards[w]);
         if (S.cards[w]) el.onclick = () => { if (isDue(S.cards[w])) { ov.remove(); polish(w, () => openBinder(onClose)); } else say(`${w}. ${c.line}`, { force: true }); }; return el; }))])));
   const close = () => { ov.remove(); onClose && onClose(); };
