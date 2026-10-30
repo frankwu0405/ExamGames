@@ -255,11 +255,17 @@ export async function stop9() {
   while (z > -53.5) await wait(40);
   const lift = await memoryWhite(600); dOff(); rOff();
   // …and out onto the beach, along the stream from the cave to the sea
-  const B = buildBeach(); const k = B.cast; [k.leo, k.mia, k.toby].forEach(c => c.g.visible = false);
+  const B = buildBeach(); const k = B.cast; [k.leo, k.mia, k.toby].forEach(c => c.g.visible = false); B.tipped.visible = false;
   const out = new THREE.Group(); B.w.add(out); const ob = builder(out);
   const boat = new THREE.Group(); out.add(boat); cart(builder(boat), 0, 0, 0); const bc = makeCast(boat); bc.leo.g.position.set(-0.3, 0.45, -0.25); bc.leo.pose('cheer'); bc.leo.L.rotation.x = bc.leo.R.rotation.x = -1.4; bc.mia.g.position.set(0.3, 0.45, 0.15); bc.mia.pose('cheer'); bc.mia.L.rotation.x = bc.mia.R.rotation.x = -1.4; bc.toby.g.position.set(0, 0.85, 0.6); bc.toby.g.scale.setScalar(0.9); boat.rotation.y = Math.PI;
   cut([4.5, 1.8, -6], [0, 1, 10], 50); lift(); sfx('whoosh');
-  await tween(5200, (e, kk) => { boat.position.set(0.2, 0.12 + Math.sin(kk * 20) * 0.04, 15 - kk * 15); boat.rotation.z = Math.sin(kk * 14) * 0.05; });
+  await tween(4200, (e, kk) => { boat.position.set(0.2, 0.12 + Math.sin(kk * 20) * 0.04, 15 - kk * 12); boat.rotation.z = Math.sin(kk * 14) * 0.05; });
+  // the cart runs up onto the sand… and tips over; the kids tumble out onto the beach
+  const T = B.tipped, tp = T.position.clone(), b0 = boat.position.clone();
+  await tween(900, e => { boat.position.lerpVectors(b0, new THREE.Vector3(tp.x, 0, tp.z), e); boat.rotation.y = Math.PI + (0.8 - Math.PI) * e; });
+  [[bc.leo, [1.6, 0, 0.4]], [bc.mia, [2.2, 0, -0.6]], [bc.toby, [1.2, 0, -0.9]]].forEach(([c, p]) => { B.w.attach(c.g); c.pose(c.L ? 'cheer' : 'wag'); if (c.L) c.L.rotation.x = c.R.rotation.x = 0; moveTo(c.g, p, 700, { hop: 1 }); });
+  sfx('crash'); await tween(600, e => { boat.rotation.x = 0; boat.rotation.z = 1.2 * e; boat.position.y = Math.sin(e * Math.PI) * 0.3; });
+  await wait(1200);
   // ---- back to the beach (now): Leo finishes his story
   const lift3 = await memory(800); playMusic('meadow');
   const B2 = buildBeach(); const k2 = B2.cast;

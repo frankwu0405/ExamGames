@@ -182,5 +182,5 @@ export function buildBeach() {
   cast.leo.g.position.set(-0.7, 0, 0); cast.mia.g.position.set(0.7, 0, 0); cast.toby.g.position.set(0, 0, -1.0);
   [cast.leo, cast.mia, cast.toby].forEach(c => c.g.rotation.y = Math.PI);   // facing the camera (and the sea)
   const gem = gemOf(cast.mia.g, 0, 0.95, 0.38);
-  return { w, cast, gem };
+  return { w, cast, gem, tipped };
 }
