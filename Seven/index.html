@@ -728,6 +728,10 @@ table.prop-chart{border-collapse:collapse;font-size:15px;background:#fff;border:
 .planet.st-done .ball{box-shadow:0 0 0 5px var(--mint),0 8px 0 var(--ink)}.planet.st-master .ball{box-shadow:0 0 0 5px var(--yellow),0 8px 0 var(--ink)}
 
 .screen .stage{padding-bottom:calc(150px + env(safe-area-inset-bottom,0px))}
+
+.gu-text{width:100%;box-sizing:border-box;font:16px var(--read);padding:8px;border-radius:10px;border:2px solid var(--ink);margin-top:8px;resize:vertical}
+.cloud-found{border:3px solid var(--ink);border-radius:14px;padding:10px;margin-top:8px;background:var(--panel2)}
+.gu-code,.gu-text{background:#fff;color:var(--ink)}.gu-code::placeholder,.gu-text::placeholder{color:#7a7f99}
 </style></head>
 <body>
 <div id="space"></div><div id="labels"></div><div id="hud"></div>
@@ -1165,7 +1169,7 @@ const S = (() => {
   s.hangar = Object.assign({ own: [], paint: 'classic', flame: 'fire', decal: 'none' }, s.hangar || {});
   return s;
 })();
-function save() { S.savedAt = Date.now(); try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {} }
+function save() { S.savedAt = Date.now(); try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {} try { cloudTouch(); } catch (e) {} }
 async function protectStorage() { try { if (navigator.storage && navigator.storage.persist) return (await navigator.storage.persisted()) || (await navigator.storage.persist()); } catch (e) {} return null; }
 async function isProtected() { try { return navigator.storage && navigator.storage.persisted ? await navigator.storage.persisted() : null; } catch (e) { return null; } }
 /* Leitner-style memory: box 0..3. right → +1, wrong → 0 */
@@ -3235,7 +3239,9 @@ function grownupExtras() {
   const sfxBox = h('input', { type: 'checkbox', checked: S.settings.sfx ? '' : null, onchange: e => { S.settings.sfx = e.target.checked; save(); } });
   const reset = h('button', { class: 'btn small red', onclick: () => { if (confirm('Erase all progress and stars? This cannot be undone.')) { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} location.reload(); } } }, 'Erase progress');
   return [
-    sec('Keep his progress safe', backupBox()),
+    sec('☁ Cloud save', cloudBox()),
+    sec('✉ Message Frank', messageBox()),
+    sec('Backup link (extra safety)', backupBox()),
     sec(`Glitch Box: mistakes to redo (${G.length})${S.fixed ? ` · fixed so far: ${S.fixed}` : ''}`, h('p', { class: 'gu-note' }, 'He redoes these from the 👾 Glitch Box button on the base. A question leaves the list when he gets it right there, or once he has it right twice anywhere else.'), gTbl),
     sec('Story',
       h('div', { class: 'gu-row' },
@@ -3245,7 +3251,7 @@ function grownupExtras() {
       h('p', {}, h('label', {}, 'Speaking speed ', rate)),
       h('p', {}, h('label', {}, 'Voice ', vsel)),
       h('p', {}, h('label', {}, sfxBox, ' Sound effects')),
-      h('p', { class: 'gu-note' }, 'Progress is saved in this browser on this device.'),
+      h('p', { class: 'gu-note' }, 'Progress is saved on this device and in the cloud (see Cloud save above).'),
       h('div', { class: 'gu-row' }, h('button', { class: 'btn small teal', onclick: printList }, '🛠️ Practice list'), reset)),
   ];
 }
@@ -3270,6 +3276,7 @@ function compactSave(lean) {
   o.glitch = S.glitch.slice(0, lean ? 20 : 60).map(e => [e.key, e.gen || '', e.n, e.area || '', lean ? '' : (e.wrong || '')]);
   o.sentences = (S.sentences || []).slice(lean ? -8 : -20).map(x => [x.w, x.ok ? 1 : 0, lean ? '' : String(x.text).slice(0, 160)]);
   if (lean && o.log && o.log.essay) o.log.essay = Object.assign({}, o.log.essay, { text: String(o.log.essay.text || '').slice(0, 300) });
+  delete o.cloudCode; delete o.cloudOff;
   o.v = 2;
   return o;
 }
@@ -3286,6 +3293,7 @@ async function unpackSave(t) {
 }
 function expandSave(o) {
   if (!o || typeof o !== 'object' || !o.items) throw new Error('not a Rocket Base save');
+  delete o.cloudCode; delete o.cloudOff;
   o.items = Object.fromEntries(Object.entries(o.items).map(([k, a]) => Array.isArray(a) ? [k, { box: a[0], r: a[1], w: a[2], label: a[3], t: 0 }] : [k, a]));
   if (Array.isArray(o.glitch)) o.glitch = o.glitch.map(e => Array.isArray(e) ? { key: e[0], gen: e[1] || null, n: e[2], area: e[3], wrong: e[4] || undefined, label: (o.items[e[0]] || {}).label || '' } : e);
   if (Array.isArray(o.sentences)) o.sentences = o.sentences.map(x => Array.isArray(x) ? { w: x[0], ok: !!x[1], text: x[2] || '(saved in a short backup)', t: 0 } : x);
@@ -3304,7 +3312,11 @@ function shortenLink(long) {
     document.head.append(sc);
   });
 }
-function writeSave(o) { if (!o || !o.items) throw new Error('not a Rocket Base save'); localStorage.setItem(SAVE_KEY, JSON.stringify(o)); return o; }
+function writeSave(o) {
+  if (!o || !o.items) throw new Error('not a Rocket Base save');
+  try { const cur = localStorage.getItem(SAVE_KEY); if (cur && !blankSave(JSON.parse(cur))) localStorage.setItem(PRE_KEY, cur); } catch (e) {} // keep a "before restore" copy
+  localStorage.setItem(SAVE_KEY, JSON.stringify(o)); return o;
+}
 const exportSave = () => 'ROCKET1:' + btoa(unescape(encodeURIComponent(JSON.stringify(S))));
 function importSave(text) {
   const t = String(text || '').trim(); if (!t) throw new Error('empty');
@@ -3489,6 +3501,176 @@ function replayHelp() {
   const m = CUR && HELP.find(x => x[0] === CUR.id);
   if (m) return showHelp({ key: CUR.id + ':' + m[2], title: m[2], steps: m[3] });
   bolt('Pick a game first. Then tap ?');
+}
+
+/* =========================================================
+   CLOUD SAVE + MESSAGE BOX
+   Firebase project "exam-games", Firestore over plain HTTPS (REST), no SDK.
+   saves/ROCKET-<NAME>  fields: d (compressed save), t (number), game (string)
+   messages/<auto id>   fields: from, text, game, t   (text max 2000)
+   Rules reject any other field, so never add one.
+   ========================================================= */
+const CLOUD = {
+  key: 'AIzaSyB9v9S8A1nMQ2_TiKxtNFO4GUuc26WrZSE',
+  base: 'https://firestore.googleapis.com/v1/projects/exam-games/databases/(default)/documents',
+  game: 'Rocket Base', prefix: 'ROCKET-',
+  busy: false, p: null, okId: '', timer: 0, lastSent: '', last: 0, err: '', tried: 0
+};
+const PRE_KEY = 'rocketbase_g4_prerestore';
+const cloudId = name => { const t = String(name || '').toUpperCase().replace(/[^\p{L}\p{N}]/gu, '').slice(0, 20); return t ? CLOUD.prefix + t : ''; };
+const fsFields = o => ({ fields: Object.fromEntries(Object.entries(o).map(([k, v]) => [k, typeof v === 'number' ? { integerValue: String(v) } : { stringValue: String(v) }])) });
+/* a game with nothing real in it must never replace a real one */
+const blankSave = o => !o || !(o.stars || Object.keys(o.items || {}).length || (o.story && o.story.finale) || ((o.hangar || {}).own || []).length);
+function fetchT(url, opt, ms) {
+  const ac = new AbortController(), tm = setTimeout(() => ac.abort(), ms || 7000);
+  return fetch(url, Object.assign({ signal: ac.signal }, opt)).finally(() => clearTimeout(tm));
+}
+const docUrl = id => `${CLOUD.base}/saves/${encodeURIComponent(id)}?key=${CLOUD.key}`;
+
+async function cloudFetch(id) {
+  const r = await fetchT(docUrl(id));
+  if (r.status === 404) throw new Error('nocode');
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const j = await r.json();
+  const save = await unpackSave(j.fields.d.stringValue);
+  return { save, t: +j.fields.t.integerValue || 0 };
+}
+async function cloudPush(force) {
+  const id = S.cloudCode;
+  if (!id || cloudId(S.name) !== id || CLOUD.okId !== id || CLOUD.busy || blankSave(S)) return false;
+  CLOUD.busy = true;
+  try {
+    const d = await packSave(false);
+    if (!force && d === CLOUD.lastSent) { CLOUD.busy = false; return true; }
+    if (!S.savedAt) save();
+    const body = JSON.stringify(fsFields({ d, t: S.savedAt, game: CLOUD.game }));
+    const r = await fetchT(docUrl(id), { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, keepalive: body.length < 60000, body }, 9000);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    CLOUD.lastSent = d; CLOUD.last = Date.now(); CLOUD.err = ''; CLOUD.busy = false;
+    return true;
+  } catch (e) { CLOUD.err = String(e.message || e); CLOUD.busy = false; return false; }
+}
+/* called from save(): push about 15 s after progress changes */
+function cloudTouch() {
+  const id = cloudId(S.name);
+  if (!id || S.cloudOff === id) return;
+  if (CLOUD.okId !== id) { if (Date.now() - CLOUD.tried > 60000) cloudStart(); return; }
+  if (CLOUD.timer || blankSave(S)) return;
+  CLOUD.timer = setTimeout(() => { CLOUD.timer = 0; cloudPush(); }, 15000);
+}
+function cloudFlush() { clearTimeout(CLOUD.timer); CLOUD.timer = 0; if (S.cloudCode && CLOUD.okId === S.cloudCode) cloudPush(); }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') cloudFlush(); });
+addEventListener('pagehide', cloudFlush);
+addEventListener('online', () => { if (S.name) cloudStart(); });
+
+/* use the cloud copy: keep a "before restore" copy of this device first (writeSave does it) */
+function cloudRestore(got, id) {
+  const o = got.save; o.cloudCode = id; o.cloudOff = ''; o.savedAt = got.t || Date.now();
+  writeSave(o); location.reload();
+}
+function cloudAsk(got, id, why) {
+  return new Promise(res => {
+    const s = got.save, when = got.t ? new Date(got.t).toLocaleString() : '';
+    const ov = h('div', { class: 'overlay', style: { zIndex: 70 } }, h('div', { class: 'panel', style: { textAlign: 'center', width: 'min(520px,94vw)' } },
+      h('h2', {}, `Found ${s.name || 'a'}'s saved game!`),
+      h('p', { style: { fontWeight: 700, fontSize: '20px', margin: '6px 0' } }, `${s.stars || 0} stars · ${Object.keys(s.items || {}).length} things learned`),
+      h('p', { class: 'gu-note' }, (when ? `Saved ${when}. ` : '') + (why === 'newer' ? 'It is newer than the game on this device.' : '')),
+      h('p', { style: { fontWeight: 700 } }, 'Bring it back?'),
+      h('div', { class: 'gu-row', style: { justifyContent: 'center', marginTop: '10px' } },
+        h('button', { class: 'btn mint', id: 'cloudYes', onclick: () => { ov.remove(); cloudRestore(got, id); } }, 'Yes, bring it back'),
+        h('button', { class: 'btn panel', id: 'cloudNo', onclick: () => { ov.remove(); S.cloudOff = id; save(); res('kept'); } }, 'No, keep this device'))));
+    document.body.append(ov);
+  });
+}
+/* Runs when we know the name. Never replaces a real game with a blank or older one. */
+function cloudStart() {
+  if (CLOUD.p) return CLOUD.p;
+  const id = cloudId(S.name);
+  if (!id || S.cloudOff === id) return Promise.resolve('off');
+  CLOUD.tried = Date.now();
+  CLOUD.p = (async () => {
+    let got = null;
+    try { got = await cloudFetch(id); } catch (e) { if (e.message !== 'nocode') { CLOUD.err = String(e.message || e); return 'offline'; } }
+    if (!got) { S.cloudCode = id; CLOUD.okId = id; save(); cloudPush(true); return 'linked'; }
+    const mineBlank = blankSave(S), cloudBlank = blankSave(got.save);
+    const newer = got.t > (S.savedAt || 0) + 120000;
+    if (!cloudBlank && (mineBlank || newer)) return cloudAsk(got, id, mineBlank ? 'blank' : 'newer');
+    S.cloudCode = id; CLOUD.okId = id; S.cloudOff = ''; save(); cloudPush(true);
+    return 'linked';
+  })().finally(() => { CLOUD.p = null; });
+  return CLOUD.p;
+}
+
+/* ---------- message box ---------- */
+async function sendMessage(from, text) {
+  const body = JSON.stringify(fsFields({ from: String(from || '').slice(0, 60), text: String(text).slice(0, 2000), game: CLOUD.game, t: Date.now() }));
+  const r = await fetchT(`${CLOUD.base}/messages?key=${CLOUD.key}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }, 9000);
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+}
+function messageBox() {
+  const from = h('input', { class: 'gu-code', maxlength: '60', placeholder: 'Your name (optional)', 'aria-label': 'Your name' });
+  try { from.value = localStorage.getItem('rocketbase_msgfrom') || ''; } catch (e) {}
+  const text = h('textarea', { class: 'gu-text', rows: '4', maxlength: '2000', placeholder: 'Something is broken, a question was wrong, or an idea for the game…', 'aria-label': 'Message' });
+  const left = h('small', { class: 'gu-note' }, '2000 left');
+  const msg = h('p', { class: 'gu-msg' });
+  text.addEventListener('input', () => { left.textContent = (2000 - text.value.length) + ' left'; });
+  const send = h('button', { class: 'btn small mint', id: 'msgSend', onclick: async () => {
+    const t = text.value.trim();
+    if (!t) { msg.textContent = 'Write a message first.'; return; }
+    send.disabled = true; msg.textContent = 'Sending…';
+    try {
+      await sendMessage(from.value.trim() || S.name || '', t);
+      try { localStorage.setItem('rocketbase_msgfrom', from.value.trim()); } catch (e) {}
+      text.value = ''; left.textContent = '2000 left'; msg.textContent = 'Sent! Frank will see it. Thank you.';
+    } catch (e) { msg.textContent = 'Could not send. Check the internet and try again. Your message is still here.'; }
+    send.disabled = false;
+  } }, '✉ Send');
+  return h('div', {}, h('p', { class: 'gu-note' }, 'Tell Frank about a bug, a wrong question, or an idea. It goes straight to him.'), from, text, h('div', { class: 'gu-row', style: { justifyContent: 'space-between', marginTop: '6px' } }, left, send), msg);
+}
+
+/* ---------- cloud save box (grown-ups page) ---------- */
+function cloudBox() {
+  const id = cloudId(S.name);
+  const status = h('p', { class: 'gu-msg', id: 'cloudStatus' });
+  const show = () => {
+    if (!id) status.textContent = 'Cloud save starts once he types his name on the first screen.';
+    else if (S.cloudOff === id) status.textContent = `Cloud save is OFF on this device for ${S.name}, so the saved game in the cloud is safe. Use "Bring back by name" below to turn it on again.`;
+    else if (CLOUD.okId === id && CLOUD.last) status.textContent = `☁ Saved to the cloud at ${new Date(CLOUD.last).toLocaleTimeString()} as ${id}.`;
+    else if (CLOUD.okId === id) status.textContent = `☁ On as ${id}. It saves about 15 seconds after he plays.`;
+    else status.textContent = 'Cloud save is waiting for the internet. The game still saves on this device.';
+  };
+  show();
+  const out = h('div', {}), msg = h('p', { class: 'gu-msg' });
+  const nameIn = h('input', { class: 'gu-code', id: 'cloudName', placeholder: 'His name, e.g. ' + (S.name || 'Ethan'), maxlength: '30', 'aria-label': 'Name to look for' });
+  const find = async () => {
+    const want = cloudId(nameIn.value); out.innerHTML = '';
+    if (!want) { msg.textContent = 'Type the name he used.'; return; }
+    msg.textContent = 'Looking…';
+    let got; try { got = await cloudFetch(want); } catch (e) { msg.textContent = e.message === 'nocode' ? 'No saved game with that name.' : 'Could not reach the cloud. Check the internet.'; return; }
+    msg.textContent = '';
+    const s = got.save;
+    out.append(h('div', { class: 'cloud-found' }, h('b', {}, `${s.name || nameIn.value}: ${s.stars || 0} stars · ${Object.keys(s.items || {}).length} things learned`), h('div', { class: 'gu-note' }, `Saved ${got.t ? new Date(got.t).toLocaleString() : '—'}`),
+      h('div', { class: 'gu-row' }, h('button', { class: 'btn small mint', id: 'cloudBring', onclick: () => { if (confirm('Replace the game on this device with this one? A copy of this device\'s game is kept so you can undo.')) cloudRestore(got, want); } }, 'Bring it back'))));
+  };
+  let pre = null; try { pre = JSON.parse(localStorage.getItem(PRE_KEY) || 'null'); } catch (e) {}
+  const undo = pre ? h('div', { class: 'gu-row', style: { marginTop: '8px' } },
+    h('button', { class: 'btn small panel', id: 'cloudUndo', onclick: () => {
+      if (!confirm(`Go back to the game this device had before (${pre.name || 'Commander'}, ${pre.stars || 0} stars)? Cloud save will stay off for that name.`)) return;
+      pre.cloudOff = cloudId(pre.name); pre.cloudCode = ''; pre.savedAt = Date.now();
+      try { localStorage.setItem(SAVE_KEY, JSON.stringify(pre)); localStorage.removeItem(PRE_KEY); } catch (e) {}
+      location.reload();
+    } }, `↩ Undo last restore (${pre.name || 'Commander'}, ${pre.stars || 0} stars)`)) : null;
+  return h('div', {},
+    h('p', { class: 'gu-note' }, 'His game saves to the cloud by name, about 15 seconds after he plays. On another iPad or computer, he types the same name and taps "Yes, bring it back". It never replaces a real game with an empty or older one.'),
+    status,
+    h('div', { class: 'gu-row' }, h('button', { class: 'btn small mint', id: 'cloudNow', onclick: async () => {
+      if (!id) return; status.textContent = 'Saving…';
+      if (CLOUD.okId !== id) await cloudStart();
+      const ok = await cloudPush(true); if (ok) show(); else status.textContent = CLOUD.okId === id ? 'Could not save. Check the internet.' : (S.cloudOff === id ? 'Cloud save is off for this name.' : 'Could not reach the cloud. Check the internet.');
+    } }, '☁ Save now')),
+    h('h4', { style: { margin: '14px 0 6px' } }, 'Bring back by name'),
+    h('div', { class: 'gu-row' }, nameIn, h('button', { class: 'btn small red', id: 'cloudFind', onclick: find }, 'Find')),
+    msg, out, undo);
 }
 
 /* =========================================================
@@ -4472,6 +4654,7 @@ function toggleLook() {
   if (await restoreFromLink()) return;
   protectStorage();
   hudShow(false);
+  if (S.name) cloudStart();
   const built = STATIONS.filter(s => partBuilt(s.id)).length;
   const nameIn = h('input', { class: 'name-in', id: 'nameIn', type: 'text', maxlength: '16', placeholder: 'Your name', autocomplete: 'off', spellcheck: 'false', 'aria-label': 'Your name' });
   nameIn.value = S.name || '';
@@ -4481,6 +4664,7 @@ function toggleLook() {
     if (!nm) { nameIn.classList.remove('shake'); void nameIn.offsetWidth; nameIn.classList.add('shake'); nameIn.focus(); SFX.no(); return; }
     S.name = nm.charAt(0).toUpperCase() + nm.slice(1);
     S.settings.music = !quiet.checked; save();
+    await cloudStart(); // may offer to bring back a saved game for this name
     audioInit(); if (!S.settings.music) musicStop(); else musicStart();
     tc.remove(); try { speechSynthesis.getVoices(); } catch (e) {} SFX.win();
     if (!S.story.intro) { await opening(); if (!S.story.toured) await baseTour(); }
