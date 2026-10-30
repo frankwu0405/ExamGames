@@ -151,3 +151,5 @@ body.aim .task-prompt { font-size: clamp(15px, 2vw, 18px); }
 .kcard-img { border-radius: 6.5% / 4.3%; }
 .after { position: fixed; inset: 0; z-index: 46; display: grid; place-items: center; background: rgba(6,7,13,.55); }
 .after .mode-card { text-align: center; }
+.backup { margin-top: 10px; padding-top: 8px; border-top: 2px dashed #CFC8B0; } .backup-note { font-size: 14px; color: #5D5876; text-align: center; }
+.tile.small { font-size: 20px; padding: 4px 12px; } .tile:disabled { opacity: .35; }

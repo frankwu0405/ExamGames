@@ -149,7 +149,7 @@ export async function stop2() {
   ]);
   tell(sw.text, { wait: false });
   tween(800, e => { c.spot.intensity = 60 * (1 - e * 0.8); });
-  await flyCam([0.7, 1.7, 6.4], [1.0, 3.3, -2.2], 1100);
+  await flyCam([0.6, 3.1, 7.6], [1.1, 2.6, -2.2], 1100);
   const shakeRocks = onTick(t => c.loose.forEach((r, i) => { if (!r.userData.fell) { r.rotation.z = Math.sin(t * 22 + i) * 0.08; r.rotation.x = Math.cos(t * 19 + i) * 0.06; } }));
   let rain = true; (async () => { while (rain) { c.drop(-4 + Math.random() * 9, -7 + Math.random() * 6, 0.2 + Math.random() * 0.15, 6.8, () => sfx('crash')); await wait(900 + Math.random() * 700); } })();
   const path = [[0.9, 0, -2.0], [1.6, 0, -1.4], [2.2, 0, -0.9], [2.6, 0, -0.5], [2.9, 0, -0.3]];
@@ -167,15 +167,15 @@ export async function stop2() {
   if (sw.word === 'cart') await earnCard('cart');
   // Leo runs for the cart — a big stalactite crashes down between them
   tell('But Leo was left behind on the stone floor as the cart began to roll!', { wait: false });
-  await flyCam([-2.5, 2.4, 3.5], [2.5, 0.8, -2], 900);
+  await flyCam([5.2, 2.6, 3.6], [1.6, 0.8, -1.2], 900);
   run(leo, [0.6, 0, -1.6], 900);
   const big = c.stal.slice().sort((a, b) => a.position.distanceTo(new THREE.Vector3(1.6, 6, -1.2)) - b.position.distanceTo(new THREE.Vector3(1.6, 6, -1.2)))[0];
-  big.position.set(1.6, big.position.y, -1.2);
+  big.position.set(1.3, big.position.y, -1.9);
   await wait(500); sfx('whoosh');
   await tween(450, e => { big.position.y = 7 - e * (7 - big.userData.h / 2 + 0.2); });
-  sfx('crash'); quake(0.9, 0.3); sparkles(new THREE.Vector3(1.6, 0.4, -1.2), 0x9A9EAC, 30); leo.pose('scared');
+  sfx('crash'); quake(0.9, 0.3); sparkles(new THREE.Vector3(1.3, 0.4, -1.9), 0x9A9EAC, 30); leo.pose('scared');
   // the cart rolls down the curved track and into the dark tunnel
-  await wait(600); flyCam([-0.6, 2.4, 2.0], [5.5, 0.4, -8], 1400);
+  await wait(600); flyCam([4.4, 2.8, 2.2], [6.2, 0.4, -9], 1600);
   sfx('clack'); let k = 0.1;
   await tween(2400, e => { k = 0.1 + e * e * 0.9; c.placeCart(k); });
   await tapOn();
@@ -189,8 +189,9 @@ export async function stop3() {
   let s = 0.0, speed = 0, target = 0;
   const behind = new THREE.Vector3(), ahead = new THREE.Vector3();
   followCam(() => { const f = T.frame(Math.min(s, 0.985)), b = T.frame(Math.max(0, s - 0.018));
-    behind.copy(b.p).addScaledVector(f.side, 0.3).setY(b.p.y - 0.4); ahead.copy(T.frame(Math.min(0.99, s + 0.02)).p).setY(f.p.y - 1.9); return [behind, ahead]; });
-  onTick((t, dt) => { speed += (target - speed) * Math.min(1, dt * 1.5); s = Math.min(0.985, s + speed * dt / T.L); T.placeAt(s); });
+    behind.copy(b.p).addScaledVector(f.side, 0.3).setY(b.p.y + 0.35); ahead.copy(T.frame(Math.min(0.99, s + 0.02)).p).setY(f.p.y - 2.1); return [behind, ahead]; });
+  let riding = true;
+  onTick((t, dt) => { if (!riding) return; speed += (target - speed) * Math.min(1, dt * 1.5); s = Math.min(0.985, s + speed * dt / T.L); T.placeAt(s); });
   const rideTo = async to => { target = 15; while (s < to - 0.004) await wait(40); target = 0; await wait(500); };
   // forks: pick the sign with the right word. Replays draw other sentences (some need -est, some -er).
   const FORKS = [
@@ -207,11 +208,11 @@ export async function stop3() {
   if (v === 0) tell(forks[0].text, { wait: false });
   await rideTo(0.08);
   const fork = async (j, f, showText) => {
-    target = 11; while (s < T.junctions[j].s - 0.03) await wait(40); target = 0;
+    target = 11; while (s < T.junctions[j].s - 0.085) await wait(30); target = 3; while (s < T.junctions[j].s - 0.05) await wait(30); target = 0; speed = Math.min(speed, 1.5);
     const jn = T.junctions[j]; const ord = Math.random() < 0.5 ? f.words : f.words.slice().reverse();
     jn.signs.forEach((b, i) => { const mt = new THREE.MeshBasicMaterial({ map: textTexture(ord[i], { bg: '#F4E1B5', w: 512, h: 190, font: '92px Chewy, sans-serif' }) }); b.material = [toon(0xC9A46A), toon(0xC9A46A), toon(0xC9A46A), toon(0xC9A46A), mt, mt]; b.userData.word = ord[i]; });
     await wait(300); if (showText) tell(f.text, { wait: false });
-    await pick3D({ prompt: 'Tap the right sign!', targets: jn.signs.map(b => ({ id: b.userData.word, obj: b })), answer: f.answer, hints: f.hints, word: f.answer,
+    await pick3D({ backupWords: true, prompt: 'Tap the right sign!', targets: jn.signs.map(b => ({ id: b.userData.word, obj: b })), answer: f.answer, hints: f.hints, word: f.answer,
       onWrong: () => { quake(0.5, 0.12); sfx('crash'); } });
     sfx('clack'); await filled(f.answer);
   };
@@ -246,7 +247,7 @@ export async function stop3() {
     star(3);
   }
   tell(hv.after, { wait: false });
-  sfx('fall'); const p0 = T.rider.position.clone(), hp = T.hole.position;
+  riding = false; sfx('fall'); const p0 = T.rider.position.clone(), hp = T.hole.position;
   await tween(1700, e => { T.rider.position.set(p0.x + (hp.x - p0.x) * Math.min(1, e * 1.6), p0.y - e * e * 9, p0.z + (hp.z - p0.z) * Math.min(1, e * 1.6)); T.rider.rotation.x = e * 0.8; });
   await tapOn();
   hideStory(); finish(3);

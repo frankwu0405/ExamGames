@@ -66,6 +66,11 @@ function task(prompt, ...body) {
 }
 export const hideTask = () => { taskEl.classList.add('hidden'); taskEl.innerHTML = ''; tobyHide(); document.body.classList.remove('aim'); };
 const aimMode = () => document.body.classList.add('aim');
+// Failsafe: if something in the scene is hard to reach, the same choices appear as buttons in the card after a few seconds.
+function backup(list, delay = 6000) {
+  const box = h('div', { class: 'backup hidden' }, h('div', { class: 'backup-note' }, 'Hard to reach? Tap here:'), h('div', { class: 'tiles' }, ...list.map(it => { const b = h('button', { class: 'tile small', onclick: () => it.go(b) }, it.label); it.btn = b; return b; })));
+  const tm = setTimeout(() => box.classList.remove('hidden'), delay); box.stop = () => clearTimeout(tm); return box;
+}
 export function toby(text, mood = '') {
   tobyEl.innerHTML = ''; tobyEl.className = 'toby-hint ' + mood;
   tobyEl.append(h('div', { class: 'toby-face', html: TOBY_SVG }), h('div', { class: 'toby-say' }, text)); say(text);
@@ -105,9 +110,10 @@ export function chooseWord({ prompt, sentence, tiles, answer, hints = [], base =
 }
 
 // ---------------------------------------------------------------- activity: tap something in the 3D scene
-export function pick3D({ prompt, targets, answer, hints = [], word, onWrong, onHover }) {
+export function pick3D({ prompt, targets, answer, hints = [], word, onWrong, onHover, backupWords = false }) {
   return new Promise(res => { aimMode();
-    task(prompt);
+    const bk = backupWords ? backup(targets.map(t => ({ label: t.id, go: () => { if (t.id === answer) good(t.obj); else { sfx('bad'); onWrong && onWrong(t.id); L.wrong(() => good(a0())); } } }))) : null;
+    task(prompt, bk);
     const L = ladder(hints, word);
     const objs = targets.map(t => t.obj);
     const click = async e => {
@@ -133,12 +139,13 @@ export function spellOn({ prompt, word, objs, decoys = '', hints = [], sentence,
       const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: textTexture(letters[i], { w: 128, h: 128, font: '96px Chewy, sans-serif', bg: null, fg: '#FFFDF4', glow: '#2E2A4F' }), depthTest: false }));
       tag.scale.setScalar(1.1); o.add(tag); tag.position.set(0, 0, 0.8); tag.userData.letter = letters[i]; tag.userData.owner = o; tags.push(tag);
     });
-    task(prompt, sentence ? h('div', { class: 'task-sentence' }, sentence) : null, slots);
+    const bk = backup(tags.map(tag => ({ label: tag.userData.letter, go: b => take(tag) })));
+    task(prompt, sentence ? h('div', { class: 'task-sentence' }, sentence) : null, slots, bk);
     // she taps the letter itself (the sprite), so a rock in front can never steal the tap
     const take = async (tag, point) => {
       if (!tag || tag.userData.used || at >= word.length) return;
       if (tag.userData.letter === word[at].toUpperCase()) {
-        sfx('pop'); tag.userData.used = true; tag.material.opacity = 0.25; if (onLetter) { tag.visible = false; onLetter(tag.userData.owner, at); } slots.children[at].textContent = tag.userData.letter; slots.children[at].classList.add('in'); at++;
+        sfx('pop'); tag.userData.used = true; tag.material.opacity = 0.25; const bb = bk.querySelectorAll('.tile')[tags.indexOf(tag)]; if (bb) bb.disabled = true; if (onLetter) { tag.visible = false; onLetter(tag.userData.owner, at); } slots.children[at].textContent = tag.userData.letter; slots.children[at].classList.add('in'); at++;
         if (at === word.length) { renderer.domElement.removeEventListener('pointerup', click); tags.forEach(t => t.parent && t.parent.remove(t)); sparkles(point || tag.getWorldPosition(new THREE.Vector3())); slots.classList.add('right'); await win(); hideTask(); res({ first: L.first }); }
       } else {
         sfx('bad'); shake(slots);
@@ -297,7 +304,8 @@ export function tapAll({ prompt, items, hints = [], word, onRight }) {   // item
   return new Promise(res => { aimMode();
     const need = items.filter(i => i.ok).length; let got = 0; const L = ladder(hints, word);
     const count = h('div', { class: 'tap-count' }, `0 / ${need}`);
-    task(prompt, count);
+    const bk = backup(items.map(it => ({ label: it.label, go: b => { if (it.ok && !it.done) b.disabled = true; take(it); } })), 9000);
+    task(prompt, count, bk);
     const objs = items.map(i => i.obj);
     const take = async it => {
       if (!it || it.done) return;

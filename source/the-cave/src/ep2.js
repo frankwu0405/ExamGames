@@ -17,7 +17,7 @@ export async function stop4() {
   playMusic('danger');
   const D = buildShaft(); const { mia, toby: dog } = D.R.cast; let y = 0, vy = 0, g = 0;
   const cam = new THREE.Vector3(), look = new THREE.Vector3();
-  followCam(() => { cam.set(2.4, y + 2.6, 3.4); look.set(0, y - 0.8, 0); return [cam, look]; });
+  followCam(() => { cam.set(2.6, y + 1.5, 4.6); look.set(0, y + 0.4, -0.6); return [cam, look]; });
   onTick((t, dt) => { vy = Math.min(vy + g * dt, 30); y = Math.max(D.BOTTOM + 0.05, y - vy * dt); D.R.g.position.y = y; D.R.g.rotation.z = Math.sin(t * 7) * 0.04 * Math.min(1, vy / 10); });
   mia.pose('scared'); dog.pose('bark'); sfx('fall'); g = 18; D.wind.speed = 16;
   // ---- the gap sentence (rotates on replays), then everything slows down: glowing pebbles float by with letters
@@ -42,13 +42,13 @@ export async function stop4() {
   tell('But BANG! The cart did not crash. It landed on a hidden track.', { wait: false });
   mia.pose('hold'); dog.pose('idle'); await wait(900);
   // racing along the new track; Mia looks back — no Leo
-  let z = 0, sp2 = 0; stopFollow(); const off = onTick((t, dt) => { sp2 = Math.min(sp2 + dt * 9, 16); z -= sp2 * dt; if (z < -52) z = -52; D.R.g.position.z = z; D.R.g.rotation.y = 0; });
-  D.R.g.rotation.y = 0;
+  let z = 0, sp2 = 0; stopFollow(); const off = onTick((t, dt) => { sp2 = Math.min(sp2 + dt * 9, 16); z -= sp2 * dt; if (z < -52) z = -52; D.R.g.position.z = z; D.R.g.rotation.y = Math.PI; });
+  D.R.g.rotation.y = Math.PI; mia.g.rotation.y = 0;
   followCam(() => { cam.set(1.6, D.BOTTOM + 2.2, z + 4.2); look.set(0, D.BOTTOM + 0.8, z - 3); return [cam, look]; });
   await tapOn();
   tell('The new track was much faster than the old one. Mia looked back, but Leo was not there.', { wait: false });
-  await wait(1500); followCam(() => { cam.set(0.4, D.BOTTOM + 1.9, z - 3.2); look.set(0, D.BOTTOM + 1.4, z); return [cam, look]; });
-  mia.head.rotation.y = 0; await tween(700, e => { mia.head.rotation.y = e * 0.9; }); mia.pose('idle');
+  await wait(1500); followCam(() => { cam.set(2.3, D.BOTTOM + 1.9, z - 0.6); look.set(0, D.BOTTOM + 1.3, z + 0.2); return [cam, look]; });
+  await wait(500); mia.pose('idle'); await tween(900, e => { mia.g.rotation.y = e * Math.PI * 0.85; }); mia.pose('point'); await wait(500); mia.pose('scared');
   await tapOn();
   // ---- feelings and predictions (reading between the lines)
   await think(pickV(4, [
@@ -56,6 +56,7 @@ export async function stop4() {
     { prompt: 'What will Mia want to do next?', options: ['Find Leo', 'Take a nap', 'Eat a snack'], answer: 'Find Leo', hints: ['Who is missing?'] },
     { prompt: 'Why did Mia look back?', options: ['To see if Leo was there', 'To see the stars', 'To find her shoes'], answer: 'To see if Leo was there', hints: ['Who was left behind?'] },
   ]));
+  tween(700, e => { mia.g.rotation.y = Math.PI * 0.85 * (1 - e); }).then(() => mia.pose('hold'));
   if (await offerStretch('A word that does not use -ed.')) {
     await chooseWord(pickV(4, [
       { prompt: 'Bonus! Pick the right word.', sentence: 'Mia and Toby {_} down into the pit.', tiles: ['falled', 'fell', 'fall'], answer: 'fell', note: 'fall → fell', hints: ['falled is not a word!', 'fall, fell.'] },
@@ -158,7 +159,7 @@ export async function stop6() {
   drift = 0.9; while (z > -11) await wait(40); drift = 0;
   tell('“Look!” Mia said to the puppy. “That is Leo!” He was drifting in the water on a floating log. Mia paddled the cart over to fetch him.', { wait: false });
   V.paddle.visible = true; mia.pose('reach');
-  await pick3D({ prompt: ch.clue, targets: V.gates.map(g => ({ id: g.userData.word, obj: g.userData.board })), answer: ch.answer, hints: ch.hints, word: 'swift' });
+  await pick3D({ backupWords: true, prompt: ch.clue, targets: V.gates.map(g => ({ id: g.userData.word, obj: g.userData.board })), answer: ch.answer, hints: ch.hints, word: 'swift' });
   const gi = ord.indexOf(ch.answer); tx = V.gates[gi].position.x;
   // paddling: the paddle swings, the cart goes down the right channel to Leo
   const row = onTick(t => { mia.AR.rotation.x = -0.6 + Math.sin(t * 6) * 0.7; });

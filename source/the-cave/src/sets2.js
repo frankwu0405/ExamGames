@@ -82,7 +82,7 @@ export function buildCrystal() {
   // the platform at the end, with eight big crystals around it (they will carry words)
   const end = path.getPointAt(1); b.cyl(3.2, 3.4, 0.4, 0x2E4A3E, end.x, -0.25, end.z - 1.5, { line: 0.04 });
   const big = [];
-  for (let i = 0; i < 8; i++) { const side = i < 4 ? -1 : 1, k = i % 4; const x = side * (3.4 + (k % 2) * 2.2), z = Zc + 12 - k * 2.4;
+  for (let i = 0; i < 8; i++) { const side = i < 4 ? -1 : 1, k = i % 4; const x = side * (4.6 + (k % 2) * 2.0) + 1.2, z = Zc + 3 - k * 2.6;
     const g = new THREE.Group(); g.position.set(x, -0.6, z); w.add(g); const m = builder(g).add(new THREE.OctahedronGeometry(0.9), toon(GREEN, { emissive: 0x1FA85A, emissiveIntensity: 0.4 }), 0, 1.9, 0, { line: 0.04 }); m.scale.y = 2.2; g.userData.crystal = m; big.push(g); }
   return { w, path, L, frame, place, R, sA, sB, big, end };
 }
