@@ -1,5 +1,5 @@
 // The Cave — Leo, Mia and Toby's voyage. Title → journey map → stops.
-import { S, load, save, audioInit, sfx, say, h, $, wait } from './core.js';
+import { S, load, save, audioInit, sfx, say, h, $, wait, englishVoices, setVoice, currentVoice } from './core.js';
 import { init, camera, setCam, flyCam, pickAt, renderer, onTick, stopFollow, THREE } from './gfx.js';
 import { buildMap, STOPS, setCamRef } from './sets.js';
 import { mountUI, openBinder, hideStory, hideTask } from './ui.js';
@@ -13,8 +13,22 @@ function buildHud(mode) {
   const readBtn = h('button', { class: 'hud-btn', onclick: () => { S.settings.read = !S.settings.read; save(); readBtn.textContent = S.settings.read ? '🔊 Read to me' : '🔈 Reading off'; sfx('tap'); } }, S.settings.read ? '🔊 Read to me' : '🔈 Reading off');
   hud = h('div', { class: 'hud' },
     mode === 'stop' ? h('button', { class: 'hud-btn', onclick: () => { sessionStorage.setItem('cave_skipTitle', '1'); location.reload(); } }, '🗺 Map') : h('button', { class: 'hud-btn', onclick: () => { sfx('tap'); openBinder(); } }, '🃏 Word cards ' + Object.keys(S.cards).length + '/4'),
-    readBtn);
+    h('div', { class: 'hud-right' }, mode === 'map' ? h('button', { class: 'hud-btn', onclick: () => { sfx('tap'); voicePanel(); } }, '🗣 Voice') : null, readBtn));
   document.body.append(hud);
+}
+
+// Choose the reading voice. The best one on this device is picked automatically and starred.
+function voicePanel() {
+  const vs = englishVoices(), cur = currentVoice();
+  const list = h('div', { class: 'voice-list' }, ...vs.slice(0, 14).map((v, i) => h('button', { class: 'voice-row' + (cur && cur.name === v.name ? ' on' : ''), onclick: () => {
+    setVoice(v.name); list.querySelectorAll('.voice-row').forEach(b => b.classList.remove('on')); list.children[i].classList.add('on'); say('Leo and Mia were playing in the bright sun with Toby the puppy.', { force: true }); } },
+    h('b', {}, (i === 0 ? '★ ' : '') + v.name.replace(/^Microsoft |\s*-\s*English.*$| Online \(Natural\)/g, m => m.includes('Natural') ? ' (natural)' : '')), h('small', {}, v.lang))));
+  const ov = h('div', { class: 'binder', onclick: e => { if (e.target === ov) ov.remove(); } }, h('div', { class: 'binder-page voice-page' },
+    h('button', { class: 'btn ghost close', onclick: () => ov.remove() }, '✕'), h('h2', {}, 'Reading voice'),
+    h('div', { class: 'binder-sub' }, vs.length ? 'Tap a voice to hear it. ★ is the best one found on this device.' : 'No voices found on this device yet.'),
+    h('button', { class: 'voice-row' + (!S.settings.voice ? ' on' : ''), onclick: () => { setVoice(''); ov.remove(); say('I will use the best voice on this device.', { force: true }); } }, h('b', {}, 'Automatic (best voice)')),
+    list, h('p', { class: 'voice-tip' }, 'Tip: Microsoft Edge has very natural voices (like Aria or Jenny). On iPad, you can download better voices in Settings → Accessibility → Spoken Content → Voices.')));
+  document.body.append(ov);
 }
 
 async function showMap(focusNext = true) {

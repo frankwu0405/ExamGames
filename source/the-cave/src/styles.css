@@ -116,3 +116,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .title-sub { position: relative; color: var(--paper); font-size: 22px; margin-bottom: 18px; }
 .title-note { color: var(--gold); font-size: 18px; min-height: 1em; }
 @media (max-width: 600px) { .story { padding: 14px 54px 14px 50px; } .kcard { width: 150px; } .kcard-art { height: 92px; } .toby-hint { bottom: 190px; } }
+.hud-right { display: flex; gap: 8px; }
+.voice-page { max-width: 560px; } .voice-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.voice-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 14px; background: #FFF6E2; color: var(--ink); border: 3px solid var(--ink); border-radius: 12px; font-size: 17px; }
+.voice-row.on { background: var(--gold); } .voice-row small { opacity: .7; } .voice-tip { font-size: 15px; opacity: .85; margin-top: 14px; }

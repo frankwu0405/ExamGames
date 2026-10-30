@@ -56,13 +56,22 @@ export function sfx(name) {
 
 // ---------------------------------------------------------------- speech
 let voice = null;
+// Rank voices: natural/neural online voices (Edge), Apple Premium/Enhanced, Google, then the rest. Novelty voices last.
+const NOVELTY = /Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Good News|Jester|Organ|Superstar|Trinoids|Whisper|Wobble|Zarvox|Fred|Junior|Ralph|Kathy|Grandma|Grandpa|Eddy|Flo|Reed|Rocko|Sandy|Shelley/i;
+export function voiceScore(v) {
+  const n = v.name; let s = 0;
+  if (/^en[-_]US/i.test(v.lang)) s += 3; else if (/^en[-_](GB|AU|CA|IE|NZ)/i.test(v.lang)) s += 2;
+  if (/Natural|Neural/i.test(n)) s += 20; if (/Premium/i.test(n)) s += 16; if (/Enhanced/i.test(n)) s += 13;
+  if (/Google US English/i.test(n)) s += 9; else if (/Google/i.test(n)) s += 6;
+  if (/Aria|Jenny|Ava|Emma|Michelle|Samantha|Allison|Libby|Sonia/i.test(n)) s += 4;
+  if (NOVELTY.test(n)) s -= 40;
+  return s;
+}
+export function englishVoices() { return ((window.speechSynthesis && speechSynthesis.getVoices()) || []).filter(v => /^en(-|_)/i.test(v.lang)).sort((a, b) => voiceScore(b) - voiceScore(a)); }
 function pickVoice() {
   const vs = (window.speechSynthesis && speechSynthesis.getVoices()) || [];
   if (S.settings.voice) { const v = vs.find(v => v.name === S.settings.voice); if (v) return (voice = v); }
-  const en = vs.filter(v => /^en(-|_)/i.test(v.lang));
-  const pref = ['Samantha', 'Google US English', 'Microsoft Aria', 'Microsoft Jenny', 'Microsoft Ava', 'Ava', 'Allison', 'Microsoft Zira', 'Karen', 'Google UK English Female'];
-  for (const p of pref) { const v = en.find(v => v.name.includes(p)); if (v) return (voice = v); }
-  voice = en.find(v => /en-US/i.test(v.lang)) || en[0] || null; return voice;
+  voice = englishVoices()[0] || null; return voice;
 }
 if (window.speechSynthesis) speechSynthesis.onvoiceschanged = pickVoice;
 let speakToken = 0;
@@ -96,3 +105,5 @@ export const $ = (s, r = document) => r.querySelector(s);
 export const wait = ms => new Promise(r => setTimeout(r, ms));
 export const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 export function shake(el) { el.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-9px)' }, { transform: 'translateX(9px)' }, { transform: 'translateX(0)' }], { duration: 300 }); }
+export function setVoice(name) { S.settings.voice = name; save(); voice = null; pickVoice(); }
+export const currentVoice = () => { if (!voice) pickVoice(); return voice; };
