@@ -63,10 +63,11 @@ function animate(c, kind) {
     if (s === 'reach') { c.AR.rotation.x = -1.5; c.AL.rotation.x = -0.3; }
     if (s === 'point') { c.AR.rotation.x = -1.6; }
     if (s === 'hold') { c.AR.rotation.x = c.AL.rotation.x = -1.1; c.AR.rotation.z = 0.35; c.AL.rotation.z = -0.35; }
+    if (s === 'hide') { c.AR.rotation.x = c.AL.rotation.x = 0.75; c.AR.rotation.z = -0.35; c.AL.rotation.z = 0.35; }
     if (s === 'sit') { c.L.rotation.x = c.R.rotation.x = -1.4; }
     c.head.rotation.z = s === 'idle' ? Math.sin(t * 1.5 + c.t0) * 0.05 : 0;
     c.head.position.y = 1.32 + (run ? Math.abs(Math.sin(k)) * 0.04 : 0);
-    c.mouth.scale.y = s === 'scared' ? -1 : 1;
+    c.mouth.scale.y = s === 'scared' || s === 'hide' ? -1 : 1;
   };
   onTick(c.tick);
   return c;

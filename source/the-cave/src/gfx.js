@@ -64,7 +64,8 @@ export function init(container) {
 }
 // Swap to a new place: clear the old world, set sky / fog / light.
 export function newWorld({ sky = 0x9FD8F5, fog = null, ambient = 0xffffff, ambientI = 1.6, sun = 0xffffff, sunI = 1.6, sunPos = [8, 14, 6] } = {}) {
-  ticks.clear(); ticks.add(camTick);
+  ticks.clear(); ticks.add(camTick); document.body.classList.remove('cine'); const fr = document.querySelector('.frost'); if (fr) { fr.style.transition = 'none'; fr.style.opacity = 0; }
+  if (camera.fov !== 50) { camera.fov = 50; camera.updateProjectionMatrix(); }
   scene.remove(world); world.traverse(o => { if (o.geometry && !o.userData.isOutline) o.geometry.dispose(); });
   world = new THREE.Group(); scene.add(world);
   scene.background = new THREE.Color(sky); scene.fog = fog ? new THREE.Fog(fog[0], fog[1], fog[2]) : null;
@@ -77,18 +78,24 @@ export function newWorld({ sky = 0x9FD8F5, fog = null, ambient = 0xffffff, ambie
 let camMove = null;
 const ease = k => k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
 export function setCam(pos, target) { camMove = null; camera.position.set(...pos); lookAt.set(...target); camera.lookAt(lookAt); }
-export function flyCam(pos, target, ms = 1400) {
+export function flyCam(pos, target, ms = 1400, { linear = false, fov = null } = {}) {
   return new Promise(res => {
     const p0 = camera.position.clone(), l0 = lookAt.clone(), p1 = new THREE.Vector3(...pos), l1 = new THREE.Vector3(...target);
-    camMove = { p0, l0, p1, l1, t0: performance.now(), ms, res };
+    camMove = { p0, l0, p1, l1, t0: performance.now(), ms, res, linear, f0: camera.fov, f1: fov };
   });
 }
+// cinematic helpers: a hard cut, a slow drift (does not block), a lens change
+export function cut(pos, target, fov = 50) { follow = null; setCam(pos, target); camera.fov = fov; camera.updateProjectionMatrix(); }
+export function dolly(pos, target, ms = 6000, fov = null) { follow = null; flyCam(pos, target, ms, { linear: true, fov }); }
+export function lens(fov, ms = 800) { const f0 = camera.fov; return tween(ms, e => { camera.fov = f0 + (fov - f0) * e; camera.updateProjectionMatrix(); }); }
+export const camLook = () => lookAt.clone();
 let follow = null;   // () => [pos, target]  (camera tracks something every frame)
 export const followCam = f => { follow = f; camMove = null; };
 function camTick() {
   if (camMove) {
-    const k = Math.min(1, (performance.now() - camMove.t0) / camMove.ms), e = ease(k);
+    const k = Math.min(1, (performance.now() - camMove.t0) / camMove.ms), e = camMove.linear ? (k * k * (3 - 2 * k) * 0.35 + k * 0.65) : ease(k);
     camera.position.lerpVectors(camMove.p0, camMove.p1, e); lookAt.lerpVectors(camMove.l0, camMove.l1, e); camera.lookAt(lookAt);
+    if (camMove.f1) { camera.fov = camMove.f0 + (camMove.f1 - camMove.f0) * e; camera.updateProjectionMatrix(); }
     if (k >= 1) { const r = camMove.res; camMove = null; r(); }
   } else if (follow) { const [p, l] = follow(); camera.position.lerp(p, 0.12); lookAt.lerp(l, 0.15); camera.lookAt(lookAt); }
 }

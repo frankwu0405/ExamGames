@@ -171,3 +171,8 @@ body.aim .task-prompt { font-size: clamp(15px, 2vw, 18px); }
 .spy-ring.on { border-color: var(--gold); }
 .spy-tap { position: absolute; left: 50%; top: calc(50% + 34vmin); transform: translateX(-50%); font-family: var(--display); font-size: 30px; color: var(--gold); opacity: 0; transition: opacity .2s; pointer-events: none; text-shadow: 2px 2px 0 var(--ink); }
 .spy-tap.on { opacity: 1; } .spy.done .spy-mask { opacity: 0; } .spy.done .spy-ring { opacity: 0; transition: opacity .5s; }
+/* cinematic letterbox bars and frost creeping in at the screen edges */
+body::before, body::after { content: ''; position: fixed; left: 0; right: 0; height: 0; background: #05060B; z-index: 12; pointer-events: none; transition: height .9s cubic-bezier(.6,0,.3,1); }
+body::before { top: 0; } body::after { bottom: 0; }
+body.cine::before, body.cine::after { height: 10vh; }
+.frost { position: fixed; inset: 0; z-index: 11; pointer-events: none; opacity: 0; background-size: 100% 100%, 100% 100%; mix-blend-mode: screen; }

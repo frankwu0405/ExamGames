@@ -1,6 +1,8 @@
 // Episode 4 — The Lost Island. Stops 10–12. Frank's text word for word; each line read once; replays rotate.
 import { S, save, sfx, wait, h, shuffle } from './core.js';
-import { THREE, setCam, flyCam, followCam, stopFollow, quake, tween, moveTo, onTick, sparkles, camera } from './gfx.js';
+import { THREE, setCam, flyCam, followCam, stopFollow, quake, tween, moveTo, onTick, sparkles, camera, scene, cut, dolly, lens } from './gfx.js';
+import { letterbox, frost, mist, fogThicken, iceSpread, snow } from './effects.js';
+import { makeVarn } from './varn.js';
 import { buildIslandTop, buildDigBeach, buildClearSea } from './sets4.js';
 import { tell, tapOn, filled, hideStory, chooseWord, pick3D, spellOn, order, think, offerStretch, earnCard, toby, spyglass, MODE } from './ui.js';
 import { playMusic } from './music.js';
@@ -154,27 +156,35 @@ export async function stop12() {
   await filled('sign'); await earnCard('sign');
   await think({ prompt: 'What does KEEP OUT mean?', options: ['Do not come in here', 'Please come in', 'Keep the boat'], answer: 'Do not come in here', hints: ['Out is the opposite of in.'] });
   // ---- the cold, the fog, the ice… and the shadow
-  playMusic('cave');
-  followCam(() => { cam.set(B.g.position.x + 3.5, 3.4, z + 7.5); look.set(B.g.position.x, 0.6, z - 6); return [cam, look]; });
+  playMusic('cave'); letterbox(true);
+  const bx = () => B.g.position.x;
+  // a wall of grey fog rolls over the sea and swallows the town
+  const wall = mist(C.w, { count: 46, center: new THREE.Vector3(bx(), 0, z - 75), spread: 42, y: [0.5, 10], size: [16, 28], color: 0xD3DAE4, opacity: 0.9, drift: 0.2 });
+  wall.show(1, 2500); wall.rollTo(new THREE.Vector3(bx(), 0, z - 10), 0.12);
+  followCam(() => { cam.set(B.g.position.x + 3, 2.2, z + 9); look.set(B.g.position.x - 1, 2.6, z - 40); return [cam, look]; });
   sp = 2; tell('They were drifting closer to the Ferris wheel when the water suddenly turned freezing cold. A thick, grey fog rolled in, hiding the town from view.', { wait: false });
-  C.fogs.forEach((m, i) => { const a = Math.random() * Math.PI * 2, r = 14 + Math.random() * 18; m.position.set(Math.cos(a) * r, 1.5 + Math.random() * 2, z - 20 + Math.sin(a) * r); });
-  const p0 = camera.position.clone();
-  await tween(3600, e => { C.fogMat.opacity = e * 0.9; C.fogs.forEach(m => { m.position.lerp(new THREE.Vector3(B.g.position.x, m.position.y, z - 6), 0.004); }); });
-  [leo, mia].forEach(c => c.pose('scared')); await tapOn();
+  fogThicken(scene, { near: 16, far: 75, color: 0xB4C0CE, ms: 6000 }); frost(0.4, 5000);
+  await wait(5000); [leo, mia].forEach(c => c.pose('scared')); await tapOn();
   // ---- shades of cold: put the words in order
   await order({ prompt: 'Put the words in order. A little cold first, the coldest last.', items: ['cool', 'cold', 'freezing', 'frozen'], labels: ['a little cold', 'coldest 🧊'], hints: ['Cool is just a little cold.', 'Frozen means it turned to ice!'] });
-  // the water freezes; the cart is stuck
-  sp = 0; tell('Suddenly, the water ahead of them froze into solid ice, and their little wooden cart got stuck right in place!', { wait: false });
-  C.ice.forEach(m => m.position.z += z - 4); sfx('crash');
-  for (const m of C.ice) { tween(500, e => m.scale.setScalar(Math.max(0.001, e))); sfx('clack'); await wait(70); }
-  quake(0.6, 0.12); B.wind.k = 0.1; await tapOn();
-  // bubbles… a glowing shadow rises
+  // the sea freezes ahead of them and races towards the boat
+  sp = 0.8; letterbox(true); stopFollow();
+  tell('Suddenly, the water ahead of them froze into solid ice, and their little wooden cart got stuck right in place!', { wait: false });
+  const iceAt = new THREE.Vector3(bx(), 0, z - 16); const sheet = iceSpread(C.w, iceAt, { radius: 46, y: 0.12 }); sheet.m.material.opacity = 0.62;
+  cut([bx() + 9, 2.4, z - 5], [bx() - 1, 0.2, z - 9], 50); dolly([bx() + 8, 2.8, z - 3.5], [bx() - 1, 0.2, z - 8], 4000);
+  sfx('crash'); frost(0.65, 2500); let stuck = false;
+  await sheet.grow(2800, r => { if (!stuck && r > 15.5) { stuck = true; sp = 0; quake(0.7, 0.15); sfx('clack'); B.wind.k = 0.1; } if (Math.random() < 0.12) { sfx('clack'); const a = Math.random() * Math.PI * 2; sheet.spike(new THREE.Vector3(iceAt.x + Math.cos(a) * r * 0.9, 0, iceAt.z + Math.sin(a) * r * 0.9), 0.6 + Math.random()); } });
+  sp = 0; snow(C.w, { center: new THREE.Vector3(bx(), 0, z), area: 40, size: 0.14, fall: 0.3 }).show(0.8, 1500);
+  await flyCam([bx() + 4, 3.2, z + 6], [bx(), 0.6, z - 2], 1800);
+  await tapOn();
+  // bubbles… a huge glowing shape rises under the ice
   playMusic('danger');
   tell('Then, the dark water began to bubble. A massive, glowing shadow started to rise from the deep water in front of them...', { wait: false });
-  C.bubbles.position.set(B.g.position.x, 0, z); C.bubbles.visible = true; C.shadow.visible = true; C.shadow.position.set(B.g.position.x, -9, z - 16);
-  stopFollow(); await flyCam([B.g.position.x + 2, 2.4, z + 5], [B.g.position.x, 0, z - 14], 1200);
+  C.bubbles.position.set(bx(), 0, z); C.bubbles.visible = true;
+  const V = makeVarn(C.w); V.g.position.set(bx(), -9.5, z - 2); V.set('swim'); V.state.glow = 2.4; V.state.sway = 0.6;
+  letterbox(true); cut([bx() + 2.4, 5.5, z + 7], [bx(), -2, z - 13], 50); dolly([bx() + 1.6, 4.6, z + 4.5], [bx(), -2, z - 14], 7000);
   sfx('rumble'); quake(3, 0.12); dog.pose('bark'); sfx('bark');
-  await tween(4200, e => { C.shadow.position.y = -9 + e * 7.5; C.sMat.opacity = 0.35 + e * 0.35; C.glow.intensity = e * 60; });
+  await tween(5000, e => { V.g.position.y = -9.5 + e * 3.6; V.state.glow = 2.4 + e; V.state.anger = e; });
   if (await offerStretch('A word that means the same.')) {
     await chooseWord(pickV(12, [
       { prompt: 'Bonus! massive means…', sentence: 'A {_} shadow rose from the water.', tiles: ['huge', 'tiny', 'thin'], answer: 'huge', note: 'massive = huge', hints: ['Massive is very, very big.', 'huge!'] },
@@ -183,7 +193,7 @@ export async function stop12() {
     ]));
     star(12);
   }
-  off(); hideStory(); finish(12);
+  off(); hideStory(); letterbox(false); frost(0, 600); finish(12);
   const cont = h('div', { class: 'tbc' }, h('div', {}, 'To be continued…')); document.body.append(cont); await wait(2600); cont.remove();
 }
 

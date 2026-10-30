@@ -10,7 +10,7 @@ import { stop1, stop2, stop3, sumUp } from './ep1.js';
 import { stop4, stop5, stop6, sumUp2 } from './ep2.js';
 import { stop7, stop8, stop9, sumUp3 } from './ep3.js';
 import { stop10, stop11, stop12, sumUp4 } from './ep4.js';
-import { stop13, stop14, stop15, sumUp5 } from './ep5.js';
+import { stop13, stop14, stop15, sumUp5, debugVarn } from './ep5.js';
 
 const PLAY = { 1: stop1, 2: stop2, 3: stop3, 4: stop4, 5: stop5, 6: stop6, 7: stop7, 8: stop8, 9: stop9, 10: stop10, 11: stop11, 12: stop12, 13: stop13, 14: stop14, 15: stop15 };
 const SUMUP = { 1: sumUp, 2: sumUp2, 3: sumUp3, 4: sumUp4, 5: sumUp5 };
@@ -130,4 +130,4 @@ const fromTown = new URLSearchParams(location.search).get('from') === 'town';
 if (fromTown) { history.replaceState(null, '', location.pathname); const cv = cloudsCovered(); showMap(); setTimeout(() => cloudsOut(cv), 700); }
 else if (sessionStorage.getItem('cave_skipTitle')) { sessionStorage.removeItem('cave_skipTitle'); showMap(); } else { setCam([-2, 40, 40], [0, 0, 0]); buildMap(S, null); title(); }
 import { buildBeach } from './sets2.js';
-window.__cave = { S, play, showMap, debugBeach: (cam = [0, 2.2, -8], tgt = [0, 1, 1]) => { stopFollow(); buildBeach(); setCam(cam, tgt); } };
+window.__cave = { S, play, showMap, debugVarn, debugBeach: (cam = [0, 2.2, -8], tgt = [0, 1, 1]) => { stopFollow(); buildBeach(); setCam(cam, tgt); } };

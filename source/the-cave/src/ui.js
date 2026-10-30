@@ -59,7 +59,7 @@ export const storyText = () => current;
 
 // ---------------------------------------------------------------- task card + Toby's hints
 function task(prompt, ...body) {
-  taskEl.innerHTML = ''; taskEl.classList.remove('hidden');
+  taskEl.innerHTML = ''; taskEl.classList.remove('hidden'); document.body.classList.remove('cine');
   const p = h('div', { class: 'task-prompt' }, h('button', { class: 'hear small', onclick: () => say(prompt, { force: true }) }, '🔊'), h('span', {}, prompt));
   taskEl.append(p, ...body.filter(Boolean)); say(prompt, { queue: true });
   return taskEl;
