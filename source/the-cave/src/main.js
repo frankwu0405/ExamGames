@@ -18,11 +18,14 @@ function buildHud(mode) {
   const musicBtn = h('button', { class: 'hud-btn', 'aria-label': 'Music', onclick: () => { setMusic(!S.settings.music); save(); musicBtn.textContent = S.settings.music ? '🎵' : '🔇'; sfx('tap'); } }, S.settings.music ? '🎵' : '🔇');
   const due = dueCards().length;
   hud = h('div', { class: 'hud' },
-    h('div', { class: 'hud-right' }, mode === 'stop' ? h('button', { class: 'hud-btn', onclick: () => { sessionStorage.setItem('cave_skipTitle', '1'); location.reload(); } }, '🗺 Map') : null,
+    h('div', { class: 'hud-right' }, mode === 'stop' ? h('button', { class: 'hud-btn', onclick: () => { sessionStorage.setItem('cave_skipTitle', '1'); location.reload(); } }, '🗺 Map') : h('button', { class: 'hud-btn town-btn', onclick: goTown }, '⛵ Pebble Town'),
       h('button', { class: 'hud-btn' + (due && mode === 'map' ? ' glow' : ''), onclick: () => { sfx('tap'); openBinder(() => buildHud(mode)); } }, '🃏 ' + (mode === 'map' ? 'Word cards ' : '') + ownedCount(MAX_EP) + '/' + cardTotal(MAX_EP) + (due && mode === 'map' ? ` · ✨${due}` : ''))),
     h('div', { class: 'hud-right' }, mode === 'map' ? h('button', { class: 'hud-btn', onclick: () => { sfx('tap'); voicePanel(); } }, '🗣 Voice') : null, musicBtn, readBtn));
   document.body.append(hud);
 }
+
+// Back to Pebble Town: fade to black around the blue glow, then the town opens at the cave mouth.
+async function goTown() { sfx('whoosh'); const p = h('div', { class: 'portal in' }); document.body.append(p); save(); await wait(700); location.href = 'index.html?from=cave'; }
 
 // Choose the reading voice. The best one on this device is picked automatically and starred.
 function voicePanel() {
@@ -119,5 +122,7 @@ function title() {
 
 load(); init(document.body); setCamRef(camera); mountUI();
 document.addEventListener('pointerdown', () => audioInit(), { once: true });
-if (sessionStorage.getItem('cave_skipTitle')) { sessionStorage.removeItem('cave_skipTitle'); showMap(); } else { setCam([-2, 40, 40], [0, 0, 0]); buildMap(S, null); title(); }
+const fromTown = new URLSearchParams(location.search).get('from') === 'town';
+if (fromTown) { history.replaceState(null, '', location.pathname); const p = h('div', { class: 'portal' }); document.body.append(p); setTimeout(() => { p.classList.add('out'); setTimeout(() => p.remove(), 1300); }, 500); showMap(); }
+else if (sessionStorage.getItem('cave_skipTitle')) { sessionStorage.removeItem('cave_skipTitle'); showMap(); } else { setCam([-2, 40, 40], [0, 0, 0]); buildMap(S, null); title(); }
 window.__cave = { S, play, showMap };

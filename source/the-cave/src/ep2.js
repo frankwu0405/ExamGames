@@ -179,11 +179,11 @@ export async function stop6() {
   await filled('flush'); V.flow.speed = 12; drift = 9; sfx('whoosh'); sfx('glow');
   while (z > -80) await wait(40);
   const lift = await veil('#FFF6D8', 700); off(); stopFollow();
-  await earnCard('flush');
   // ---- the beach
   playMusic('meadow');
   const B = buildBeach(); const k = B.cast;
-  setCam([0, 2.2, -8], [0, 1, 1]); lift();
+  setCam([0, 2.2, -8], [0, 1, 1]); lift(); await wait(900);
+  await earnCard('flush');
   [k.leo, k.mia].forEach(c => c.pose('cheer')); k.toby.pose('wag');
   await tell('They landed on the softest sandy beach and jumped out into the warm sun.');
   // they hug
@@ -199,8 +199,12 @@ export async function stop6() {
     ]));
     star(6);
   }
-  hideStory(); finish(6);
-  const end = h('div', { class: 'tbc' }, h('div', {}, 'The End')); document.body.append(end); await wait(2400); end.remove();
+  // a proper ending: everyone cheers, the camera rises over the beach and the sea
+  hideStory(); [k.leo, k.mia].forEach(c => c.pose('cheer')); k.toby.pose('bark'); sfx('bark'); sfx('great');
+  sparkles(new THREE.Vector3(0, 1.6, 0.4), 0xFFE58A, 40);
+  await flyCam([6, 14, -22], [0, 0, -2], 4200);
+  finish(6);
+  const end = h('div', { class: 'tbc end' }, h('div', {}, h('div', { class: 'end-ep' }, 'The Cave 2'), 'The End')); document.body.append(end); sfx('card'); await wait(3000); end.classList.add('fade'); await wait(800); end.remove();
 }
 
 // ================================================================ sum up the episode
