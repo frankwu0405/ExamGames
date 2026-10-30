@@ -37,14 +37,16 @@ export const STOPS = [
   { n: 10, name: 'The Lost Island', ep: 4, p: [2.6, 1.8, 1.4] },
   { n: 11, name: 'Toby’s Dig', ep: 4, p: [0.2, 0.7, 3.9] },
   { n: 12, name: 'The Clear Sea', ep: 4, p: [7.5, 0.3, -2.4] },
-  { n: 13, name: 'The Ice', ep: 5, p: [11, 0.3, -6] },
-  { n: 14, name: 'The Gray Shore', ep: 6, p: [18, 0.6, -11] },
-  { n: 15, name: 'Out of the Fog', ep: 7, p: [23, 0.3, -2] },
-  { n: 16, name: 'The Chase', ep: 8, p: [18, 0.3, 8] },
-  { n: 17, name: "Varn's Story", ep: 9, p: [27, 0.6, 12] },
+  { n: 13, name: 'Varn Rises', ep: 5, p: [10, 0.3, -4.4] },
+  { n: 14, name: 'Mia’s Choice', ep: 5, p: [12.4, 0.3, -6.6] },
+  { n: 15, name: 'The Angry Wave', ep: 5, p: [14.6, 0.3, -9] },
+  { n: 16, name: 'The Gray Shore', ep: 6, p: [18, 0.6, -11] },
+  { n: 17, name: 'Out of the Fog', ep: 7, p: [23, 0.3, -2] },
+  { n: 18, name: 'The Chase', ep: 8, p: [18, 0.3, 8] },
+  { n: 19, name: "Varn's Story", ep: 9, p: [27, 0.6, 12] },
 ];
-export const EPISODES = { 1: { title: 'The Cave', stops: [1, 2, 3] }, 2: { title: 'The Cave 2', stops: [4, 5, 6] }, 3: { title: 'The Cave 3: Leo’s Side', stops: [7, 8, 9] }, 4: { title: 'The Cave 4: The Lost Island', stops: [10, 11, 12] } };
-export const MAX_EP = 4;
+export const EPISODES = { 1: { title: 'The Cave', stops: [1, 2, 3] }, 2: { title: 'The Cave 2', stops: [4, 5, 6] }, 3: { title: 'The Cave 3: Leo’s Side', stops: [7, 8, 9] }, 4: { title: 'The Cave 4: The Lost Island', stops: [10, 11, 12] }, 5: { title: 'The Cave 5: Guard of the Stones', stops: [13, 14, 15] } };
+export const MAX_EP = 5;
 export function buildMap(S, onPick) {
   const w = newWorld({ sky: 0xBFE6F7, ambientI: 1.5, sunI: 1.5, fog: [0xBFE6F7, 70, 140] }); const b = builder(w);
   // sea with a dark seabed under it, so the secret tunnel shows through the water
@@ -112,7 +114,7 @@ export function buildMap(S, onPick) {
   }
   // fog over places not yet open
   const fogMat = toon(0xF4F7FB, { transparent: true, opacity: 0.8 });
-  for (let i = 0; i < 40; i++) { const x = (MAX_EP >= 4 ? 10.5 : 3.5) + rnd() * (MAX_EP >= 4 ? 22 : 28), z = -15 + rnd() * 30; const m = new THREE.Mesh(new THREE.SphereGeometry(1.0 + rnd() * 1.3, 10, 8), fogMat); m.position.set(x, 1.2 + rnd() * 1.2, z); m.scale.y = 0.55; w.add(m);
+  for (let i = 0; i < 40; i++) { const x = (MAX_EP >= 5 ? 16.5 : MAX_EP >= 4 ? 10.5 : 3.5) + rnd() * (MAX_EP >= 5 ? 16 : MAX_EP >= 4 ? 22 : 28), z = -15 + rnd() * 30; const m = new THREE.Mesh(new THREE.SphereGeometry(1.0 + rnd() * 1.3, 10, 8), fogMat); m.position.set(x, 1.2 + rnd() * 1.2, z); m.scale.y = 0.55; w.add(m);
     const ph = rnd() * 6; onTick(t => { m.position.y = 1.4 + Math.sin(t * 0.4 + ph) * 0.25; }); }
   // markers
   const markers = [];

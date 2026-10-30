@@ -239,6 +239,10 @@ export const CARDS = {
   flag: { ep: 4, line: 'Toby pulled out a giant, old pirate flag.', tip: 'flag = cloth that waves on a pole', more: ['The {_} waved in the wind.', 'The pirate ship had a black {_}.'] },
   clear: { ep: 4, line: 'The ocean water was very clear.', tip: 'clear = you can see through it', more: ['The window is so {_} I can see the sea.', 'The sky was {_} and blue.'] },
   sign: { ep: 4, line: 'They saw a sign stuck between the rocks.', tip: 'sign = a board with words on it (quiet g)', more: ['The {_} said KEEP OUT.', 'Read the {_} before you go in.'] },
+  lie: { ep: 5, line: '“You lie!” Varn yelled.', tip: 'lie = say something that is not true', more: ['It is wrong to tell a {_}.', 'Mia told a {_} to Varn.'] },
+  smash: { ep: 5, line: 'Varn lifts a big, heavy tail to smash the ice.', tip: 'smash = hit hard and break', more: ['The waves {_} against the rocks.', 'Don’t {_} the eggs!'] },
+  wave: { ep: 5, line: 'The hard hit makes a huge, angry wave.', tip: 'wave = a big moving hill of water', more: ['A big {_} rolled onto the beach.', 'The boat rode over the {_}.'] },
+  voice: { ep: 5, line: 'A cold, deep voice speaks inside their heads.', tip: 'voice = the sound of talking', more: ['Mia has a soft {_}.', 'Speak in a quiet {_}, please.'] },
   flush: { ep: 2, line: 'The water helped them flush out of the dark cave.', tip: 'flush = wash out fast with water', more: ['The rain will {_} the mud off the rocks.', 'The waves {_} the sand away.'] },
 };
 const cardSrc = w => CARD_IMG[w] || `cave-cards/ep${CARDS[w].ep}/${w}.webp`;
@@ -300,7 +304,7 @@ export function openBinder(onClose) {
   const ov = h('div', { class: 'binder', onclick: e => { if (e.target === ov) close(); } },
     h('div', { class: 'binder-page' }, h('button', { class: 'btn ghost close', onclick: () => close() }, '✕'),
       h('h2', {}, 'My Word Cards'), h('div', { class: 'binder-sub' }, due.length ? `✨ ${due.length} card${due.length > 1 ? 's' : ''} ready to polish. Polish cards to make them Silver, then Gold!` : 'Cards go Bronze → Silver → Gold when you polish them on later days.'),
-      ...[...new Set(Object.values(CARDS).map(c => c.ep))].filter(ep => ep <= (window.__maxEp || 99)).flatMap(ep => [h('h3', { class: 'binder-ep' }, ep === 1 ? 'Episode 1 · The Cave' : ep === 3 ? 'Episode 3 · Leo’s Side' : ep === 4 ? 'Episode 4 · The Lost Island' : `Episode ${ep} · The Cave ${ep}`),
+      ...[...new Set(Object.values(CARDS).map(c => c.ep))].filter(ep => ep <= (window.__maxEp || 99)).flatMap(ep => [h('h3', { class: 'binder-ep' }, ep === 1 ? 'Episode 1 · The Cave' : ep === 3 ? 'Episode 3 · Leo’s Side' : ep === 4 ? 'Episode 4 · The Lost Island' : ep === 5 ? 'Episode 5 · Guard of the Stones' : `Episode ${ep} · The Cave ${ep}`),
         h('div', { class: 'binder-grid' }, ...Object.entries(CARDS).filter(([w, c]) => c.ep === ep).map(([w, c]) => { const el = cardEl(w, c, S.cards[w]);
         if (S.cards[w]) el.onclick = () => { if (isDue(S.cards[w])) { ov.remove(); polish(w, () => openBinder(onClose)); } else say(`${w}. ${c.line}`, { force: true }); }; return el; }))])));
   const close = () => { ov.remove(); onClose && onClose(); };
