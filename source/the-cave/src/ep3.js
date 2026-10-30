@@ -1,7 +1,10 @@
 // Episode 3 — Leo's side. Stops 7–9, told as Leo's story on the beach (flashback), then back to the beach.
 // Frank's text word for word; each line read once; replays rotate to new versions.
 import { S, save, sfx, wait, h, shuffle } from './core.js';
-import { THREE, setCam, flyCam, followCam, stopFollow, quake, tween, moveTo, onTick, sparkles, textTexture, toon, builder } from './gfx.js';
+import { THREE, setCam, flyCam, followCam, stopFollow, quake, tween, moveTo, onTick, sparkles, textTexture, toon, builder, cut, dolly, lens } from './gfx.js';
+import { letterbox, mist } from './effects.js';
+import { makeCast } from './chars.js';
+import { cart } from './sets.js';
 import { buildShelf, buildCrack, buildCliff } from './sets3.js';
 import { buildRiver, buildBeach } from './sets2.js';
 import { tell, tapOn, filled, hideStory, chooseWord, pick3D, spellOn, order, think, offerStretch, earnCard, toby, tapAll, MODE } from './ui.js';
@@ -64,25 +67,46 @@ export async function stop7() {
 }
 
 // ================================================================ stop 8 — the crack
+const blackout = async (ms = 500) => { const v = h('div', { class: 'veil' }); document.body.append(v); await wait(ms); return () => { v.classList.add('out'); setTimeout(() => v.remove(), 900); }; };
 export async function stop8() {
   playMusic('cave');
-  const C = buildCrack(); const { leo, crawler } = C; let z = 1;
-  const cam = new THREE.Vector3(), look = new THREE.Vector3();
-  followCam(() => { cam.set(0.35, 0.25, z + 2.2); look.set(0, -0.4, z - 4); return [cam, look]; });
-  const crawlTo = async (nz, ms) => { leo.pose('walk'); const z0 = z; await tween(ms, e => { z = z0 + (nz - z0) * e; crawler.position.z = z; }); leo.pose('idle'); };
-  // ---- spell the gap word on the mud blobs: every right letter pulls Leo forward (rotates on replays)
+  // ---- under the shelf: the dust settles, and Leo spots a tiny crack in the wall behind him
+  const Sh = buildShelf(); const shelf = Sh.shelves.find(g => g.userData.id === 'thick'); const X = shelf.position.x, Z = shelf.position.z; let leo = Sh.leo;
+  Sh.pile.forEach(r => r.visible = true);
+  leo.g.position.set(X, 0.2, Z + 0.1); leo.g.rotation.set(-1.45, 0, 0); leo.pose('idle');
+  const dust = mist(Sh.w, { count: 18, center: new THREE.Vector3(X, 0, Z + 2.5), spread: 5, y: [0.3, 2.4], size: [3, 6], color: 0xA89886, opacity: 0.7, drift: 0.3 }); dust.show(1, 10);
+  letterbox(true); cut([X + 0.8, 1.4, Z + 4.6], [X, 0.7, Z - 0.1], 46); dolly([X + 0.5, 1.1, Z + 3.6], [X, 0.6, Z - 0.1], 6000);
   const sp = pickV(8, [
     { text: 'When the dust is gone, Leo found a tiny crack in the cave wall. It was a dark {tunnel} and the only way out.', word: 'tunnel', decoys: 'ma', prompt: 'Tap the letters to spell the word. It is a long hole to go through.', hints: ['It has two n’s in the middle.', 'T – U – N – N – E – L'] },
     { text: 'When the dust is gone, Leo found a tiny {crack} in the cave wall. It was a dark tunnel and the only way out.', word: 'crack', decoys: 'ois', prompt: 'Tap the letters to spell the word. It is a thin gap in a wall.', hints: ['It ends with c-k.', 'C – R – A – C – K'] },
     { text: 'He had to squeeze on his tummy and crawl like a {worm}.', word: 'worm', decoys: 'aite', prompt: 'Tap the letters to spell the word. It is long and wiggly.', hints: ['It sounds like “wurm” but has an o.', 'W – O – R – M'] },
   ]);
-  tell(sp.text, { wait: false });
+  tell(sp.word === 'worm' ? 'When the dust is gone, Leo found a tiny crack in the cave wall. It was a dark tunnel and the only way out.' : sp.text, { wait: false });
+  dust.show(0, 4500); await wait(2200);
+  // he rolls over, and a thin line of light shows in the wall behind him
+  leo.g.rotation.order = 'YXZ'; leo.g.rotation.set(Math.PI / 2, Math.PI, 0); leo.g.position.set(X, 0.22, Z + 0.9); leo.head.rotation.x = -0.7;
+  cut([X - 0.45, 1.15, Z + 3], [X, 0.45, -5.8], 44); dolly([X - 0.35, 1.1, Z + 2.3], [X, 0.45, -5.8], 5000);
+  sfx('glow'); await tween(1400, e => { Sh.crackGlow.intensity = e * 7; });
+  await tapOn();
+  // he crawls into the crack
+  leo.pose('walk'); await tween(1700, e => { leo.g.position.z = Z + 0.9 - e * 2.3; });
+  const lift = await blackout(500);
+  // ---- inside the tunnel: tight, muddy, full of bugs. We see Leo's face as he squeezes towards us.
+  const C = buildCrack(); leo = C.leo; const { crawler } = C; let z = 1; leo.head.rotation.x = -1.1;
+  const cam = new THREE.Vector3(), look = new THREE.Vector3(); let front = true;
+  followCam(() => { if (front) { cam.set(0.45, -0.55, z - 5); look.set(0, -0.7, z - 1.4); } else { cam.set(0.35, 0.25, z + 2.2); look.set(0, -0.4, z - 4); } return [cam, look]; });
+  const crawlTo = async (nz, ms) => { leo.pose('walk'); const z0 = z; await tween(ms, e => { z = z0 + (nz - z0) * e; crawler.position.z = z; }); leo.pose('idle'); };
+  lift(); letterbox(true);
+  if (sp.word === 'worm') tell(sp.text, { wait: false });
+  await crawlTo(0.2, 1400);
+  // ---- spell the gap word: the letters float by the mud blobs; every right letter pulls Leo forward
   await spellOn({ prompt: sp.prompt, word: sp.word, decoys: sp.decoys, objs: C.blobs, hints: sp.hints,
-    onLetter: (blob, i) => { blob.visible = false; sparkles(blob.position, 0x8A6A4A, 10); crawlTo(z - 1.0, 600); } });
+    onLetter: (blob) => { blob.visible = false; sparkles(blob.position, 0x8A6A4A, 10); crawlTo(z - 1.0, 600); } });
   await filled(sp.word); if (sp.word === 'tunnel') await earnCard('tunnel');
-  // squeezing on, through the mud
+  // squeezing on, through the mud (panel: Leo crawling towards us, bugs on the walls)
+  letterbox(true);
   tell(sp.word === 'worm' ? 'The path was covered in yucky, sticky mud and all kinds of scary bugs crawling everywhere! His clothes got dirty.' : 'He had to squeeze on his tummy and crawl like a worm. The path was covered in yucky, sticky mud and all kinds of scary bugs crawling everywhere! His clothes got dirty.', { wait: false });
-  await crawlTo(-8.5, 2600);
+  await crawlTo(-8.5, 3000);
   leo.g.traverse(o => { if (o.material && o.material.color && !o.userData.isOutline && o.material.color.getHex() === 0x5DBB4A) { o.material = o.material.clone(); o.material.color.set(0x6E7A3A); } });
   await tapOn();
   // ---- the bugs carry words: tap the ones that fit (rotates on replays)
@@ -91,9 +115,9 @@ export async function stop8() {
     { prompt: 'Tap the bugs with doing words (things you can do).', yes: ['crawl', 'squeeze', 'dig', 'wiggle'], no: ['mud', 'dark', 'bug', 'small'], hints: ['Can you do it? Then tap it!', 'You can crawl!'] },
     { prompt: 'Tap the bugs with words that rhyme with mud.', yes: ['bud', 'thud', 'spud', 'flood'], no: ['map', 'mop', 'bed', 'mix'], hints: ['Say mud. Listen to the end: -ud.', 'thud rhymes with mud!'] },
   ]);
-  await crawlTo(-10, 900);
+  front = false; await crawlTo(-10, 900);
   const words = shuffle([...set.yes.map(w => ({ w, ok: true })), ...set.no.map(w => ({ w, ok: false }))]);
-  const items = C.wordBugs.map((g, i) => { const lab = new THREE.Sprite(new THREE.SpriteMaterial({ map: textTexture(words[i].w, { w: 384, h: 140, font: '82px Chewy, sans-serif', fg: '#FFFDF4', glow: '#2B1A0E' }), depthTest: false })); lab.scale.set(1.3, 0.48, 1); lab.position.set(0, 0.55, 0); g.add(lab); return { obj: g, ok: words[i].ok, label: words[i].w }; });
+  const items = C.wordBugs.map((g, i) => ({ obj: g, ok: words[i].ok, label: words[i].w }));
   await tapAll({ prompt: set.prompt, items, hints: set.hints, onRight: it => { it.obj.visible = false; } });
   items.forEach(it => it.obj.visible = false);
   // ---- a simile
@@ -102,11 +126,24 @@ export async function stop8() {
     { prompt: 'Which word fits?', sentence: 'The tunnel was as dark as {_}.', tiles: ['night', 'snow', 'sun'], answer: 'night', note: 'as dark as night = very dark', hints: ['When is it dark outside?', 'Snow and sun are bright.'] },
     { prompt: 'Which word fits?', sentence: 'The mud was as sticky as {_}.', tiles: ['glue', 'water', 'air'], answer: 'glue', note: 'as sticky as glue = very sticky', hints: ['What sticks paper together?', 'glue!'] },
   ]));
-  // the tight path opens up
-  sfx('glow'); await crawlTo(-30, 3200);
+  // light ahead… he crawls towards it
+  letterbox(true); sfx('glow'); await crawlTo(-31, 3600);
+  const lift2 = await memoryWhite();
+  // ---- out of the tunnel: he crawls out of a hole in the rock onto a high ledge, stands up — and we see his face
+  const K = buildCliff(); K.leo.g.visible = false; K.ride.on = false; K.tiny.visible = false;
+  const hold = new THREE.Group(); hold.position.set(K.MOUTH.x, K.LEDGE.y + 0.1, K.MOUTH.z + 0.4); hold.rotation.y = Math.PI; K.w.add(hold);
+  const hc = makeCast(hold); hc.mia.g.visible = false; hc.toby.g.visible = false; const L2 = hc.leo; L2.g.rotation.x = Math.PI / 2; L2.g.position.set(0, 0.28, 0.6); L2.head.rotation.x = -0.8;
+  L2.g.traverse(o => { if (o.material && o.material.color && !o.userData.isOutline && o.material.color.getHex() === 0x5DBB4A) { o.material = o.material.clone(); o.material.color.set(0x6E7A3A); } });
+  const flick = new THREE.PointLight(0xFFFFFF, 14, 9, 1.4); flick.position.set(K.MOUTH.x + 0.5, K.LEDGE.y + 1.8, K.MOUTH.z - 3.4); K.w.add(flick);
+  onTick(t => flick.color.setHSL((t * 0.12) % 1, 0.8, 0.6));
+  cut([K.MOUTH.x + 1.2, K.LEDGE.y + 1.1, K.MOUTH.z - 5.2], [K.MOUTH.x, K.LEDGE.y + 0.6, K.MOUTH.z], 46); lift2(); letterbox(true);
+  L2.pose('walk'); await tween(2200, e => { hold.position.z = K.MOUTH.z + 0.4 - e * 2.4; });
+  // he stands up slowly, looking out at something we cannot see yet
+  L2.pose('idle'); await tween(900, e => { L2.g.rotation.x = Math.PI / 2 * (1 - e); L2.g.position.set(0, 0.28 * (1 - e), 0.6 * (1 - e)); L2.head.rotation.x = -0.8 * (1 - e); });
+  L2.pose('wow'); sfx('glow');
   tell('But finally, the tight path opened up, and Leo cannot believe what he saw.', { wait: false });
-  await tween(700, e => { leo.g.rotation.x = Math.PI / 2 * (1 - e); leo.g.position.y = 0.28 + e * 0.5; }); leo.pose('scared');
-  await tapOn();
+  const hp = hold.position; dolly([hp.x + 0.45, hp.y + 1.45, hp.z - 2.1], [hp.x, hp.y + 1.25, hp.z], 6000);
+  await wait(2200); await tapOn();
   if (await offerStretch('Make two words into one.')) {
     await chooseWord(pickV(8, [
       { prompt: 'Bonus! cannot = ?', sentence: 'Leo {_} believe what he saw.', tiles: ['can’t', 'cant', 'ca’nt'], answer: 'can’t', note: 'cannot → can’t (the ’ goes where the letters left)', hints: ['The ’ goes between n and t.', 'can’t'] },
@@ -115,45 +152,58 @@ export async function stop8() {
     ]));
     star(8);
   }
-  hideStory(); finish(8);
+  hideStory(); letterbox(false); finish(8);
 }
+const memoryWhite = async (ms = 650) => { const v = h('div', { class: 'veil memory' }); v.style.background = '#FFF8E8'; document.body.append(v); await wait(ms); return () => { v.classList.add('out'); setTimeout(() => v.remove(), 900); }; };
 
-// ================================================================ stop 9 — the rainbow cliff, the slide, the river, home to the beach
+// ================================================================ stop 9 — the rainbow cavern, the slide, the river, out to the beach
 export async function stop9() {
   playMusic('wonder');
-  const K = buildCliff(); const { leo } = K;
-  setCam([K.CL.x + 4.5, 13.2, K.CL.z + 5], [K.CL.x + 1.6, 11.6, K.CL.z - 1.2]);
+  const K = buildCliff(); const { leo, LEDGE, SPRING } = K; K.ride.on = false; K.tiny.visible = false;
+  leo.pose('wow'); letterbox(true);
+  // the view Leo sees (like the picture in the book): over his shoulder, the rainbow cavern opens up
+  cut([LEDGE.x - 2.4, LEDGE.y + 1.9, LEDGE.z - 0.6], [LEDGE.x + 0.4, LEDGE.y + 1.2, LEDGE.z - 6], 50);
+  await flyCam([LEDGE.x + 0.8, LEDGE.y + 1.9, LEDGE.z - 0.5], [-0.5, 6.5, -18], 2600, { fov: 58 });
+  dolly([LEDGE.x + 0.7, LEDGE.y + 2, LEDGE.z - 0.9], [-0.5, 6.3, -18], 9000);
   // ---- the gap word (rotates on replays)
   const cv = pickV(9, [
     { text: 'It was an amazing sight! He was standing on a high {cliff} looking down at a huge room filled with rainbow-colored crystals.', sentence: 'He was standing on a high {_}.', tiles: ['cliff', 'clip', 'click'], answer: 'cliff', note: 'cliff = a high, rocky edge', hints: ['A high, rocky edge.', 'c – l – i – f – f, two f’s'] },
     { text: 'It was an {amazing} sight! He was standing on a high cliff looking down at a huge room filled with rainbow-colored crystals.', sentence: 'It was an {_} sight!', tiles: ['amazing', 'amazed', 'amaze'], answer: 'amazing', note: 'an amazing sight = a WOW thing to see', hints: ['It ends with -ing.', 'amazing!'] },
     { text: 'It was an amazing sight! He was standing on a high cliff looking down at a huge room filled with {rainbow}-colored crystals.', sentence: 'a huge room filled with {_}-colored crystals', tiles: ['rainbow', 'rainbo', 'reinbow'], answer: 'rainbow', note: 'rain + bow = rainbow', hints: ['Two small words: rain + bow.', 'r-a-i-n-b-o-w'] },
   ]);
-  tell(cv.text, { wait: false });
-  await flyCam([K.CL.x - 2, 14.5, K.CL.z + 6], [K.CL.x + 10, 7, K.CL.z - 10], 1600);
+  tell(cv.text, { wait: false }); await wait(2600);
   await chooseWord({ prompt: 'Which word fits?', sentence: cv.sentence, tiles: cv.tiles, answer: cv.answer, note: cv.note, hints: cv.hints });
   await filled(cv.answer); if (cv.answer === 'cliff') await earnCard('cliff');
-  // ---- spot Mia and Toby zooming round the loop below
+  // ---- Mia and Toby come out of the tunnel and make ONE loop through the green crystals
+  letterbox(true); K.ride.s = -0.02; K.ride.on = true;
   tell('Zoom! He watched Mia and Toby in the minecart rush over a giant loop right where the green crystals were.', { wait: false });
-  await flyCam([K.CL.x + 2, 13, K.CL.z + 2], [6, 7, -8], 1400);
-  await pick3D({ prompt: 'Find Mia and Toby! Tap their cart.', answer: 'cart', targets: [{ id: 'cart', obj: K.hitBox }], hints: ['Look at the green loop!', 'It goes round and round.'] });
+  await flyCam([LEDGE.x + 1.5, LEDGE.y + 1.8, LEDGE.z - 2], [K.G.x, K.G.y + 4, K.G.z], 1600, { fov: 30 });
+  { const t0 = performance.now(); while (K.ride.s < K.sB + 0.06 && performance.now() - t0 < 14000) await wait(60); }
   leo.pose('point'); sfx('great');
-  // the water slide
+  await pick3D({ prompt: 'Find Mia and Toby! Tap their cart.', answer: 'cart', targets: [{ id: 'cart', obj: K.hitBox }], hints: ['Look at the green loop!', 'It comes out of the tunnel and goes round.'] });
+  // ---- the water slide: a spring pours into a stone pool, then a smooth path of rushing water goes down the cliff
+  letterbox(true); leo.pose('idle');
   tell('Next to the cliff, he found a smooth rock path filled with rushing water. It looked just like a fun water slide! Leo took a deep breath, pinched his nose, and jumped right in.', { wait: false });
-  await flyCam([K.CL.x + 7, 14, K.CL.z + 8], [K.CL.x + 2, 10.5, K.CL.z + 2], 1300);
-  await tapOn();
-  playMusic('danger'); sfx('whoosh'); leo.pose('cheer');
-  const cam = new THREE.Vector3(), look = new THREE.Vector3(); let sl = 0;
-  followCam(() => { const p = K.slidePath.getPointAt(Math.min(sl, 1)), q = K.slidePath.getPointAt(Math.max(0, sl - 0.06)); cam.copy(q).add(new THREE.Vector3(0, 2.4, 0)); look.copy(p); return [cam, look]; });
-  await tween(3600, e => { sl = e; const p = K.slidePath.getPointAt(e), tg = K.slidePath.getTangentAt(e); leo.g.position.copy(p).add(new THREE.Vector3(0, 0.1, 0)); leo.g.rotation.set(0, Math.atan2(tg.x, tg.z), 0); });
-  stopFollow();
+  cut([LEDGE.x - 3.4, LEDGE.y + 3.2, LEDGE.z - 7.5], [SPRING.x + 1, LEDGE.y - 1, LEDGE.z + 2], 52); dolly([LEDGE.x - 2.6, LEDGE.y + 3.6, LEDGE.z - 8.2], [SPRING.x + 1.5, LEDGE.y - 1.5, LEDGE.z + 1], 8000);
+  await run(leo, [SPRING.x - 1.6, LEDGE.y + 0.05, LEDGE.z + 2.2], 1400);
+  const sp0 = K.slidePath.getPointAt(0.04); leo.g.rotation.y = Math.PI / 2; await wait(1500); await tapOn();
+  // whee! sitting down, all the way down the slide…
+  playMusic('danger'); sfx('whoosh'); await moveTo(leo.g, [sp0.x, sp0.y + 0.05, sp0.z], 450, { hop: 0.8 }); leo.pose('slide');
+  const cam = new THREE.Vector3(), look = new THREE.Vector3(); let sl = 0.04; leo.g.rotation.order = 'YXZ';
+  followCam(() => { const p = K.slidePath.getPointAt(Math.min(sl, 1)), q = K.slidePath.getPointAt(Math.max(0, sl - 0.07)); cam.copy(q).add(new THREE.Vector3(1.2, 2.2, 0)); look.copy(p).add(new THREE.Vector3(0, 0.6, 0)); return [cam, look]; });
+  await tween(4200, (e, k) => { sl = 0.04 + k * 0.96; const p = K.slidePath.getPointAt(sl), tg = K.slidePath.getTangentAt(sl); leo.g.position.copy(p).add(new THREE.Vector3(0, -0.12, 0)); leo.g.rotation.y = Math.atan2(tg.x, tg.z); leo.g.rotation.x = -Math.asin(Math.max(-1, Math.min(1, tg.y))) * 0.8; });
+  // …off the end and SPLASH into the river
+  stopFollow(); const endP = K.slidePath.getPointAt(1), endT = K.slidePath.getTangentAt(1);
+  cut([endP.x + 6, endP.y + 2.2, endP.z + 3], [endP.x + 1, endP.y, endP.z - 2], 50);
+  await tween(600, (e, k) => { leo.g.position.copy(endP).addScaledVector(endT, k * 2.5).add(new THREE.Vector3(0, Math.sin(k * Math.PI) * 1.2 - k * 0.9, 0)); });
+  sfx('crash'); sparkles(endP.clone().addScaledVector(endT, 2.5).add(new THREE.Vector3(0, 0.3, 0)), 0xE6F6FF, 50); leo.g.visible = false; await wait(700);
   // ---- the river: spinning in the swift water
-  const V = buildRiver(); V.R.g.visible = false; V.gates.forEach(g => g.visible = false);
+  const V = buildRiver({ exitZ: -62 }); V.R.g.visible = false; V.gates.forEach(g => g.visible = false);
   const L = V.leo; V.leoLog.remove(L.g); V.w.add(L.g); L.pose('scared'); L.g.position.set(0, -0.6, -6);
-  V.leoLog.position.set(-2.2, 0.1, 2);
+  V.leoLog.position.set(-2.2, 0.1, 2); V.leoLog.rotation.y = Math.PI / 2;
   let spin = true; const sOff = onTick((t, dt) => { if (spin) { L.g.rotation.y += dt * 3; L.g.position.y = -0.6 + Math.sin(t * 3) * 0.08; } });
   sfx('crash'); sparkles(new THREE.Vector3(0, 0.3, -6), 0xE6F6FF, 40);
-  setCam([3.2, 3.4, 0], [0, 0, -6]);
+  letterbox(true); cut([3.2, 3.4, 0], [0, 0, -6], 50);
   await tell('Whoosh! The slide dropped him into the deep river. The water was far too swift, and Leo spun around in the fast water.');
   // ---- science: what floats?
   tell('He needed something to help him stay up.', { wait: false });
@@ -162,15 +212,18 @@ export async function stop9() {
     { prompt: 'Which one will FLOAT?', options: ['A wooden log', 'A big stone', 'An iron key'], answer: 'A wooden log', hints: ['Wood floats. Stone and iron sink.'] },
     { prompt: 'Why does a log help Leo?', options: ['Wood floats on water', 'Logs are warm', 'Logs can swim'], answer: 'Wood floats on water', hints: ['Think: float or sink?'] },
   ]));
+  letterbox(true);
   tell('Luckily, he bumped into an old log floating by. He grabbed it tight and drifted down the dark river until he saw a bright light, and Mia paddled over to {fetch} him.', { wait: false });
   await moveTo(V.leoLog, [0, 0.1, -5.6], 1400, { face: false });
-  spin = false; sOff(); V.w.remove(L.g); V.leoLog.add(L.g); L.g.position.set(0, 0.32, 0); L.g.rotation.set(0, Math.PI * 0.15, 0); L.pose('hold');
+  // he grabs the log and holds on tight, lying across it (like the picture in the book)
+  spin = false; sOff(); V.w.remove(L.g); const grip = new THREE.Group(); grip.rotation.y = -Math.PI / 2; V.leoLog.add(grip); grip.add(L.g);
+  L.g.rotation.set(Math.PI / 2, 0, 0); L.g.position.set(0, 0.42, 0.55); L.head.rotation.x = -0.8; L.pose('hug');
   // drifting to the light; Mia's cart comes paddling up behind
-  let z = -5.6; const dOff = onTick((t, dt) => { z = Math.max(-40, z - dt * 2.6); V.leoLog.position.z = z; });
-  followCam(() => { cam.set(2.4, 3.0, z + 6); look.set(0, 0.4, z - 4); return [cam, look]; });
+  let z = -5.6; const dOff = onTick((t, dt) => { z = Math.max(-54, z - dt * 2.6); V.leoLog.position.z = z; });
+  followCam(() => { cam.set(-2.6, 1.9, z - 5.5); look.set(0.6, 0.5, z + 1.5); return [cam, look]; });
   await wait(2600);
   V.R.g.visible = true; V.R.g.rotation.set(0, Math.PI, 0); V.paddle.visible = true; const M = V.R.cast.mia; const row = onTick(t => { M.AR.rotation.x = -0.6 + Math.sin(t * 6) * 0.7; });
-  let rz = z + 7; const rOff = onTick((t, dt) => { rz = Math.max(z + 1.3, rz - dt * 4); V.R.g.position.set(0.9, 0.1 + Math.sin(t * 2.2) * 0.05, rz); });
+  let rz = z + 7; const rOff = onTick((t, dt) => { rz = Math.max(z + 1.6, rz - dt * 4); V.R.g.position.set(1.7, 0.1 + Math.sin(t * 2.2) * 0.05, rz); });
   while (z > -30) await wait(40);
   // ---- fetch (rotates on replays)
   await chooseWord(pickV(9, [
@@ -187,13 +240,25 @@ export async function stop9() {
     ]));
     star(9);
   }
-  dOff(); rOff(); stopFollow();
+  // ---- the river carries them out through the bright cave mouth…
+  hideStory(); letterbox(true); stopFollow();
+  cut([4, 2.2, -40], [0, 1, -62], 52);
+  while (z > -53.5) await wait(40);
+  const lift = await memoryWhite(600); dOff(); rOff();
+  // …and out onto the beach, along the stream from the cave to the sea
+  const B = buildBeach(); const k = B.cast; [k.leo, k.mia, k.toby].forEach(c => c.g.visible = false);
+  const out = new THREE.Group(); B.w.add(out); const ob = builder(out);
+  const raft = new THREE.Group(); out.add(raft); builder(raft).cyl(0.34, 0.34, 2.4, 0x8A5A3B, 0, 0.1, 0, { rz: Math.PI / 2, line: 0.03 }); raft.rotation.y = Math.PI / 2;
+  const g2 = new THREE.Group(); g2.rotation.y = -Math.PI / 2; raft.add(g2); const lc = makeCast(g2); lc.mia.g.visible = false; lc.toby.g.visible = false; lc.leo.g.rotation.set(Math.PI / 2, 0, 0); lc.leo.g.position.set(0, 0.42, 0.55); lc.leo.head.rotation.x = -0.8; lc.leo.pose('hug');
+  const boat = new THREE.Group(); out.add(boat); cart(builder(boat), 0, 0, 0); const bc = makeCast(boat); bc.leo.g.visible = false; bc.mia.g.position.set(0, 0.45, 0.15); bc.mia.pose('cheer'); bc.mia.L.rotation.x = bc.mia.R.rotation.x = -1.4; bc.toby.g.position.set(0, 0.85, 0.6); bc.toby.g.scale.setScalar(0.9); boat.rotation.y = Math.PI;
+  cut([4.5, 1.8, -6], [0, 1, 10], 50); lift(); sfx('whoosh');
+  await tween(5200, (e, kk) => { raft.position.set(-0.4, 0.15 + Math.sin(kk * 20) * 0.05, 14 - kk * 15); boat.position.set(0.6, 0.12, 17 - kk * 15); boat.rotation.z = Math.sin(kk * 14) * 0.05; });
   // ---- back to the beach (now): Leo finishes his story
-  const lift = await memory(800); playMusic('meadow');
-  const B = buildBeach(); const k = B.cast;
-  k.leo.g.position.set(-0.6, 0, 0); k.mia.g.position.set(0.6, 0, 0.2); k.leo.g.rotation.y = Math.PI - 0.5; k.mia.g.rotation.y = Math.PI + 0.5;
-  setCam([0.2, 1.7, -4.6], [0, 0.9, 0.4]); lift();
-  k.leo.pose('cheer'); k.mia.pose('cheer'); k.toby.pose('wag');
+  const lift3 = await memory(800); playMusic('meadow');
+  const B2 = buildBeach(); const k2 = B2.cast;
+  k2.leo.g.position.set(-0.6, 0, 0); k2.mia.g.position.set(0.6, 0, 0.2); k2.leo.g.rotation.y = Math.PI - 0.5; k2.mia.g.rotation.y = Math.PI + 0.5;
+  setCam([0.2, 1.7, -4.6], [0, 0.9, 0.4]); lift3(); letterbox(false);
+  k2.leo.pose('cheer'); k2.mia.pose('cheer'); k2.toby.pose('wag');
   await tell('Leo is finally safe...');
   hideStory(); sfx('great'); sparkles(new THREE.Vector3(0, 1.6, 0.4), 0xFFE58A, 40);
   await flyCam([5, 12, -20], [0, 0, -2], 3600);

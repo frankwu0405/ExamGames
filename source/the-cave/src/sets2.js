@@ -88,7 +88,7 @@ export function buildCrystal() {
 }
 
 // ================================================================ stop 6: the swift river (and the beach after it)
-export function buildRiver() {
+export function buildRiver({ exitZ = null } = {}) {
   const w = newWorld({ sky: 0x070B14, ambient: 0xB0C4E8, ambientI: 0.75, sunI: 0.35, fog: [0x070B14, 18, 70] }); const b = builder(w);
   const cave = new THREE.Mesh(new THREE.CylinderGeometry(8, 8, 110, 20, 1, true, Math.PI / 2, Math.PI * 1.25), toon(0x2A3040, { side: THREE.BackSide })); cave.rotation.x = Math.PI / 2; cave.rotation.y = 0; cave.position.set(0, 1, -40); w.add(cave);
   const bed = new THREE.Mesh(new THREE.PlaneGeometry(16, 110), toon(0x2A3040)); bed.rotation.x = -Math.PI / 2; bed.position.set(0, -1.2, -40); w.add(bed);
@@ -115,6 +115,15 @@ export function buildRiver() {
   const R = rider(w); R.g.position.set(0, 1.45, 15.5); R.g.rotation.y = Math.PI;
   const paddle = builder(R.cast.mia.AR).box(0.06, 1.3, 0.06, 0x8A5A3B, 0, -0.5, 0.2, { line: 0.015 }); paddle.visible = false;
   const lc = makeCast(leoLog); lc.mia.g.visible = false; lc.toby.g.visible = false; const leo = lc.leo; leo.g.position.set(0, 0.32, 0); leo.pose('sit'); leo.g.rotation.y = Math.PI * 0.15;
+  // (Episode 3) a real cave mouth: the river runs out through a rocky arch into the bright day
+  if (exitZ !== null) {
+    exitGlow.position.z = exitZ - 1.5; exitGlow.scale.setScalar(1.3); halo.position.z = exitZ + 6;
+    const oc = document.createElement('canvas'); oc.width = 256; oc.height = 256; const ox = oc.getContext('2d'); const og = ox.createLinearGradient(0, 0, 0, 256);
+    og.addColorStop(0, '#9FD8F5'); og.addColorStop(0.5, '#FFF6D8'); og.addColorStop(0.56, '#3FA7D6'); og.addColorStop(0.7, '#5BB8E8'); og.addColorStop(0.72, '#F2D79B'); og.addColorStop(1, '#E9C98A'); ox.fillStyle = og; ox.fillRect(0, 0, 256, 256);
+    const ot = new THREE.CanvasTexture(oc); ot.colorSpace = THREE.SRGBColorSpace; exitGlow.material = new THREE.MeshBasicMaterial({ map: ot, fog: false });
+    const arch = new THREE.Mesh(new THREE.RingGeometry(6.2, 18, 30), toon(0x2A3040)); arch.position.set(0, 0, exitZ); w.add(arch); outline(arch, 0.06);
+    for (let i = 0; i < 16; i++) { const a = Math.PI * i / 15; b.rock(1 + rnd() * 0.8, 0x3A3F55, Math.cos(a) * 7, Math.sin(a) * 7.2 - 0.3, exitZ + 0.6); }
+  }
   return { w, R, gates, leoLog, flow, leo, paddle, exitGlow };
 }
 export function buildBeach() {

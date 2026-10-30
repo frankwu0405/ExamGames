@@ -63,11 +63,14 @@ function animate(c, kind) {
     if (s === 'reach') { c.AR.rotation.x = -1.5; c.AL.rotation.x = -0.3; }
     if (s === 'point') { c.AR.rotation.x = -1.6; }
     if (s === 'hold') { c.AR.rotation.x = c.AL.rotation.x = -1.1; c.AR.rotation.z = 0.35; c.AL.rotation.z = -0.35; }
+    if (s === 'wow') { c.AL.rotation.x = c.AR.rotation.x = -0.5; c.AL.rotation.z = -0.9; c.AR.rotation.z = 0.9; }
+    if (s === 'slide') { c.L.rotation.x = c.R.rotation.x = -1.45; c.AL.rotation.z = -2.3 + Math.sin(t * 7) * 0.15; c.AR.rotation.z = 2.3 - Math.sin(t * 7) * 0.15; }
+    if (s === 'hug') { c.AL.rotation.x = c.AR.rotation.x = -1.5; c.AL.rotation.z = 0.35; c.AR.rotation.z = -0.35; c.L.rotation.x = 0.4 + Math.sin(t * 7) * 0.35; c.R.rotation.x = 0.4 - Math.sin(t * 7) * 0.35; }
     if (s === 'hide') { c.AR.rotation.x = c.AL.rotation.x = 0.75; c.AR.rotation.z = -0.35; c.AL.rotation.z = 0.35; }
     if (s === 'sit') { c.L.rotation.x = c.R.rotation.x = -1.4; }
     c.head.rotation.z = s === 'idle' ? Math.sin(t * 1.5 + c.t0) * 0.05 : 0;
     c.head.position.y = 1.32 + (run ? Math.abs(Math.sin(k)) * 0.04 : 0);
-    c.mouth.scale.y = s === 'scared' || s === 'hide' ? -1 : 1;
+    c.mouth.scale.y = s === 'scared' || s === 'hide' ? -1 : s === 'wow' ? -2 : 1; c.mouth.scale.x = s === 'wow' ? 0.8 : 1;
   };
   onTick(c.tick);
   return c;

@@ -176,3 +176,18 @@ body::before, body::after { content: ''; position: fixed; left: 0; right: 0; hei
 body::before { top: 0; } body::after { bottom: 0; }
 body.cine::before, body.cine::after { height: 10vh; }
 .frost { position: fixed; inset: 0; z-index: 11; pointer-events: none; opacity: 0; background-size: 100% 100%, 100% 100%; mix-blend-mode: screen; }
+/* floating letters: always on screen, big enough for small fingers */
+.letter-layer { position: fixed; inset: 0; z-index: 26; pointer-events: none; }
+.lbub { position: absolute; left: 0; top: 0; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; pointer-events: auto; cursor: pointer;
+  font-family: var(--display); font-size: 38px; line-height: 1; color: var(--ink); border: 3px solid var(--ink);
+  background: radial-gradient(circle at 35% 30%, #FFFFFF 0, #FFF6E2 45%, #FFD98A 100%); box-shadow: 0 0 0 4px rgba(255,255,255,.35), 0 0 18px rgba(255,220,140,.8);
+  animation: bubIn .35s cubic-bezier(.3,1.6,.6,1); transition: opacity .3s, filter .3s; }
+@keyframes bubIn { from { scale: .2; } to { scale: 1; } }
+.lbub:active { filter: brightness(1.15); }
+.lbub.used { opacity: 0; pointer-events: none; }
+.lbub.nope { background: radial-gradient(circle at 35% 30%, #FFFFFF 0, #FFD5CF 60%, #EF5B4C 100%); }
+.wchip { position: absolute; left: 0; top: 0; height: 52px; padding: 0 18px; margin: -26px 0 0 0; translate: -50% 0; border-radius: 26px; pointer-events: auto; cursor: pointer; white-space: nowrap;
+  font-family: var(--display); font-size: 26px; color: var(--ink); border: 3px solid var(--ink); background: var(--paper); box-shadow: 0 4px 0 rgba(0,0,0,.35), 0 0 16px rgba(255,240,200,.6);
+  animation: bubIn .35s cubic-bezier(.3,1.6,.6,1); transition: opacity .4s, background .2s; }
+.wchip.right { background: #9BE08F; opacity: 0; pointer-events: none; transition-delay: .3s; }
+.wchip.nope { background: #FFD5CF; }

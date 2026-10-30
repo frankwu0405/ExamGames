@@ -130,32 +130,55 @@ export function pick3D({ prompt, targets, answer, hints = [], word, onWrong, onH
   });
 }
 
-// ---------------------------------------------------------------- activity: spell a word by tapping letters painted on objects
-export function spellOn({ prompt, word, objs, decoys = '', hints = [], sentence, onLetter }) {
-  return new Promise(res => { aimMode();
-    const letters = shuffle([...word.toUpperCase(), ...decoys.toUpperCase()]); const slots = h('div', { class: 'slots' }, ...[...word].map(() => h('span', { class: 'slot-l' }, '')));
-    const tags = []; let at = 0; const L = ladder(hints, word);
-    objs.slice(0, letters.length).forEach((o, i) => {
-      const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: textTexture(letters[i], { w: 128, h: 128, font: '96px Chewy, sans-serif', bg: null, fg: '#FFFDF4', glow: '#2E2A4F' }), depthTest: false }));
-      tag.scale.setScalar(1.1); o.add(tag); tag.position.set(0, 0, 0.8); tag.userData.letter = letters[i]; tag.userData.owner = o; tags.push(tag);
+// Keep DOM buttons next to their 3D objects, but always on screen, in the open space between the task card and
+// the story panel, and never on top of each other. Returns a function that stops it.
+function floatAnchors(list, gap = 74) {
+  const v = new THREE.Vector3();
+  return onTick(t => {
+    const tb = taskEl.classList.contains('hidden') ? null : taskEl.getBoundingClientRect();
+    const top = (tb ? tb.bottom : 60) + 46, bot = Math.max(top, (panel.classList.contains('hidden') ? innerHeight : panel.getBoundingClientRect().top) - 46);
+    const n = list.length, midY = (top + bot) / 2;
+    list.forEach((b, i) => {
+      const hw = (b.offsetWidth || 64) / 2 + 10, lo = hw, hi = innerWidth - hw; b.lo = lo; b.hi = hi;
+      let x = lo + (hi - lo) * (i + 0.5) / n, y = midY;
+      if (b.owner && b.owner.visible !== false) { b.owner.getWorldPosition(v); if (b.lift) v.y += b.lift; v.project(camera); if (v.z < 1) { x = (v.x + 1) / 2 * innerWidth; y = (1 - v.y) / 2 * innerHeight; } }
+      b.tx = Math.min(hi, Math.max(lo, x)); b.ty = Math.min(bot, Math.max(top, y));
     });
-    const bk = backup(tags.map(tag => ({ label: tag.userData.letter, go: b => take(tag) })));
-    task(prompt, sentence ? h('div', { class: 'task-sentence' }, sentence) : null, slots, bk);
-    // she taps the letter itself (the sprite), so a rock in front can never steal the tap
-    const take = async (tag, point) => {
-      if (!tag || tag.userData.used || at >= word.length) return;
-      if (tag.userData.letter === word[at].toUpperCase()) {
-        sfx('pop'); tag.userData.used = true; tag.material.opacity = 0.25; const bb = bk.querySelectorAll('.tile')[tags.indexOf(tag)]; if (bb) bb.disabled = true; if (onLetter) { tag.visible = false; onLetter(tag.userData.owner, at); } slots.children[at].textContent = tag.userData.letter; slots.children[at].classList.add('in'); at++;
-        if (at === word.length) { renderer.domElement.removeEventListener('pointerup', click); tags.forEach(t => t.parent && t.parent.remove(t)); sparkles(point || tag.getWorldPosition(new THREE.Vector3())); slots.classList.add('right'); await win(); hideTask(); res({ first: L.first }); }
+    for (let k = 0; k < 6; k++) for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+      const a = list[i], c = list[j]; if (a.used || c.used) continue;
+      const wx = ((a.offsetWidth || 64) + (c.offsetWidth || 64)) / 2 + 10, wy = gap;
+      const dx = c.tx - a.tx, dy = c.ty - a.ty, ox = wx - Math.abs(dx), oy = wy - Math.abs(dy);
+      if (ox > 0 && oy > 0) { if (ox / wx < oy / wy) { const m = ox / 2 * (dx < 0 ? -1 : 1); a.tx -= m; c.tx += m; } else { const m = oy / 2 * (dy < 0 ? -1 : 1) || oy / 2; a.ty -= m; c.ty += m; } }
+    }
+    list.forEach(b => { b.tx = Math.min(b.hi, Math.max(b.lo, b.tx)); b.ty = Math.min(bot, Math.max(top, b.ty));
+      b.x += (b.tx - b.x) * 0.2; b.y += (b.ty - b.y) * 0.2; b.style.transform = `translate(${b.x}px, ${b.y + Math.sin(t * 2 + (b.ph || 0)) * 4}px)`; });
+  });
+}
+
+// ---------------------------------------------------------------- activity: spell a word by tapping floating letters
+// Each letter is a big bubble that floats next to its object in the scene, but it is always kept on screen,
+// in the open space between the task card and the story panel, and bubbles never sit on top of each other.
+export function spellOn({ prompt, word, objs = [], decoys = '', hints = [], sentence, onLetter }) {
+  return new Promise(res => {
+    const letters = shuffle([...word.toUpperCase(), ...decoys.toUpperCase()]); const slots = h('div', { class: 'slots' }, ...[...word].map(() => h('span', { class: 'slot-l' }, '')));
+    let at = 0; const L = ladder(hints, word);
+    const layerEl = h('div', { class: 'letter-layer' }); document.body.append(layerEl);
+    const bubs = letters.map((ch, i) => { const b = h('button', { class: 'lbub', onclick: e => { e.stopPropagation(); take(b); } }, ch);
+      b.letter = ch; b.owner = objs[i] || null; b.x = innerWidth / 2; b.y = innerHeight / 2; b.ph = i * 1.7; layerEl.append(b); return b; });
+    task(prompt, sentence ? h('div', { class: 'task-sentence' }, sentence) : null, slots);
+    const off = floatAnchors(bubs, 74);
+    const take = async b => {
+      if (!b || b.used || at >= word.length) return;
+      if (b.letter === word[at].toUpperCase()) {
+        sfx('pop'); b.used = true; b.classList.add('used'); if (onLetter && b.owner) onLetter(b.owner, at);
+        slots.children[at].textContent = b.letter; slots.children[at].classList.add('in'); at++;
+        if (at === word.length) { off(); layerEl.remove(); slots.classList.add('right'); await win(); hideTask(); res({ first: L.first }); }
       } else {
-        sfx('bad'); shake(slots);
-        L.wrong(() => take(tags.find(t => !t.userData.used && t.userData.letter === word[at].toUpperCase())));
+        sfx('bad'); shake(slots); b.classList.add('nope'); setTimeout(() => b.classList.remove('nope'), 500);
+        L.wrong(() => take(bubs.find(x => !x.used && x.letter === word[at].toUpperCase())));
       }
     };
-    const click = e => { const live = tags.filter(t => !t.userData.used); const hit = pickAt(e.clientX, e.clientY, live) || pickAt(e.clientX, e.clientY, objs);
-      if (!hit) return; take(live.includes(hit.obj) ? hit.obj : tags.find(t => t.userData.owner === hit.obj), hit.point); };
-    window.__solve = async () => { while (at < word.length) { await take(tags.find(t => !t.userData.used && t.userData.letter === word[at].toUpperCase())); await wait(150); } };
-    renderer.domElement.addEventListener('pointerup', click);
+    window.__solve = async () => { while (at < word.length) { await take(bubs.find(x => !x.used && x.letter === word[at].toUpperCase())); await wait(150); } };
   });
 }
 
@@ -313,21 +336,22 @@ export function openBinder(onClose) {
 
 // ---------------------------------------------------------------- activity: tap EVERY object that matches (e.g. words with the oo sound)
 export function tapAll({ prompt, items, hints = [], word, onRight }) {   // items: [{ obj, label, ok }]
-  return new Promise(res => { aimMode();
+  return new Promise(res => {
     const need = items.filter(i => i.ok).length; let got = 0; const L = ladder(hints, word);
     const count = h('div', { class: 'tap-count' }, `0 / ${need}`);
-    const bk = backup(items.map(it => ({ label: it.label, go: b => { if (it.ok && !it.done) b.disabled = true; take(it); } })), 9000);
-    task(prompt, count, bk);
-    const objs = items.map(i => i.obj);
+    task(prompt, count);
+    // the words float as big chips next to their things (the little 3D labels are hidden while the chips show)
+    const layerEl = h('div', { class: 'letter-layer' }); document.body.append(layerEl);
+    items.forEach((it, i) => { it.obj.traverse(o => { if (o.isSprite && o.material && o.material.depthTest === false) { o.visible = false; it.hid = it.hid || []; it.hid.push(o); } });
+      const c = h('button', { class: 'wchip', onclick: e => { e.stopPropagation(); take(it); } }, it.label); c.owner = it.obj; c.lift = 0.6; c.ph = i * 1.3; c.x = innerWidth / 2; c.y = innerHeight / 2; it.chip = c; layerEl.append(c); });
+    const off = floatAnchors(items.map(it => it.chip), 58);
     const take = async it => {
       if (!it || it.done) return;
-      if (it.ok) { it.done = true; got++; sfx('chime'); count.textContent = `${got} / ${need}`; onRight && onRight(it); sparkles(it.obj.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 2, 0)), 0xC8FFD8);
-        if (got === need) { cv.removeEventListener('pointerup', click); await win(count); hideTask(); res({ first: L.first }); } }
-      else { sfx('bad'); shake(count); it.obj.userData.nope && it.obj.userData.nope(); L.wrong(() => take(items.find(i => i.ok && !i.done))); }
+      if (it.ok) { it.done = true; got++; sfx('chime'); count.textContent = `${got} / ${need}`; it.chip.classList.add('right'); it.chip.used = true; onRight && onRight(it); sparkles(it.obj.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 1, 0)), 0xC8FFD8);
+        if (got === need) { off(); setTimeout(() => layerEl.remove(), 400); await win(count); hideTask(); res({ first: L.first }); } }
+      else { sfx('bad'); shake(count); it.chip.classList.add('nope'); setTimeout(() => it.chip.classList.remove('nope'), 500); it.obj.userData.nope && it.obj.userData.nope(); L.wrong(() => take(items.find(i => i.ok && !i.done))); }
     };
-    const click = e => { const hit = pickAt(e.clientX, e.clientY, objs); if (hit) take(items.find(i => i.obj === hit.obj)); };
     window.__solve = async () => { for (const it of items.filter(i => i.ok)) { await take(it); await wait(200); } };
-    const cv = renderer.domElement; cv.addEventListener('pointerup', click);
   });
 }
 

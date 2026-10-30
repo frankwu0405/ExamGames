@@ -130,4 +130,5 @@ const fromTown = new URLSearchParams(location.search).get('from') === 'town';
 if (fromTown) { history.replaceState(null, '', location.pathname); const cv = cloudsCovered(); showMap(); setTimeout(() => cloudsOut(cv), 700); }
 else if (sessionStorage.getItem('cave_skipTitle')) { sessionStorage.removeItem('cave_skipTitle'); showMap(); } else { setCam([-2, 40, 40], [0, 0, 0]); buildMap(S, null); title(); }
 import { buildBeach } from './sets2.js';
-window.__cave = { S, play, showMap, debugVarn, debugBeach: (cam = [0, 2.2, -8], tgt = [0, 1, 1]) => { stopFollow(); buildBeach(); setCam(cam, tgt); } };
+import { buildCliff, buildShelf, buildCrack } from './sets3.js';
+window.__cave = { S, play, showMap, debugVarn, dbg: { buildShelf, buildCliff, buildCrack, setCam, stopFollow, THREE, camera: () => camera }, debugCliff: (cam, tgt, fov = 50) => { stopFollow(); const K = buildCliff(); setCam(cam, tgt); camera.fov = fov; camera.updateProjectionMatrix(); window.__K = K; }, debugBeach: (cam = [0, 2.2, -8], tgt = [0, 1, 1]) => { stopFollow(); buildBeach(); setCam(cam, tgt); } };
