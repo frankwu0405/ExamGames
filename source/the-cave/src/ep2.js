@@ -159,11 +159,15 @@ export async function stop6() {
   drift = 0.9; while (z > -11) await wait(40); drift = 0;
   tell('“Look!” Mia said to the puppy. “That is Leo!” He was drifting in the water on a floating log. Mia paddled the cart over to fetch him.', { wait: false });
   V.paddle.visible = true; mia.pose('reach');
+  // frame the three signs in the middle of the screen (with Leo's log far behind them) while she chooses
+  stopFollow(); await flyCam([0, 1.9, z - 1.5], [0, 2.1, -20], 1100);
   await pick3D({ backupWords: true, prompt: ch.clue, targets: V.gates.map(g => ({ id: g.userData.word, obj: g.userData.board })), answer: ch.answer, hints: ch.hints, word: 'swift' });
   const gi = ord.indexOf(ch.answer); tx = V.gates[gi].position.x;
-  // paddling: the paddle swings, the cart goes down the right channel to Leo
+  followCam(() => { cam.set(x + 2.2, 3.2, z + 6.2); look.set(x * 0.5, 0.6, z - 5); return [cam, look]; });
+  // paddling: first line up with the right channel, THEN go down it (no cutting through the rocks), then on to Leo
   const row = onTick(t => { mia.AR.rotation.x = -0.6 + Math.sin(t * 6) * 0.7; });
-  drift = 3.2; while (z > -28) await wait(40); tx = 0; while (z > -39) await wait(40); drift = 0.25; row();
+  drift = 0.5; while (Math.abs(x - tx) > 0.15) await wait(40);
+  drift = 3.2; while (z > -35) await wait(40); tx = 0; while (z > -39) await wait(40); drift = 0.25; row();
   // Leo climbs in
   const lw = V.leo.g.getWorldPosition(new THREE.Vector3()); V.leoLog.remove(V.leo.g); R.add(V.leo.g); V.leo.g.position.set(-0.3, 0.45, -0.4); V.leo.g.rotation.set(0, 0, 0); V.leo.pose('cheer'); V.leo.L.rotation.x = V.leo.R.rotation.x = -1.4;
   sfx('great'); dog.pose('wag'); mia.pose('cheer'); V.paddle.visible = false;
@@ -188,7 +192,7 @@ export async function stop6() {
   await tell('They landed on the softest sandy beach and jumped out into the warm sun.');
   // they hug
   moveTo(k.leo.g, [-0.32, 0, 0], 600, { face: false }); await moveTo(k.mia.g, [0.32, 0, 0], 600, { face: false });
-  k.leo.g.rotation.y = 0.5; k.mia.g.rotation.y = -0.5; k.leo.pose('hold'); k.mia.pose('hold'); sparkles(new THREE.Vector3(0.3, 1.2, 0.5), 0x9FEAFF, 30); sfx('glow');
+  k.leo.g.rotation.y = Math.PI - 0.6; k.mia.g.rotation.y = Math.PI + 0.6; k.leo.pose('hold'); k.mia.pose('hold'); sparkles(new THREE.Vector3(0.3, 1.2, 0.5), 0x9FEAFF, 30); sfx('glow');
   await flyCam([0.6, 1.6, -4.2], [0, 1, 0.5], 1400);
   await tell('They hugged each other, so glad to be together. They had the puppy AND the treasure. It was the best adventure.');
   if (await offerStretch('Pick the word that compares.')) {

@@ -118,20 +118,53 @@ export function buildRiver() {
   return { w, R, gates, leoLog, flow, leo, paddle, exitGlow };
 }
 export function buildBeach() {
-  const w = newWorld({ sky: 0xA8E0FF, ambientI: 1.7, sunI: 1.8, fog: [0xA8E0FF, 40, 110] }); const b = builder(w);
-  const sand = new THREE.Mesh(new THREE.CircleGeometry(40, 30), toon(0xF2D79B)); sand.rotation.x = -Math.PI / 2; w.add(sand);
-  const sea = new THREE.Mesh(new THREE.PlaneGeometry(200, 120, 40, 20), toon(0x3FA7D6)); sea.rotation.x = -Math.PI / 2; sea.position.set(0, 0.05, -66); w.add(sea);
-  const sp = sea.geometry.attributes.position; onTick(t => { for (let i = 0; i < sp.count; i++) sp.setZ(i, Math.sin(sp.getX(i) * 0.25 + t) * 0.12); sp.needsUpdate = true; });
-  const sun = new THREE.Mesh(new THREE.SphereGeometry(4, 20, 12), new THREE.MeshBasicMaterial({ color: 0xFFE58A })); sun.position.set(30, 24, -90); w.add(sun);
-  // the cliff with the cave they shot out of
-  const cliff = b.rock(9, 0x9A8C7A, 0, 3, 18, { line: 0.06 }); cliff.scale.set(1.6, 0.9, 0.8);
-  const hole = new THREE.Mesh(new THREE.CircleGeometry(2.4, 22, 0, Math.PI), new THREE.MeshBasicMaterial({ color: 0x0B0C13 })); hole.position.set(0, 0.02, 11.4); hole.rotation.y = Math.PI; w.add(hole);
-  const stream = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 14), toon(0x5BB8E8)); stream.rotation.x = -Math.PI / 2; stream.position.set(0, 0.03, 4.5); w.add(stream);
-  for (let i = 0; i < 9; i++) { const x = -18 + rnd() * 36, z = 8 + rnd() * 10; if (Math.abs(x) < 6) continue; b.cyl(0.18, 0.24, 3.4, 0x8A5A3B, x, 1.7, z, { rz: (rnd() - 0.5) * 0.3 }); for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 2; b.box(2.2, 0.08, 0.5, 0x4FA35A, x + Math.cos(a) * 1, 3.5, z + Math.sin(a) * 1, { ry: -a, rz: -0.35, line: 0.02 }); } }
-  for (let i = 0; i < 14; i++) b.ball(0.12, [0xFFFFFF, 0xF8C8D0, 0xFFE58A][i % 3], -10 + rnd() * 20, 0.06, -6 + rnd() * 10, { line: 0.01 }).scale.y = 0.4;
+  const w = newWorld({ sky: 0xA8E0FF, ambientI: 1.7, sunI: 1.8, fog: [0xBFE6F7, 45, 120] }); const b = builder(w);
+  // sky gradient
+  const sc = document.createElement('canvas'); sc.width = 4; sc.height = 256; const sx = sc.getContext('2d'); const sg = sx.createLinearGradient(0, 0, 0, 256);
+  sg.addColorStop(0, '#6FB7E6'); sg.addColorStop(0.6, '#BFE6F7'); sg.addColorStop(1, '#FFE9C2'); sx.fillStyle = sg; sx.fillRect(0, 0, 4, 256);
+  const st = new THREE.CanvasTexture(sc); st.colorSpace = THREE.SRGBColorSpace; w.parent.background = st;
+  // sand with soft dunes, a darker wet band, and the sea
+  const sandGeo = new THREE.PlaneGeometry(90, 50, 60, 34); const sp0 = sandGeo.attributes.position;
+  for (let i = 0; i < sp0.count; i++) { const x = sp0.getX(i), y = sp0.getY(i); const back = Math.max(0, -y - 2) / 22; sp0.setZ(i, back * back * 6 + Math.sin(x * 0.35) * Math.cos(y * 0.4) * 0.35 * back + (rnd() - 0.5) * 0.05); }
+  sandGeo.computeVertexNormals(); const sand = new THREE.Mesh(sandGeo, toon(0xF2D79B)); sand.rotation.x = -Math.PI / 2; sand.position.set(0, 0, 5); w.add(sand);
+  const wet = new THREE.Mesh(new THREE.PlaneGeometry(90, 5), toon(0xD9B878)); wet.rotation.x = -Math.PI / 2; wet.position.set(0, 0.015, -17.5); w.add(wet);
+  const sea = new THREE.Mesh(new THREE.PlaneGeometry(220, 120, 50, 24), toon(0x3FA7D6)); sea.rotation.x = -Math.PI / 2; sea.position.set(0, 0.05, -80); w.add(sea);
+  const spos = sea.geometry.attributes.position; onTick(t => { for (let i = 0; i < spos.count; i++) spos.setZ(i, Math.sin(spos.getX(i) * 0.25 + t) * 0.12 + Math.cos(spos.getY(i) * 0.3 + t * 0.7) * 0.08); spos.needsUpdate = true; });
+  // waves washing up the sand
+  const foamMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.85 });
+  const waves = [0, 1, 2].map(i => { const m = new THREE.Mesh(new THREE.PlaneGeometry(90, 0.5, 40, 1), foamMat.clone()); m.rotation.x = -Math.PI / 2; w.add(m); m.userData.ph = i / 3; return m; });
+  onTick(t => waves.forEach(m => { const k = (t * 0.18 + m.userData.ph) % 1; m.position.set(0, 0.06, -21 + k * 4.2); m.material.opacity = Math.sin(k * Math.PI) * 0.85; }));
+  const sun = new THREE.Mesh(new THREE.SphereGeometry(4, 20, 12), new THREE.MeshBasicMaterial({ color: 0xFFE58A })); sun.position.set(30, 22, -100); w.add(sun);
+  // clouds
+  const cm = toon(0xFFFFFF); for (let i = 0; i < 6; i++) { const g = new THREE.Group(); g.position.set(-50 + i * 20 + rnd() * 8, 16 + rnd() * 6, -70 - rnd() * 20); w.add(g); for (let k = 0; k < 4; k++) { const m = new THREE.Mesh(new THREE.SphereGeometry(2 + rnd() * 1.5, 10, 8), cm); m.position.set(k * 2.6 - 4, rnd(), 0); m.scale.y = 0.6; g.add(m); } onTick((t, dt) => { g.position.x += dt * 0.6; if (g.position.x > 70) g.position.x = -70; }); }
+  // the rocky cliff with the cave they shot out of — the opening sits IN FRONT of the rock so it is never cut off
+  const cliff = b.rock(10, 0x9A8C7A, 0, 3, 21, { line: 0.06 }); cliff.scale.set(1.8, 1.0, 0.75);
+  b.rock(5, 0x8C7F6E, -13, 1.5, 17, { line: 0.05 }); b.rock(5.5, 0x8C7F6E, 13, 1.8, 17.5, { line: 0.05 });
+  const mouth = new THREE.Group(); mouth.position.set(0, 0, 13.4); mouth.rotation.y = Math.PI; w.add(mouth);
+  const gc = document.createElement('canvas'); gc.width = gc.height = 256; const gx = gc.getContext('2d'); const gr = gx.createRadialGradient(128, 256, 10, 128, 256, 250);
+  gr.addColorStop(0, '#000000'); gr.addColorStop(0.55, '#07080E'); gr.addColorStop(1, '#2A2D3A'); gx.fillStyle = gr; gx.fillRect(0, 0, 256, 256); const gt = new THREE.CanvasTexture(gc); gt.colorSpace = THREE.SRGBColorSpace;
+  const door = new THREE.Mesh(new THREE.CircleGeometry(2.6, 28, 0, Math.PI), new THREE.MeshBasicMaterial({ map: gt })); door.scale.y = 1.1; mouth.add(door);
+  const face = new THREE.Mesh(new THREE.RingGeometry(2.6, 6.5, 28, 1, 0, Math.PI), toon(0x9A8C7A)); face.scale.y = 1.1; face.position.z = 0.02; mouth.add(face); outline(face, 0.04);
+  [[-3.6, 0.6], [-3.2, 2.2], [-2.0, 3.4], [-0.4, 3.9], [1.3, 3.7], [2.7, 2.8], [3.5, 1.4]].forEach(([x, y]) => { const r = builder(mouth).rock(0.55, 0x8C7F6E, x, y, 0.3, { line: 0.03 }); r.scale.z = 0.5; });
+  // the little stream from the cave across the sand to the sea
+  const stream = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 31), toon(0x5BB8E8)); stream.rotation.x = -Math.PI / 2; stream.position.set(0, 0.03, -2.3); w.add(stream);
+  // palms, bushes, boulders, driftwood, shells, starfish, a crab
+  const palm = (x, z, lean) => { const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.z = lean; w.add(g); const pb = builder(g);
+    for (let k = 0; k < 6; k++) pb.cyl(0.24 - k * 0.02, 0.27 - k * 0.02, 0.85, 0x8A5A3B, Math.sin(k * 0.35) * 0.3, 0.45 + k * 0.8, 0, { line: 0.02 });
+    for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2; const l = pb.box(2.6, 0.06, 0.7, 0x4FA35A, Math.cos(a) * 1.1 + 0.3, 4.9, Math.sin(a) * 1.1, { ry: -a, rz: -0.45, line: 0.02 }); }
+    pb.ball(0.18, 0x6B4A33, 0.4, 4.6, 0.2, { line: 0.01 }); pb.ball(0.18, 0x6B4A33, 0.1, 4.55, -0.2, { line: 0.01 }); };
+  [[-9, 8, 0.12], [-12.5, 4, -0.1], [9.5, 7, -0.14], [13, 3, 0.1], [-6, 11, 0.05], [7, 11.5, -0.06]].forEach(p => palm(...p));
+  for (let i = 0; i < 14; i++) { const x = (rnd() < 0.5 ? -1 : 1) * (8 + rnd() * 14), z = 5 + rnd() * 10; b.ball(0.8 + rnd() * 0.8, [0x4FA35A, 0x5DBB66][i % 2], x, 0.5, z, { line: 0.03 }); }
+  [[-7, -9, 1.2], [8, -11, 1.5], [-15, -6, 2], [16, -5, 1.8], [-4, -15, 0.7], [11, -16, 0.9]].forEach(([x, z, r]) => b.rock(r, 0x8C7F6E, x, r * 0.4, z, { line: 0.04 }));
+  b.cyl(0.18, 0.2, 3.4, 0xB79A72, -5, 0.18, -4, { rz: Math.PI / 2, ry: 0.5, line: 0.02 });
+  for (let i = 0; i < 18; i++) { const x = -14 + rnd() * 28, z = -16 + rnd() * 14; if (Math.abs(x) < 2.5) continue; b.ball(0.12, [0xFFFFFF, 0xF8C8D0, 0xFFE58A][i % 3], x, 0.05, z, { line: 0.01 }).scale.y = 0.45; }
+  [[-3.5, -10], [5, -7]].forEach(([x, z]) => { for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 2; b.box(0.08, 0.04, 0.4, 0xF28C38, x + Math.cos(a) * 0.18, 0.04, z + Math.sin(a) * 0.18, { ry: -a + Math.PI / 2, line: 0.01 }); } });
+  const crab = new THREE.Group(); crab.position.set(4, 0, -3); w.add(crab); const crb = builder(crab); crb.ball(0.25, 0xEF5B4C, 0, 0.18, 0, { line: 0.02 }).scale.y = 0.6; [-1, 1].forEach(sd => { crb.ball(0.1, 0xEF5B4C, sd * 0.3, 0.25, 0.15, { line: 0.01 }); crb.ball(0.05, 0x2E2A4F, sd * 0.09, 0.32, 0.18, { line: 0 }); });
+  onTick(t => { crab.position.x = 4 + Math.sin(t * 0.6) * 2.5; crab.rotation.y = Math.PI / 2; });
   const tipped = cart(b, 3.2, 0, 1.5); tipped.rotation.set(0, 0.8, 1.2);
   const cast = makeCast(w);
-  cast.leo.g.position.set(-0.7, 0, 0); cast.mia.g.position.set(0.7, 0, 0); cast.toby.g.position.set(0, 0, 1.0);
+  cast.leo.g.position.set(-0.7, 0, 0); cast.mia.g.position.set(0.7, 0, 0); cast.toby.g.position.set(0, 0, -1.0);
+  [cast.leo, cast.mia, cast.toby].forEach(c => c.g.rotation.y = Math.PI);   // facing the camera (and the sea)
   const gem = gemOf(cast.mia.g, 0, 0.95, 0.38);
   return { w, cast, gem };
 }

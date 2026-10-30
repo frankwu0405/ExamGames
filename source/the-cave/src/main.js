@@ -126,4 +126,5 @@ document.addEventListener('pointerdown', () => audioInit(), { once: true });
 const fromTown = new URLSearchParams(location.search).get('from') === 'town';
 if (fromTown) { history.replaceState(null, '', location.pathname); const cv = cloudsCovered(); showMap(); setTimeout(() => cloudsOut(cv), 700); }
 else if (sessionStorage.getItem('cave_skipTitle')) { sessionStorage.removeItem('cave_skipTitle'); showMap(); } else { setCam([-2, 40, 40], [0, 0, 0]); buildMap(S, null); title(); }
-window.__cave = { S, play, showMap };
+import { buildBeach } from './sets2.js';
+window.__cave = { S, play, showMap, debugBeach: (cam = [0, 2.2, -8], tgt = [0, 1, 1]) => { stopFollow(); buildBeach(); setCam(cam, tgt); } };
