@@ -65,7 +65,7 @@ function task(prompt, ...body) {
   return taskEl;
 }
 export const hideTask = () => { taskEl.classList.add('hidden'); taskEl.innerHTML = ''; tobyHide(); document.body.classList.remove('aim'); };
-const aim = () => document.body.classList.add('aim');
+const aimMode = () => document.body.classList.add('aim');
 export function toby(text, mood = '') {
   tobyEl.innerHTML = ''; tobyEl.className = 'toby-hint ' + mood;
   tobyEl.append(h('div', { class: 'toby-face', html: TOBY_SVG }), h('div', { class: 'toby-say' }, text)); say(text);
@@ -106,7 +106,7 @@ export function chooseWord({ prompt, sentence, tiles, answer, hints = [], base =
 
 // ---------------------------------------------------------------- activity: tap something in the 3D scene
 export function pick3D({ prompt, targets, answer, hints = [], word, onWrong, onHover }) {
-  return new Promise(res => { aim();
+  return new Promise(res => { aimMode();
     task(prompt);
     const L = ladder(hints, word);
     const objs = targets.map(t => t.obj);
@@ -126,7 +126,7 @@ export function pick3D({ prompt, targets, answer, hints = [], word, onWrong, onH
 
 // ---------------------------------------------------------------- activity: spell a word by tapping letters painted on objects
 export function spellOn({ prompt, word, objs, decoys = '', hints = [], sentence, onLetter }) {
-  return new Promise(res => { aim();
+  return new Promise(res => { aimMode();
     const letters = shuffle([...word.toUpperCase(), ...decoys.toUpperCase()]); const slots = h('div', { class: 'slots' }, ...[...word].map(() => h('span', { class: 'slot-l' }, '')));
     const tags = []; let at = 0; const L = ladder(hints, word);
     objs.slice(0, letters.length).forEach((o, i) => {
@@ -154,7 +154,7 @@ export function spellOn({ prompt, word, objs, decoys = '', hints = [], sentence,
 
 // ---------------------------------------------------------------- activity: sweep the flashlight to find things / words
 export function flashlight({ spot, surfaces, prompt, words = [], answer, find, hints = [], word }) {
-  return new Promise(res => { aim();
+  return new Promise(res => { aimMode();
     task(prompt);
     const L = ladder(hints, word || answer); const hitV = new THREE.Vector3(); let aim = new THREE.Vector3(0, 2, -6);
     const move = e => { const r = rayFrom(e.clientX, e.clientY); const hit = r.intersectObjects(surfaces, false)[0]; if (hit) aim.copy(hit.point); };
@@ -294,7 +294,7 @@ export function openBinder(onClose) {
 
 // ---------------------------------------------------------------- activity: tap EVERY object that matches (e.g. words with the oo sound)
 export function tapAll({ prompt, items, hints = [], word, onRight }) {   // items: [{ obj, label, ok }]
-  return new Promise(res => { aim();
+  return new Promise(res => { aimMode();
     const need = items.filter(i => i.ok).length; let got = 0; const L = ladder(hints, word);
     const count = h('div', { class: 'tap-count' }, `0 / ${need}`);
     task(prompt, count);
