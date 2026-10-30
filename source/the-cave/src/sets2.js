@@ -134,7 +134,9 @@ export function buildBeach() {
   const st = new THREE.CanvasTexture(sc); st.colorSpace = THREE.SRGBColorSpace; w.parent.background = st;
   // sand with soft dunes, a darker wet band, and the sea
   const sandGeo = new THREE.PlaneGeometry(90, 50, 60, 34); const sp0 = sandGeo.attributes.position;
-  for (let i = 0; i < sp0.count; i++) { const x = sp0.getX(i), y = sp0.getY(i); const back = Math.max(0, -y - 2) / 22; sp0.setZ(i, back * back * 6 + Math.sin(x * 0.35) * Math.cos(y * 0.4) * 0.35 * back + (rnd() - 0.5) * 0.05); }
+  for (let i = 0; i < sp0.count; i++) { const x = sp0.getX(i), y = sp0.getY(i); const back = Math.max(0, -y - 2) / 22; let hgt = back * back * 6 + Math.sin(x * 0.35) * Math.cos(y * 0.4) * 0.35 * back + (rnd() - 0.5) * 0.05;
+    if (Math.abs(x) < 3.4 && -y + 5 < 14) hgt = Math.min(hgt, Math.max(0, Math.abs(x) - 2.0) * 0.45 - 0.08);   // the stream's channel, from the cave door to the sea
+    sp0.setZ(i, hgt); }
   sandGeo.computeVertexNormals(); const sand = new THREE.Mesh(sandGeo, toon(0xF2D79B)); sand.rotation.x = -Math.PI / 2; sand.position.set(0, 0, 5); w.add(sand);
   const wet = new THREE.Mesh(new THREE.PlaneGeometry(90, 5), toon(0xD9B878)); wet.rotation.x = -Math.PI / 2; wet.position.set(0, 0.015, -17.5); w.add(wet);
   const sea = new THREE.Mesh(new THREE.PlaneGeometry(220, 120, 50, 24), toon(0x3FA7D6)); sea.rotation.x = -Math.PI / 2; sea.position.set(0, 0.05, -80); w.add(sea);
@@ -156,7 +158,12 @@ export function buildBeach() {
   const face = new THREE.Mesh(new THREE.RingGeometry(2.6, 6.5, 28, 1, 0, Math.PI), toon(0x9A8C7A)); face.scale.y = 1.1; face.position.z = 0.02; mouth.add(face); outline(face, 0.04);
   [[-3.6, 0.6], [-3.2, 2.2], [-2.0, 3.4], [-0.4, 3.9], [1.3, 3.7], [2.7, 2.8], [3.5, 1.4]].forEach(([x, y]) => { const r = builder(mouth).rock(0.55, 0x8C7F6E, x, y, 0.3, { line: 0.03 }); r.scale.z = 0.5; });
   // the little stream from the cave across the sand to the sea
-  const stream = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 31), toon(0x5BB8E8)); stream.rotation.x = -Math.PI / 2; stream.position.set(0, 0.03, -2.3); w.add(stream);
+  const stream = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 32), toon(0x5BB8E8, { emissive: 0x1E5A80, emissiveIntensity: 0.2 })); stream.rotation.x = -Math.PI / 2; stream.position.set(0, 0.04, -2.2); w.add(stream);
+  // it starts inside the cave door and flows out across the sand to the sea (foam moving down it)
+  const inDoor = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 2.4), toon(0x2F6E9A)); inDoor.rotation.x = -Math.PI / 2; inDoor.position.set(0, 0.035, 14.4); w.add(inDoor);
+  const sfm = new THREE.MeshBasicMaterial({ color: 0xF2FBFF }); const sfoam = Array.from({ length: 22 }, (_, i) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.02, 0.5), sfm); m.position.set((rnd() - 0.5) * 2.8, 0.06, 13.5 - i * 1.45); w.add(m); return m; });
+  onTick((t, dt) => sfoam.forEach(m => { m.position.z -= dt * 2.2; if (m.position.z < -18) m.position.z = 13.8; }));
+  for (let i = 0; i < 26; i++) { const sd = i % 2 ? 1 : -1, z = 12.5 - (i >> 1) * 2.4; b.rock(0.22 + rnd() * 0.18, 0xB8A27E, sd * (1.95 + rnd() * 0.3), 0.02, z, { line: 0.015 }); }
   // palms, bushes, boulders, driftwood, shells, starfish, a crab
   const palm = (x, z, lean) => { const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.z = lean; w.add(g); const pb = builder(g);
     for (let k = 0; k < 6; k++) pb.cyl(0.24 - k * 0.02, 0.27 - k * 0.02, 0.85, 0x8A5A3B, Math.sin(k * 0.35) * 0.3, 0.45 + k * 0.8, 0, { line: 0.02 });

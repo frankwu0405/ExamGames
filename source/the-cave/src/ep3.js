@@ -23,8 +23,8 @@ export async function stop7() {
   playMusic('meadow');
   // the beach: Leo tells his story
   const B = buildBeach(); const k = B.cast;
-  k.leo.g.position.set(-0.6, 0, 0); k.mia.g.position.set(0.6, 0, 0.2); k.leo.pose('sit'); k.mia.pose('sit'); k.leo.g.position.y = k.mia.g.position.y = -0.32; k.leo.g.rotation.y = Math.PI - 0.5; k.mia.g.rotation.y = Math.PI + 0.5; k.toby.pose('sit');
-  setCam([0.2, 1.6, -4.4], [0, 0.8, 0.4]);
+  k.leo.g.position.set(-3.8, 0, 0); k.mia.g.position.set(-2.6, 0, 0.2); k.toby.g.position.set(-4.7, 0, 0.5); k.leo.pose('sit'); k.mia.pose('sit'); k.leo.g.position.y = k.mia.g.position.y = -0.32; k.leo.g.rotation.y = Math.PI - 0.5; k.mia.g.rotation.y = Math.PI + 0.5; k.toby.pose('sit');
+  setCam([-3, 1.6, -4.4], [-3.2, 0.8, 0.4]);
   await tell('Mia and Leo sat on the warm, sandy beach. “Leo, how did you get here?” Mia asked. Leo smiled and told his story.');
   // back in time: the cave, the moment the floor tipped
   const lift = await memory(); playMusic('danger');
@@ -219,7 +219,7 @@ export async function stop9() {
   spin = false; sOff(); V.w.remove(L.g); const grip = new THREE.Group(); grip.rotation.y = -Math.PI / 2; V.leoLog.add(grip); grip.add(L.g);
   L.g.rotation.set(Math.PI / 2, 0, 0); L.g.position.set(0, 0.42, 0.55); L.head.rotation.x = -0.8; L.pose('hug');
   // drifting to the light; Mia's cart comes paddling up behind
-  let z = -5.6; const dOff = onTick((t, dt) => { z = Math.max(-54, z - dt * 2.6); V.leoLog.position.z = z; });
+  let z = -5.6, logFree = false; const dOff = onTick((t, dt) => { z = Math.max(-54, z - dt * 2.6); if (!logFree) V.leoLog.position.z = z; else { V.leoLog.position.z -= dt * 1.2; V.leoLog.position.x += (-3.2 - V.leoLog.position.x) * dt * 0.6; } });
   followCam(() => { cam.set(-2.6, 1.9, z - 5.5); look.set(0.6, 0.5, z + 1.5); return [cam, look]; });
   await wait(2600);
   V.R.g.visible = true; V.R.g.rotation.set(0, Math.PI, 0); V.paddle.visible = true; const M = V.R.cast.mia; const row = onTick(t => { M.AR.rotation.x = -0.6 + Math.sin(t * 6) * 0.7; });
@@ -231,7 +231,16 @@ export async function stop9() {
     { prompt: 'Which word fits?', sentence: 'Mia paddled over to {_} him.', tiles: ['fetch', 'fence', 'feather'], answer: 'fetch', note: 'fetch = go and get', hints: ['It means go and get.', 'Toby likes to play ___ with a ball!'] },
     { prompt: 'Which word means “go and get”?', sentence: 'Mia paddled over to {_} him.', tiles: ['fetch', 'forget', 'follow'], answer: 'fetch', note: 'fetch = go and get', hints: ['A dog can ___ a ball.', 'fetch!'] },
   ]));
-  row(); M.pose('reach'); await filled('fetch'); await earnCard('fetch');
+  row(); M.pose('reach'); await filled('fetch');
+  // Mia reaches out and pulls Leo up off the log into the cart
+  { stopFollow(); const lw = L.g.getWorldPosition(new THREE.Vector3()); cut([V.R.g.position.x + 3.2, 2.1, z - 3.6], [V.R.g.position.x - 0.6, 0.8, z + 0.6], 48);
+    await wait(500); sfx('pop'); grip.remove(L.g); V.w.add(L.g); L.g.position.copy(lw); L.g.rotation.set(0, Math.PI, 0); L.head.rotation.x = 0; L.pose('reach');
+    const seat = new THREE.Vector3(-0.3, 0.45, -0.25); const to = () => V.R.g.localToWorld(seat.clone());
+    await tween(900, (e, k) => { L.g.position.lerpVectors(lw, to(), e); L.g.position.y += Math.sin(k * Math.PI) * 0.9; });
+    V.R.g.attach(L.g); L.g.position.copy(seat); L.g.rotation.set(0, 0, 0); L.pose('cheer'); L.L.rotation.x = L.R.rotation.x = -1.4;
+    M.g.position.x = 0.3; M.pose('cheer'); logFree = true; sfx('great');
+    followCam(() => { cam.set(-2.6, 2.2, z - 5); look.set(1.2, 0.6, z + 1.5); return [cam, look]; }); await wait(1200); }
+  await earnCard('fetch');
   if (await offerStretch('Three words that sound the same.')) {
     await chooseWord(pickV(9, [
       { prompt: 'Bonus! Which word fits?', sentence: 'The water was far {_} swift.', tiles: ['to', 'too', 'two'], answer: 'too', note: 'too = very / also · two = 2 · to = toward', hints: ['It means VERY.', 'too has two o’s.'] },
@@ -248,20 +257,18 @@ export async function stop9() {
   // …and out onto the beach, along the stream from the cave to the sea
   const B = buildBeach(); const k = B.cast; [k.leo, k.mia, k.toby].forEach(c => c.g.visible = false);
   const out = new THREE.Group(); B.w.add(out); const ob = builder(out);
-  const raft = new THREE.Group(); out.add(raft); builder(raft).cyl(0.34, 0.34, 2.4, 0x8A5A3B, 0, 0.1, 0, { rz: Math.PI / 2, line: 0.03 }); raft.rotation.y = Math.PI / 2;
-  const g2 = new THREE.Group(); g2.rotation.y = -Math.PI / 2; raft.add(g2); const lc = makeCast(g2); lc.mia.g.visible = false; lc.toby.g.visible = false; lc.leo.g.rotation.set(Math.PI / 2, 0, 0); lc.leo.g.position.set(0, 0.42, 0.55); lc.leo.head.rotation.x = -0.8; lc.leo.pose('hug');
-  const boat = new THREE.Group(); out.add(boat); cart(builder(boat), 0, 0, 0); const bc = makeCast(boat); bc.leo.g.visible = false; bc.mia.g.position.set(0, 0.45, 0.15); bc.mia.pose('cheer'); bc.mia.L.rotation.x = bc.mia.R.rotation.x = -1.4; bc.toby.g.position.set(0, 0.85, 0.6); bc.toby.g.scale.setScalar(0.9); boat.rotation.y = Math.PI;
+  const boat = new THREE.Group(); out.add(boat); cart(builder(boat), 0, 0, 0); const bc = makeCast(boat); bc.leo.g.position.set(-0.3, 0.45, -0.25); bc.leo.pose('cheer'); bc.leo.L.rotation.x = bc.leo.R.rotation.x = -1.4; bc.mia.g.position.set(0.3, 0.45, 0.15); bc.mia.pose('cheer'); bc.mia.L.rotation.x = bc.mia.R.rotation.x = -1.4; bc.toby.g.position.set(0, 0.85, 0.6); bc.toby.g.scale.setScalar(0.9); boat.rotation.y = Math.PI;
   cut([4.5, 1.8, -6], [0, 1, 10], 50); lift(); sfx('whoosh');
-  await tween(5200, (e, kk) => { raft.position.set(-0.4, 0.15 + Math.sin(kk * 20) * 0.05, 14 - kk * 15); boat.position.set(0.6, 0.12, 17 - kk * 15); boat.rotation.z = Math.sin(kk * 14) * 0.05; });
+  await tween(5200, (e, kk) => { boat.position.set(0.2, 0.12 + Math.sin(kk * 20) * 0.04, 15 - kk * 15); boat.rotation.z = Math.sin(kk * 14) * 0.05; });
   // ---- back to the beach (now): Leo finishes his story
   const lift3 = await memory(800); playMusic('meadow');
   const B2 = buildBeach(); const k2 = B2.cast;
-  k2.leo.g.position.set(-0.6, 0, 0); k2.mia.g.position.set(0.6, 0, 0.2); k2.leo.g.rotation.y = Math.PI - 0.5; k2.mia.g.rotation.y = Math.PI + 0.5;
-  setCam([0.2, 1.7, -4.6], [0, 0.9, 0.4]); lift3(); letterbox(false);
+  k2.leo.g.position.set(-3.8, 0, 0); k2.mia.g.position.set(-2.6, 0, 0.2); k2.toby.g.position.set(-4.7, 0, 0.5); k2.leo.g.rotation.y = Math.PI - 0.5; k2.mia.g.rotation.y = Math.PI + 0.5;
+  setCam([-3, 1.7, -4.6], [-3.2, 0.9, 0.4]); lift3(); letterbox(false);
   k2.leo.pose('cheer'); k2.mia.pose('cheer'); k2.toby.pose('wag');
   await tell('Leo is finally safe...');
-  hideStory(); sfx('great'); sparkles(new THREE.Vector3(0, 1.6, 0.4), 0xFFE58A, 40);
-  await flyCam([5, 12, -20], [0, 0, -2], 3600);
+  hideStory(); sfx('great'); sparkles(new THREE.Vector3(-3.2, 1.6, 0.4), 0xFFE58A, 40);
+  await flyCam([5, 12, -20], [-1.5, 0, -2], 3600);
   finish(9);
   const end = h('div', { class: 'tbc end' }, h('div', {}, h('div', { class: 'end-ep' }, 'The Cave 3 · Leo’s Side'), 'The End')); document.body.append(end); sfx('card'); await wait(3000); end.classList.add('fade'); await wait(800); end.remove();
 }
