@@ -1,0 +1,227 @@
+// Story panel, activity widgets, hints and keyword cards.
+import { S, save, say, hush, sfx, h, $, wait, shuffle, shake, miss } from './core.js';
+import { THREE, pickAt, rayFrom, renderer, camera, onTick, toScreen, sparkles, textTexture, snapshot } from './gfx.js';
+
+// ---------------------------------------------------------------- story panel
+let panel, textEl, nextBtn, taskEl, tobyEl, layer;
+export function mountUI() {
+  layer = h('div', { id: 'ui' });
+  textEl = h('div', { class: 'story-text' });
+  nextBtn = h('button', { class: 'next', 'aria-label': 'Next' }, '▶');
+  const hear = h('button', { class: 'hear', 'aria-label': 'Read to me', onclick: e => { e.stopPropagation(); readCurrent(true); } }, '🔊');
+  panel = h('div', { class: 'story hidden' }, hear, textEl, nextBtn);
+  taskEl = h('div', { class: 'task hidden' });
+  tobyEl = h('div', { class: 'toby-hint hidden' });
+  layer.append(panel, taskEl, tobyEl); document.body.append(layer);
+}
+let current = '';
+// text may contain {word} for a blank that gets filled later; returns when she taps ▶
+function render(text) {
+  textEl.innerHTML = ''; current = text;
+  text.split(/(\{[^}]*\}|\s+)/).forEach(part => {
+    if (!part) return;
+    if (/^\{/.test(part)) { const w = part.slice(1, -1); textEl.append(h('span', { class: 'gap', 'data-word': w }, ' '.repeat(10))); }
+    else if (/^\s+$/.test(part)) textEl.append(part);
+    else textEl.append(h('span', { class: 'w' }, part));
+  });
+}
+const spoken = () => current.replace(/\{([^}]*)\}/g, (m, w) => (textEl.querySelector(`.gap[data-word="${w}"].filled`) ? w : '...'));
+function readCurrent(force) {
+  const words = [...textEl.querySelectorAll('.w, .gap')]; const txt = spoken();
+  // map char offsets to spans for highlighting as she listens
+  let off = 0; const starts = words.map(sp => { const t = sp.classList.contains('gap') ? (sp.classList.contains('filled') ? sp.dataset.word : '...') : sp.textContent; const i = txt.indexOf(t, off); off = i + t.length; return i; });
+  return say(txt, { force, onWord: ci => { let k = 0; starts.forEach((s, i) => { if (s <= ci) k = i; }); words.forEach((w, i) => w.classList.toggle('reading', i === k)); } })
+    .then(() => words.forEach(w => w.classList.remove('reading')));
+}
+export async function tell(text, { auto = false, wait: waitTap = true } = {}) {
+  panel.classList.remove('hidden'); render(text); nextBtn.classList.add('hidden');
+  const reading = readCurrent(false);
+  if (!waitTap) return reading;
+  await Promise.race([reading, wait(1200)]);
+  nextBtn.classList.remove('hidden'); nextBtn.classList.add('bob');
+  await new Promise(r => { const go = () => { panel.removeEventListener('click', go); r(); }; panel.addEventListener('click', go); });
+  hush(); sfx('tap'); nextBtn.classList.remove('bob');
+}
+export function fillGap(word) { const g = textEl.querySelector(`.gap[data-word="${word}"]`); if (!g) return; g.textContent = word; g.classList.add('filled'); g.animate([{ transform: 'scale(1.5)' }, { transform: 'scale(1)' }], { duration: 400, easing: 'cubic-bezier(.3,1.6,.6,1)' }); }
+export const hideStory = () => panel.classList.add('hidden');
+export const storyText = () => current;
+
+// ---------------------------------------------------------------- task card + Toby's hints
+function task(prompt, ...body) {
+  taskEl.innerHTML = ''; taskEl.classList.remove('hidden');
+  const p = h('div', { class: 'task-prompt' }, h('button', { class: 'hear small', onclick: () => say(prompt, { force: true }) }, '🔊'), h('span', {}, prompt));
+  taskEl.append(p, ...body.filter(Boolean)); say(prompt);
+  return taskEl;
+}
+export const hideTask = () => { taskEl.classList.add('hidden'); taskEl.innerHTML = ''; tobyHide(); };
+export function toby(text, mood = '') {
+  tobyEl.innerHTML = ''; tobyEl.className = 'toby-hint ' + mood;
+  tobyEl.append(h('div', { class: 'toby-face', html: TOBY_SVG }), h('div', { class: 'toby-say' }, text)); say(text);
+}
+export const tobyHide = () => tobyEl.classList.add('hidden');
+const TOBY_SVG = `<svg viewBox="0 0 100 100"><ellipse cx="22" cy="44" rx="13" ry="24" fill="#8A5A2E" stroke="#2E2A4F" stroke-width="4" transform="rotate(18 22 44)"/><ellipse cx="78" cy="44" rx="13" ry="24" fill="#8A5A2E" stroke="#2E2A4F" stroke-width="4" transform="rotate(-18 78 44)"/><circle cx="50" cy="50" r="32" fill="#C98A4B" stroke="#2E2A4F" stroke-width="4"/><ellipse cx="50" cy="64" rx="17" ry="13" fill="#E7B985" stroke="#2E2A4F" stroke-width="3"/><circle cx="38" cy="45" r="5" fill="#2E2A4F"/><circle cx="62" cy="45" r="5" fill="#2E2A4F"/><ellipse cx="50" cy="58" rx="6" ry="4.5" fill="#2E2A4F"/></svg>`;
+
+// A hint ladder: 1) Toby's clue  2) a stronger clue  3) Toby shows the answer. She is never stuck.
+function ladder(hints, word) {
+  let wrong = 0;
+  return {
+    get first() { return wrong === 0; },
+    async wrong(reveal) {
+      wrong++; sfx('whine'); if (word) miss(word);
+      if (wrong <= hints.length) toby(hints[wrong - 1]);
+      else { toby('Let me show you!', 'show'); await wait(600); reveal(); }
+    },
+  };
+}
+async function win(el) { sfx('good'); tobyHide(); if (el) el.classList.add('right'); await wait(700); }
+
+// ---------------------------------------------------------------- activity: put the right word (or ending) in the gap
+export function chooseWord({ prompt, sentence, tiles, answer, hints = [], base = '', note }) {
+  return new Promise(res => {
+    const shown = h('div', { class: 'task-sentence' });
+    const draw = (w, cls = '') => { shown.innerHTML = ''; sentence.split(/(\{_\})/).forEach(p => shown.append(p === '{_}' ? h('span', { class: 'slot ' + cls }, w || ' '.repeat(8)) : p)); };
+    draw('');
+    const L = ladder(hints, answer);
+    const row = h('div', { class: 'tiles' }, ...shuffle(tiles).map(t => h('button', { class: 'tile', onclick: async e => {
+      sfx('tap'); const word = base + t.replace(/^-/, ''); draw(word);
+      if (word === answer || t === answer) { row.querySelectorAll('.tile').forEach(b => b.disabled = true); e.target.classList.add('right'); draw(word, 'ok'); await win(); hideTask(); res({ first: L.first, word: answer }); }
+      else { shake(e.target); e.target.classList.add('nope'); setTimeout(() => draw(''), 700); L.wrong(() => [...row.children].find(b => (base + b.textContent.replace(/^-/, '')) === answer || b.textContent === answer).click()); }
+    } }, (base ? '' : '') + t)));
+    window.__solve = () => [...row.children].find(b => (base + b.textContent.replace(/^-/, '')) === answer || b.textContent === answer).click();
+    task(prompt, base ? h('div', { class: 'base-word' }, h('b', {}, base), ' + ?') : null, shown, row, note ? h('div', { class: 'task-note' }, note) : null);
+  });
+}
+
+// ---------------------------------------------------------------- activity: tap something in the 3D scene
+export function pick3D({ prompt, targets, answer, hints = [], word, onWrong, onHover }) {
+  return new Promise(res => {
+    task(prompt);
+    const L = ladder(hints, word);
+    const objs = targets.map(t => t.obj);
+    const click = async e => {
+      const hit = pickAt(e.clientX, e.clientY, objs); if (!hit) return;
+      const t = targets.find(t => t.obj === hit.obj);
+      if (t.id === answer) { cleanup(); sfx('good'); sparkles(hit.point, 0xFFE58A); await win(); hideTask(); res({ first: L.first }); }
+      else { sfx('bad'); onWrong && onWrong(t.id); L.wrong(() => { const a = targets.find(t => t.id === answer); const p = toScreen(a.obj.getWorldPosition(new THREE.Vector3())); click({ clientX: p.x, clientY: p.y, reveal: true }); }); }
+    };
+    window.__solve = () => { const a = targets.find(t => t.id === answer); const p = toScreen(a.obj.getWorldPosition(new THREE.Vector3())); click({ clientX: p.x, clientY: p.y }); };
+    const cleanup = () => renderer.domElement.removeEventListener('pointerup', click);
+    renderer.domElement.addEventListener('pointerup', click);
+  });
+}
+
+// ---------------------------------------------------------------- activity: spell a word by tapping letters painted on objects
+export function spellOn({ prompt, word, objs, decoys = '', hints = [], sentence }) {
+  return new Promise(res => {
+    const letters = shuffle([...word.toUpperCase(), ...decoys.toUpperCase()]); const slots = h('div', { class: 'slots' }, ...[...word].map(() => h('span', { class: 'slot-l' }, '')));
+    const tags = []; let at = 0; const L = ladder(hints, word);
+    objs.slice(0, letters.length).forEach((o, i) => {
+      const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: textTexture(letters[i], { w: 128, h: 128, font: '96px Chewy, sans-serif', bg: null, fg: '#FFFDF4', glow: '#2E2A4F' }), depthTest: false }));
+      tag.scale.setScalar(0.9); o.add(tag); tag.position.set(0, 0, 0.8); tag.userData.letter = letters[i]; tag.userData.owner = o; tags.push(tag);
+    });
+    task(prompt, sentence ? h('div', { class: 'task-sentence' }, sentence) : null, slots);
+    const click = async e => {
+      const hit = pickAt(e.clientX, e.clientY, objs); if (!hit) return; const tag = tags.find(t => t.userData.owner === hit.obj); if (!tag || tag.userData.used) return;
+      if (tag.userData.letter === word[at].toUpperCase()) {
+        sfx('pop'); tag.userData.used = true; tag.material.opacity = 0.25; slots.children[at].textContent = tag.userData.letter; slots.children[at].classList.add('in'); at++;
+        if (at === word.length) { renderer.domElement.removeEventListener('pointerup', click); tags.forEach(t => t.parent.remove(t)); sparkles(hit.point); slots.classList.add('right'); await win(); hideTask(); res({ first: L.first }); }
+      } else {
+        sfx('bad'); shake(slots);
+        L.wrong(() => { const t = tags.find(t => !t.userData.used && t.userData.letter === word[at].toUpperCase()); const p = toScreen(t.userData.owner.getWorldPosition(new THREE.Vector3())); click({ clientX: p.x, clientY: p.y }); });
+      }
+    };
+    window.__solve = async () => { while (at < word.length) { const t = tags.find(t => !t.userData.used && t.userData.letter === word[at].toUpperCase()); const p = toScreen(t.userData.owner.getWorldPosition(new THREE.Vector3())); await click({ clientX: p.x, clientY: p.y }); } };
+    renderer.domElement.addEventListener('pointerup', click);
+  });
+}
+
+// ---------------------------------------------------------------- activity: sweep the flashlight to find things / words
+export function flashlight({ spot, surfaces, prompt, words = [], answer, find, hints = [], word }) {
+  return new Promise(res => {
+    task(prompt);
+    const L = ladder(hints, word || answer); const hitV = new THREE.Vector3(); let aim = new THREE.Vector3(0, 2, -6);
+    const move = e => { const r = rayFrom(e.clientX, e.clientY); const hit = r.intersectObjects(surfaces, false)[0]; if (hit) aim.copy(hit.point); };
+    const off = onTick(() => {
+      spot.target.position.lerp(aim, 0.25);
+      words.forEach(m => { const d = m.position.distanceTo(spot.target.position); m.material.opacity = Math.max(0, Math.min(1, (4.2 - d) / 2)); });
+    });
+    const down = async e => {
+      move(e);
+      if (find) { const d = find.obj.getWorldPosition(new THREE.Vector3()).distanceTo(aim); if (d < 2.2) { done(); sfx('good'); await win(); hideTask(); res({ first: L.first }); } return; }
+      const lit = words.filter(m => m.material.opacity > 0.5); const hit = pickAt(e.clientX, e.clientY, lit); if (!hit) return;
+      if (hit.obj.userData.word === answer) { done(); sparkles(hit.obj.position, 0x9FEAFF); sfx('good'); await win(); hideTask(); res({ first: L.first }); }
+      else { sfx('bad'); L.wrong(() => { const m = words.find(m => m.userData.word === answer); aim.copy(m.position); setTimeout(() => { const p = toScreen(m.position); down({ clientX: p.x, clientY: p.y }); }, 800); }); }
+    };
+    window.__solve = () => { if (find) { aim.copy(find.obj.getWorldPosition(new THREE.Vector3())); done(); win().then(() => { hideTask(); res({ first: true }); }); } else { const m = words.find(m => m.userData.word === answer); aim.copy(m.position); setTimeout(() => { const p = toScreen(m.position); down({ clientX: p.x, clientY: p.y }); }, 600); } };
+    const cv = renderer.domElement; cv.addEventListener('pointermove', move); cv.addEventListener('pointerdown', down);
+    const done = () => { clearTimeout(L.wrongTimer); cv.removeEventListener('pointermove', move); cv.removeEventListener('pointerdown', down); };
+    if (find) L.wrongTimer = setTimeout(() => toby(hints[0] || 'Keep looking!'), 12000);
+  });
+}
+
+// ---------------------------------------------------------------- activity: put things in order (quiet→loud, first→last)
+export function order({ prompt, items, labels = ['', ''], hints = [], word, compact }) {
+  return new Promise(res => {
+    const slots = h('div', { class: 'order-slots' + (compact ? ' compact' : '') }, ...items.map((_, i) => h('div', { class: 'oslot' }, h('i', {}, String(i + 1)))));
+    const ends = h('div', { class: 'order-ends' }, h('span', {}, labels[0]), h('span', {}, labels[1]));
+    let at = 0; const L = ladder(hints, word);
+    const pool = h('div', { class: 'order-pool' + (compact ? ' compact' : '') }, ...shuffle(items).map(it => h('button', { class: 'tile', onclick: async e => {
+      if (it === items[at]) { sfx('pop'); slots.children[at].append(h('span', {}, it)); slots.children[at].classList.add('in'); e.target.remove(); at++;
+        if (at === items.length) { await win(slots); hideTask(); res({ first: L.first }); } }
+      else { shake(e.target); sfx('bad'); L.wrong(() => [...pool.children].find(b => b.textContent === items[at]).click()); }
+    } }, it)));
+    window.__solve = () => { while (at < items.length) [...pool.children].find(b => b.textContent === items[at]).click(); };
+    task(prompt, labels[0] ? ends : null, slots, pool);
+  });
+}
+
+// ---------------------------------------------------------------- activity: pick the best answer (used sparingly)
+export function think({ prompt, options, answer, hints = [] }) {
+  return new Promise(res => {
+    const L = ladder(hints);
+    const row = h('div', { class: 'think' }, ...shuffle(options).map(o => h('button', { class: 'idea', onclick: async e => {
+      if (o === answer) { e.target.classList.add('right'); row.querySelectorAll('button').forEach(b => b.disabled = true); await win(); hideTask(); res({ first: L.first }); }
+      else { shake(e.target); e.target.classList.add('nope'); sfx('bad'); L.wrong(() => [...row.children].find(b => b.textContent === answer).click()); }
+    } }, o)));
+    window.__solve = () => [...row.children].find(b => b.textContent === answer).click();
+    task(prompt, row);
+  });
+}
+
+// ---------------------------------------------------------------- a bonus challenge she may skip
+export function offerStretch(text) {
+  return new Promise(res => {
+    const box = h('div', { class: 'stretch' }, h('div', { class: 'stretch-star' }, '★'), h('div', {}, h('b', {}, 'Bonus challenge'), h('div', {}, text)),
+      h('div', { class: 'stretch-btns' }, h('button', { class: 'btn gold', onclick: () => { box.remove(); res(true); } }, 'Try it!'), h('button', { class: 'btn ghost', onclick: () => { box.remove(); res(false); } }, 'Skip')));
+    document.body.append(box); say('Bonus challenge! ' + text);
+  });
+}
+
+// ---------------------------------------------------------------- keyword cards
+export const CARDS = {
+  enter: { line: 'They had to enter the cave to find their puppy.', tip: 'enter = go in' },
+  rumble: { line: 'The cave gave a loud rumble.', tip: 'rumble = a deep, shaking sound' },
+  cart: { line: 'Mia and Toby jumped into a rusty old cart.', tip: 'cart = a box on wheels' },
+  hole: { line: 'In front of them was a giant black hole.', tip: 'hole ≠ whole' },
+};
+function cardEl(word, c, own) {
+  return h('div', { class: 'kcard' + (own ? '' : ' empty'), style: { '--tilt': ((word.length * 37) % 7 - 3) + 'deg' } },
+    h('div', { class: 'kcard-art' }, own && own.img ? h('img', { src: own.img, alt: '' }) : h('span', {}, '?')),
+    h('div', { class: 'kcard-word' }, own ? word : '· · ·'), own ? h('div', { class: 'kcard-line' }, c.line) : null, own ? h('div', { class: 'kcard-tip' }, c.tip) : null);
+}
+export function earnCard(word) {
+  return new Promise(async res => {
+    if (!S.cards[word]) { S.cards[word] = { t: Date.now(), img: snapshot() }; save(); }
+    sfx('card'); const c = CARDS[word];
+    const ov = h('div', { class: 'card-reveal' }, h('div', { class: 'card-flip' }, cardEl(word, c, S.cards[word])), h('div', { class: 'card-msg' }, 'New word card!'),
+      h('button', { class: 'btn gold', onclick: () => { ov.remove(); res(); } }, 'Keep it'));
+    document.body.append(ov); await wait(300); say(`${word}. ${c.line}`, { force: S.settings.read });
+  });
+}
+export function openBinder() {
+  const ov = h('div', { class: 'binder', onclick: e => { if (e.target === ov) ov.remove(); } },
+    h('div', { class: 'binder-page' }, h('button', { class: 'btn ghost close', onclick: () => ov.remove() }, '✕'),
+      h('h2', {}, 'My Word Cards'), h('div', { class: 'binder-sub' }, 'Episode 1 · The Cave'),
+      h('div', { class: 'binder-grid' }, ...Object.entries(CARDS).map(([w, c]) => { const el = cardEl(w, c, S.cards[w]); if (S.cards[w]) el.onclick = () => say(`${w}. ${c.line}`, { force: true }); return el; }))));
+  document.body.append(ov);
+}
