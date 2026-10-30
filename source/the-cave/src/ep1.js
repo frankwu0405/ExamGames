@@ -3,7 +3,7 @@
 import { S, save, sfx, wait, h, shuffle } from './core.js';
 import { THREE, setCam, flyCam, followCam, stopFollow, quake, tween, moveTo, onTick, sparkles, textTexture, builder, toon, world } from './gfx.js';
 import { buildMeadow, buildChamber, buildTunnel } from './sets.js';
-import { tell, tapOn, fillGap, hideStory, chooseWord, pick3D, spellOn, flashlight, order, think, offerStretch, earnCard, toby, tobyHide, MODE } from './ui.js';
+import { tell, tapOn, fillGap, filled, hideStory, chooseWord, pick3D, spellOn, flashlight, order, think, offerStretch, earnCard, toby, tobyHide, MODE } from './ui.js';
 import { playMusic } from './music.js';
 
 const star = n => { S.stars[n] = 1; save(); sfx('great'); };
@@ -70,11 +70,10 @@ export async function stop1() {
   const para = ['They had to {explore} it to find their puppy.', 'The air inside was much {colder} than the warm air.', 'They had to be the {bravest} kids to save their pet.'].map(t => t === sp.text ? t : t.replace(/[{}]/g, '')).join(' ');
   tell(para, { wait: false });
   await spellOn({ prompt: sp.prompt, word: sp.word, decoys: sp.decoys, objs: m.stones, hints: sp.hints });
-  fillGap(sp.word); sfx('great'); await wait(900);
+  sfx('great'); await filled(sp.word);
   if (sp.word === 'explore') await earnCard('explore');
   walk(leo, [-0.6, 0, -8.6], 2600); walk(mia, [0.6, 0, -8.6], 2600);
   await flyCam([0, 1.6, -5.5], [0, 1.2, -10], 2600);
-  await tapOn();
   [leo, mia].forEach(c => c.g.visible = false);
   hideStory(); finish(1);
 }
@@ -107,8 +106,7 @@ export async function stop2() {
   tell(wv.text, { wait: false });
   await flyCam([0, 2.3, 4.5], [0, 2.8, -6], 900);
   await flashlight({ spot: c.spot, surfaces: [c.shell, floor], words: c.words, answer: wv.answer, prompt: wv.prompt, hints: wv.hints });
-  fillGap(wv.answer); c.words.forEach(w => w.visible = false); await wait(500);
-  await tapOn();
+  c.words.forEach(w => w.visible = false); await filled(wv.answer);
   await flyCam([2.2, 2.2, 0.5], [0, 1.3, -5], 1000);
   mia.g.rotation.y = Math.PI - 0.3; mia.pose('reach');
   await tell('It made the room look magical. “Wow,” Mia said. She reached out to grab it.');
@@ -135,7 +133,7 @@ export async function stop2() {
     hints: [`${ladderSet[0]} is the quietest.`, `The loudest can shake a cave!`] });
   fillGap('rumble'); playMusic('danger'); sfx('rumble'); quake(2.2, 0.25); [leo, mia].forEach(k => k.pose('scared')); dog.pose('bark'); sfx('bark');
   Promise.all(c.cracks.slice(4).map(sg => grow(sg, 900)));
-  await wait(1000); await tapOn(); await earnCard('rumble');
+  await filled('rumble'); await earnCard('rumble');
   // the floor tips toward the dark tunnel; small stones roll, rocks start to fall
   tell('The sound was louder than a roaring lion. The flat rock floor tipped down. It became the steepest slide in the cave!', { wait: false });
   await flyCam([-3, 3.2, 6], [2, 0.5, -3], 1100);
@@ -151,7 +149,7 @@ export async function stop2() {
   ]);
   tell(sw.text, { wait: false });
   tween(800, e => { c.spot.intensity = 60 * (1 - e * 0.8); });
-  await flyCam([0.6, 2.0, 5.6], [1.0, 2.4, -2.2], 1100);
+  await flyCam([0.7, 1.7, 6.4], [1.0, 3.3, -2.2], 1100);
   const shakeRocks = onTick(t => c.loose.forEach((r, i) => { if (!r.userData.fell) { r.rotation.z = Math.sin(t * 22 + i) * 0.08; r.rotation.x = Math.cos(t * 19 + i) * 0.06; } }));
   let rain = true; (async () => { while (rain) { c.drop(-4 + Math.random() * 9, -7 + Math.random() * 6, 0.2 + Math.random() * 0.15, 6.8, () => sfx('crash')); await wait(900 + Math.random() * 700); } })();
   const path = [[0.9, 0, -2.0], [1.6, 0, -1.4], [2.2, 0, -0.9], [2.6, 0, -0.5], [2.9, 0, -0.3]];
@@ -159,7 +157,7 @@ export async function stop2() {
     onLetter: (rock, i) => { rock.userData.fell = true; const wp = rock.getWorldPosition(new THREE.Vector3()); world.remove(rock);
       c.drop(wp.x, wp.z, 0.45, wp.y, () => { sfx('crash'); quake(0.4, 0.12); sparkles(new THREE.Vector3(wp.x, 0.4, wp.z), 0x9A9EAC, 14); });
       const st = path[Math.min(i, path.length - 1)]; run(mia, st, 500); run(dog, [st[0] + 0.5, 0, st[2] + 0.3], 450); } });
-  rain = false; shakeRocks(); fillGap(sw.word);
+  rain = false; shakeRocks(); filled(sw.word);
   // the roof gives way behind them: Mia and Toby leap into the cart
   for (let i = 0; i < 8; i++) { c.drop(-1.5 + Math.random() * 3, -1 + Math.random() * 2, 0.3 + Math.random() * 0.3, 6.8, () => { sfx('crash'); quake(0.35, 0.15); }); await wait(140); }
   const cp = c.cart.position;
@@ -179,7 +177,7 @@ export async function stop2() {
   // the cart rolls down the curved track and into the dark tunnel
   await wait(600); flyCam([-0.6, 2.4, 2.0], [5.5, 0.4, -8], 1400);
   sfx('clack'); let k = 0.1;
-  await tween(3600, e => { k = 0.1 + e * e * 0.9; c.placeCart(k); });
+  await tween(2400, e => { k = 0.1 + e * e * 0.9; c.placeCart(k); });
   await tapOn();
   hideStory(); finish(2);
 }
@@ -193,7 +191,7 @@ export async function stop3() {
   followCam(() => { const f = T.frame(Math.min(s, 0.985)), b = T.frame(Math.max(0, s - 0.018));
     behind.copy(b.p).addScaledVector(f.side, 0.3).setY(b.p.y - 0.4); ahead.copy(T.frame(Math.min(0.99, s + 0.02)).p).setY(f.p.y - 1.9); return [behind, ahead]; });
   onTick((t, dt) => { speed += (target - speed) * Math.min(1, dt * 1.5); s = Math.min(0.985, s + speed * dt / T.L); T.placeAt(s); });
-  const rideTo = async to => { target = 9; while (s < to - 0.004) await wait(40); target = 0; await wait(500); };
+  const rideTo = async to => { target = 15; while (s < to - 0.004) await wait(40); target = 0; await wait(500); };
   // forks: pick the sign with the right word. Replays draw other sentences (some need -est, some -er).
   const FORKS = [
     { text: 'The cart rolled faster and {faster} into the tunnel.', words: ['faster', 'fastest'], answer: 'faster', hints: ['Faster and faster. Both words match!', 'Pick faster.'] },
@@ -209,13 +207,13 @@ export async function stop3() {
   if (v === 0) tell(forks[0].text, { wait: false });
   await rideTo(0.08);
   const fork = async (j, f, showText) => {
-    target = 7; while (s < T.junctions[j].s - 0.035) await wait(40); target = 0;
+    target = 11; while (s < T.junctions[j].s - 0.03) await wait(40); target = 0;
     const jn = T.junctions[j]; const ord = Math.random() < 0.5 ? f.words : f.words.slice().reverse();
     jn.signs.forEach((b, i) => { const mt = new THREE.MeshBasicMaterial({ map: textTexture(ord[i], { bg: '#F4E1B5', w: 512, h: 190, font: '92px Chewy, sans-serif' }) }); b.material = [toon(0xC9A46A), toon(0xC9A46A), toon(0xC9A46A), toon(0xC9A46A), mt, mt]; b.userData.word = ord[i]; });
     await wait(300); if (showText) tell(f.text, { wait: false });
     await pick3D({ prompt: 'Tap the right sign!', targets: jn.signs.map(b => ({ id: b.userData.word, obj: b })), answer: f.answer, hints: f.hints, word: f.answer,
       onWrong: () => { quake(0.5, 0.12); sfx('crash'); } });
-    fillGap(f.answer); sfx('clack'); await wait(800);
+    sfx('clack'); await filled(f.answer);
   };
   await fork(0, forks[0], v !== 0);
   await rideTo(0.36);
@@ -224,7 +222,7 @@ export async function stop3() {
   await fork(2, forks[2], true);
   tell('Mia held Toby tight. Then, the metal tracks just stopped!', { wait: false });
   // the tracks stop at the edge
-  target = 12; while (s < 0.97) await wait(40); target = 0; await wait(300); sfx('crash'); quake(0.6, 0.15);
+  target = 20; while (s < 0.97) await wait(40); target = 0; await wait(300); sfx('crash'); quake(0.6, 0.15);
   mia.pose('scared'); dog.pose('bark'); sfx('bark');
   stopFollow(); const endF = T.frame(0.985);
   await flyCam([endF.p.x + endF.side.x * 3, endF.p.y - 0.6, endF.p.z + 3], [T.hole.position.x, T.hole.position.y, T.hole.position.z], 1300);
@@ -238,7 +236,7 @@ export async function stop3() {
   ]);
   tell(hv.text, { wait: false });
   await chooseWord({ prompt: hv.answer === 'pit' ? 'Which word fits?' : 'Which word fits? They sound the same!', sentence: hv.sentence, tiles: hv.tiles, answer: hv.answer, note: hv.note, hints: hv.hints });
-  fillGap(hv.answer); await wait(600); if (hv.answer === 'pit') await earnCard('pit');
+  await filled(hv.answer); if (hv.answer === 'pit') await earnCard('pit');
   if (await offerStretch(hv.answer === 'pit' ? 'Two words that sound the same: hole and whole.' : 'Use the other word that sounds the same.')) {
     await chooseWord(pickV(3, [
       { prompt: 'Bonus! Which word fits now?', sentence: 'The {_} cart was falling, wheels and all!', tiles: ['hole', 'whole'], answer: 'whole', hints: ['It means ALL of the cart.', 'whole = all of it.'] },

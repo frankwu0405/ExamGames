@@ -1,12 +1,15 @@
 // The Cave — Leo, Mia and Toby's voyage. Title → journey map → stops.
 import { S, load, save, audioInit, sfx, say, h, $, wait, englishVoices, setVoice, currentVoice } from './core.js';
 import { init, camera, setCam, flyCam, pickAt, renderer, onTick, stopFollow, THREE } from './gfx.js';
-import { buildMap, STOPS, setCamRef } from './sets.js';
-import { mountUI, openBinder, hideStory, hideTask, MODE, dueCards, ownedCount } from './ui.js';
+import { buildMap, STOPS, setCamRef, EPISODES, MAX_EP } from './sets.js';
+window.__maxEp = MAX_EP;
+import { mountUI, openBinder, hideStory, hideTask, MODE, dueCards, ownedCount, cardTotal } from './ui.js';
 import { playMusic, setMusic } from './music.js';
 import { stop1, stop2, stop3, sumUp } from './ep1.js';
+import { stop4, stop5, stop6, sumUp2 } from './ep2.js';
 
-const PLAY = { 1: stop1, 2: stop2, 3: stop3 };
+const PLAY = { 1: stop1, 2: stop2, 3: stop3, 4: stop4, 5: stop5, 6: stop6 };
+const SUMUP = { 1: sumUp, 2: sumUp2 };
 let hud;
 
 function buildHud(mode) {
@@ -15,8 +18,8 @@ function buildHud(mode) {
   const musicBtn = h('button', { class: 'hud-btn', 'aria-label': 'Music', onclick: () => { setMusic(!S.settings.music); save(); musicBtn.textContent = S.settings.music ? '🎵' : '🔇'; sfx('tap'); } }, S.settings.music ? '🎵' : '🔇');
   const due = dueCards().length;
   hud = h('div', { class: 'hud' },
-    mode === 'stop' ? h('button', { class: 'hud-btn', onclick: () => { sessionStorage.setItem('cave_skipTitle', '1'); location.reload(); } }, '🗺 Map')
-      : h('button', { class: 'hud-btn' + (due ? ' glow' : ''), onclick: () => { sfx('tap'); openBinder(() => buildHud('map')); } }, '🃏 Word cards ' + ownedCount() + '/4' + (due ? ` · ✨${due}` : '')),
+    h('div', { class: 'hud-right' }, mode === 'stop' ? h('button', { class: 'hud-btn', onclick: () => { sessionStorage.setItem('cave_skipTitle', '1'); location.reload(); } }, '🗺 Map') : null,
+      h('button', { class: 'hud-btn' + (due && mode === 'map' ? ' glow' : ''), onclick: () => { sfx('tap'); openBinder(() => buildHud(mode)); } }, '🃏 ' + (mode === 'map' ? 'Word cards ' : '') + ownedCount(MAX_EP) + '/' + cardTotal(MAX_EP) + (due && mode === 'map' ? ` · ✨${due}` : ''))),
     h('div', { class: 'hud-right' }, mode === 'map' ? h('button', { class: 'hud-btn', onclick: () => { sfx('tap'); voicePanel(); } }, '🗣 Voice') : null, musicBtn, readBtn));
   document.body.append(hud);
 }
@@ -38,10 +41,11 @@ function voicePanel() {
 async function showMap(focusNext = true) {
   buildHud('map'); playMusic('map');
   const { markers, reached } = buildMap(S, null);
-  const next = STOPS[Math.min(reached, 3) - 1];
+  const last = Math.max(...EPISODES[MAX_EP].stops); const next = STOPS[Math.min(reached, last) - 1];
+  const ep = Math.min(MAX_EP, next.ep), epDone = S['ep' + ep];
   setCam([-2, 40, 40], [0, 0, 0]);
-  const banner = h('div', { class: 'map-banner' }, h('div', { class: 'ep' }, 'Episode 1'), h('div', { class: 'ep-title' }, 'The Cave'),
-    h('div', { class: 'ep-hint' }, S.stops[3] ? 'Episode 1 complete! More of the voyage is coming soon.' : 'Tap the glowing stop to begin.'));
+  const banner = h('div', { class: 'map-banner' }, h('div', { class: 'ep' }, 'Episode ' + ep), h('div', { class: 'ep-title' }, EPISODES[ep].title),
+    h('div', { class: 'ep-hint' }, epDone && ep === MAX_EP ? `Episode ${ep} complete! More of the voyage is coming soon.` : 'Tap the glowing stop to begin.'));
   document.body.append(banner);
   await flyCam([next.p[0] + 12, 25, next.p[2] + 24], [next.p[0] + 9, 0, next.p[2] - 3], 2600);
   // drag to look around the map, tap a stop to play it
@@ -84,15 +88,24 @@ async function play(n, captain = false) {
   await go; hideStory(); hideTask();
   if (captain) { const ok = MODE.perfect; const ov = h('div', { class: 'ep-done' }, h('div', { class: 'ep-done-in' }, h('div', { class: 'stamp' }, ok ? '⚓ Captain' : 'Captain mode'), h('h2', {}, ok ? 'Captain stamp earned!' : 'Great sailing!'), h('p', {}, ok ? 'Everything right the first time!' : 'Try again to get every answer right the first time.'), h('button', { class: 'btn gold', onclick: () => { ov.remove(); r(); } }, 'Back to the map'))); let r; const p = new Promise(x => r = x); document.body.append(ov); sfx(ok ? 'great' : 'good'); await p; }
   MODE.captain = false;
-  if (n === 3 && !S.ep1) { await sumUp(); await episodeDone(); }
+  const epN = STOPS[n - 1].ep, lastOfEp = Math.max(...EPISODES[epN].stops);
+  if (n === lastOfEp && !S['ep' + epN]) { await SUMUP[epN](); await episodeDone(epN); }
+  const nxt = STOPS[n]; // the stop after this one
+  if (nxt && nxt.ep <= MAX_EP) {
+    const go = await new Promise(r => { const ov = h('div', { class: 'after' }, h('div', { class: 'mode-card' }, h('h3', {}, 'Stop ' + n + ' done!'), h('div', {}, 'Where to next?'),
+      h('button', { class: 'mode-opt cap', onclick: () => { ov.remove(); r(true); } }, h('b', {}, '▶ Next stop'), `Stop ${nxt.n}: ${nxt.name}`),
+      h('button', { class: 'mode-opt', onclick: () => { ov.remove(); r(false); } }, h('b', {}, '🗺 Back to the map'), 'See the whole voyage.'))); document.body.append(ov); say('Where to next?', { force: S.settings.read }); });
+    if (go) return play(nxt.n);
+  }
   const v2 = h('div', { class: 'veil' }); document.body.append(v2); await wait(400); showMap(); v2.classList.add('out'); setTimeout(() => v2.remove(), 900);
 }
 
-async function episodeDone() {
+async function episodeDone(ep) {
   sfx('great');
-  const ov = h('div', { class: 'ep-done' }, h('div', { class: 'ep-done-in' }, h('div', { class: 'stamp' }, 'Episode 1'), h('h2', {}, 'You finished The Cave!'),
-    h('p', {}, `Word cards: ${ownedCount()} of 4 · Bonus stars: ${Object.keys(S.stars).length} of 3`), h('button', { class: 'btn gold', onclick: () => { ov.remove(); done(); } }, 'Back to the map')));
-  let done; const p = new Promise(r => done = r); document.body.append(ov); say('You finished Episode 1! Well done!', { force: S.settings.read }); return p;
+  const stops = EPISODES[ep].stops, stars = stops.filter(n => S.stars[n]).length;
+  const ov = h('div', { class: 'ep-done' }, h('div', { class: 'ep-done-in' }, h('div', { class: 'stamp' }, 'Episode ' + ep), h('h2', {}, `You finished ${EPISODES[ep].title}!`),
+    h('p', {}, `Bonus stars: ${stars} of ${stops.length}`), h('button', { class: 'btn gold', onclick: () => { ov.remove(); done(); } }, 'Back to the map')));
+  let done; const p = new Promise(r => done = r); document.body.append(ov); say(`You finished Episode ${ep}! Well done!`, { force: S.settings.read }); return p;
 }
 
 function title() {

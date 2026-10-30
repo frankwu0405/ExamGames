@@ -51,6 +51,8 @@ export async function tapOn() {
   await new Promise(r => { const go = () => { panel.removeEventListener('click', go); r(); }; panel.addEventListener('click', go); });
   hush(); sfx('tap'); nextBtn.classList.remove('bob'); nextBtn.classList.add('hidden');
 }
+// Fill the gap, then read the finished sentence once and move on.
+export async function filled(word, reread = true) { fillGap(word); if (!reread || MODE.captain || !S.settings.read) return wait(500); await wait(450); await readCurrent(false); }
 export function fillGap(word) { const g = textEl.querySelector(`.gap[data-word="${word}"]`); if (!g) return; g.textContent = word; g.classList.add('filled'); g.animate([{ transform: 'scale(1.5)' }, { transform: 'scale(1)' }], { duration: 400, easing: 'cubic-bezier(.3,1.6,.6,1)' }); }
 export const hideStory = () => panel.classList.add('hidden');
 export const storyText = () => current;
@@ -59,10 +61,11 @@ export const storyText = () => current;
 function task(prompt, ...body) {
   taskEl.innerHTML = ''; taskEl.classList.remove('hidden');
   const p = h('div', { class: 'task-prompt' }, h('button', { class: 'hear small', onclick: () => say(prompt, { force: true }) }, '🔊'), h('span', {}, prompt));
-  taskEl.append(p, ...body.filter(Boolean)); say(prompt);
+  taskEl.append(p, ...body.filter(Boolean)); say(prompt, { queue: true });
   return taskEl;
 }
-export const hideTask = () => { taskEl.classList.add('hidden'); taskEl.innerHTML = ''; tobyHide(); };
+export const hideTask = () => { taskEl.classList.add('hidden'); taskEl.innerHTML = ''; tobyHide(); document.body.classList.remove('aim'); };
+const aim = () => document.body.classList.add('aim');
 export function toby(text, mood = '') {
   tobyEl.innerHTML = ''; tobyEl.className = 'toby-hint ' + mood;
   tobyEl.append(h('div', { class: 'toby-face', html: TOBY_SVG }), h('div', { class: 'toby-say' }, text)); say(text);
@@ -103,7 +106,7 @@ export function chooseWord({ prompt, sentence, tiles, answer, hints = [], base =
 
 // ---------------------------------------------------------------- activity: tap something in the 3D scene
 export function pick3D({ prompt, targets, answer, hints = [], word, onWrong, onHover }) {
-  return new Promise(res => {
+  return new Promise(res => { aim();
     task(prompt);
     const L = ladder(hints, word);
     const objs = targets.map(t => t.obj);
@@ -123,12 +126,12 @@ export function pick3D({ prompt, targets, answer, hints = [], word, onWrong, onH
 
 // ---------------------------------------------------------------- activity: spell a word by tapping letters painted on objects
 export function spellOn({ prompt, word, objs, decoys = '', hints = [], sentence, onLetter }) {
-  return new Promise(res => {
+  return new Promise(res => { aim();
     const letters = shuffle([...word.toUpperCase(), ...decoys.toUpperCase()]); const slots = h('div', { class: 'slots' }, ...[...word].map(() => h('span', { class: 'slot-l' }, '')));
     const tags = []; let at = 0; const L = ladder(hints, word);
     objs.slice(0, letters.length).forEach((o, i) => {
       const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: textTexture(letters[i], { w: 128, h: 128, font: '96px Chewy, sans-serif', bg: null, fg: '#FFFDF4', glow: '#2E2A4F' }), depthTest: false }));
-      tag.scale.setScalar(0.9); o.add(tag); tag.position.set(0, 0, 0.8); tag.userData.letter = letters[i]; tag.userData.owner = o; tags.push(tag);
+      tag.scale.setScalar(1.1); o.add(tag); tag.position.set(0, 0, 0.8); tag.userData.letter = letters[i]; tag.userData.owner = o; tags.push(tag);
     });
     task(prompt, sentence ? h('div', { class: 'task-sentence' }, sentence) : null, slots);
     // she taps the letter itself (the sprite), so a rock in front can never steal the tap
@@ -151,7 +154,7 @@ export function spellOn({ prompt, word, objs, decoys = '', hints = [], sentence,
 
 // ---------------------------------------------------------------- activity: sweep the flashlight to find things / words
 export function flashlight({ spot, surfaces, prompt, words = [], answer, find, hints = [], word }) {
-  return new Promise(res => {
+  return new Promise(res => { aim();
     task(prompt);
     const L = ladder(hints, word || answer); const hitV = new THREE.Vector3(); let aim = new THREE.Vector3(0, 2, -6);
     const move = e => { const r = rayFrom(e.clientX, e.clientY); const hit = r.intersectObjects(surfaces, false)[0]; if (hit) aim.copy(hit.point); };
@@ -214,11 +217,16 @@ export function offerStretch(text) {
 
 // ---------------------------------------------------------------- keyword cards
 export const CARDS = {
-  explore: { line: 'They had to explore it to find their puppy.', tip: 'explore = look around a new place', more: ['Leo and Mia wanted to {_} the dark cave.', 'Let\u2019s {_} the island and see what is there!'] },
-  rumble: { line: 'The cave gave a loud rumble.', tip: 'rumble = a deep, shaking sound', more: ['The thunder gave a low {_}.', 'They heard a {_} under the floor.'] },
-  cart: { line: 'Mia and Toby jumped into a rusty old cart.', tip: 'cart = a box on wheels', more: ['The {_} rolled down the metal tracks.', 'Mia held Toby tight in the {_}.'] },
-  pit: { line: 'In front of them was a giant black pit with no bottom.', tip: 'pit = a very deep hole', more: ['Toby dug a deep {_} in the sand.', 'The cart fell into the dark {_}.'] },
+  explore: { ep: 1, line: 'They had to explore it to find their puppy.', tip: 'explore = look around a new place', more: ['Leo and Mia wanted to {_} the dark cave.', 'Let\u2019s {_} the island and see what is there!'] },
+  rumble: { ep: 1, line: 'The cave gave a loud rumble.', tip: 'rumble = a deep, shaking sound', more: ['The thunder gave a low {_}.', 'They heard a {_} under the floor.'] },
+  cart: { ep: 1, line: 'Mia and Toby jumped into a rusty old cart.', tip: 'cart = a box on wheels', more: ['The {_} rolled down the metal tracks.', 'Mia held Toby tight in the {_}.'] },
+  pit: { ep: 1, line: 'In front of them was a giant black pit with no bottom.', tip: 'pit = a very deep hole', more: ['Toby dug a deep {_} in the sand.', 'The cart fell into the dark {_}.'] },
+  drop: { ep: 2, line: 'It was the longest drop of their lives.', tip: 'drop = a fall down', more: ['Don\u2019t {_} the blue stone!', 'One more {_} and the cart was on the track.'] },
+  loop: { ep: 2, line: 'The track went up in a giant loop.', tip: 'loop = a big circle', more: ['The cart went round the {_} upside down!', 'Tie the rope in a {_}.'] },
+  swift: { ep: 2, line: 'The swift water quickly helped them out.', tip: 'swift = very fast', more: ['Toby is a {_} little dog.', 'The {_} river pushed the cart along.'] },
+  flush: { ep: 2, line: 'The water helped them flush out of the dark cave.', tip: 'flush = wash out fast with water', more: ['The rain will {_} the mud off the rocks.', 'The waves {_} the sand away.'] },
 };
+const cardSrc = w => CARD_IMG[w] || `cave-cards/ep${CARDS[w].ep}/${w}.webp`;
 // Card levels: 1 bronze → 2 silver → 3 gold. A card is "due" for a quick polish a day (then three days) after it was last earned or polished.
 const DAY = 864e5, LV = ['', 'Bronze', 'Silver', 'Gold'];
 const lvl = c => (c && c.lvl) || 1;
@@ -228,10 +236,11 @@ function cardEl(word, c, own) {
   const L = own ? lvl(own) : 0;
   return h('div', { class: 'kcard' + (own ? ' lv' + L : ' empty') + (own && isDue(own) ? ' due' : ''), style: { '--tilt': ((word.length * 37) % 7 - 3) + 'deg' } },
     own ? h('div', { class: 'kcard-badge' }, LV[L]) : null,
-    own ? h('img', { class: 'kcard-img', src: CARD_IMG[word], alt: word }) : h('div', { class: 'kcard-blank' }, '?'),
+    own ? h('img', { class: 'kcard-img', src: cardSrc(word), alt: word }) : h('div', { class: 'kcard-blank' }, '?'),
     own ? h('div', { class: 'kcard-tip' }, isDue(own) ? '✨ Tap to polish!' : c.tip) : null);
 }
-export const ownedCount = () => Object.keys(CARDS).filter(w => S.cards[w]).length;
+export const ownedCount = (maxEp = 99) => Object.keys(CARDS).filter(w => CARDS[w].ep <= maxEp && S.cards[w]).length;
+export const cardTotal = maxEp => Object.keys(CARDS).filter(w => CARDS[w].ep <= maxEp).length;
 export function earnCard(word) {
   return new Promise(async res => {
     const isNew = !S.cards[word];
@@ -264,7 +273,7 @@ async function polish(word, done) {
   const ov = h('div', { class: 'sumup polish' }, h('div', { class: 'sumup-title' }, 'Polish your card'), h('div', { class: 'sumup-sub' }, `${word} · ${LV[lvl(own)]} → ${LV[lvl(own) + 1]}`));
   document.body.append(ov);
   const a = await spellTiles(word);
-  const others = Object.keys(CARDS).filter(w => w !== word);
+  const others = Object.keys(CARDS).filter(w => w !== word && CARDS[w].ep === c.ep);
   const b = await chooseWord({ prompt: 'Which word fits?', sentence: c.more[Math.floor(Math.random() * c.more.length)], tiles: [word, ...shuffle(others).slice(0, 2)], answer: word, hints: [c.tip] });
   ov.remove();
   if (a.first && b.first) { own.lvl = lvl(own) + 1; own.due = Date.now() + 3 * DAY; save(); sfx('card'); toby(`Your ${word} card is now ${LV[own.lvl]}!`); }
@@ -275,9 +284,45 @@ export function openBinder(onClose) {
   const due = dueCards();
   const ov = h('div', { class: 'binder', onclick: e => { if (e.target === ov) close(); } },
     h('div', { class: 'binder-page' }, h('button', { class: 'btn ghost close', onclick: () => close() }, '✕'),
-      h('h2', {}, 'My Word Cards'), h('div', { class: 'binder-sub' }, due.length ? `✨ ${due.length} card${due.length > 1 ? 's' : ''} ready to polish. Polish cards to make them Silver, then Gold!` : 'Episode 1 · The Cave · Cards go Bronze → Silver → Gold when you polish them on later days.'),
-      h('div', { class: 'binder-grid' }, ...Object.entries(CARDS).map(([w, c]) => { const el = cardEl(w, c, S.cards[w]);
-        if (S.cards[w]) el.onclick = () => { if (isDue(S.cards[w])) { ov.remove(); polish(w, () => openBinder(onClose)); } else say(`${w}. ${c.line}`, { force: true }); }; return el; }))));
+      h('h2', {}, 'My Word Cards'), h('div', { class: 'binder-sub' }, due.length ? `✨ ${due.length} card${due.length > 1 ? 's' : ''} ready to polish. Polish cards to make them Silver, then Gold!` : 'Cards go Bronze → Silver → Gold when you polish them on later days.'),
+      ...[...new Set(Object.values(CARDS).map(c => c.ep))].filter(ep => ep <= (window.__maxEp || 99)).flatMap(ep => [h('h3', { class: 'binder-ep' }, ep === 1 ? 'Episode 1 · The Cave' : `Episode ${ep} · The Cave ${ep}`),
+        h('div', { class: 'binder-grid' }, ...Object.entries(CARDS).filter(([w, c]) => c.ep === ep).map(([w, c]) => { const el = cardEl(w, c, S.cards[w]);
+        if (S.cards[w]) el.onclick = () => { if (isDue(S.cards[w])) { ov.remove(); polish(w, () => openBinder(onClose)); } else say(`${w}. ${c.line}`, { force: true }); }; return el; }))])));
   const close = () => { ov.remove(); onClose && onClose(); };
   document.body.append(ov);
+}
+
+// ---------------------------------------------------------------- activity: tap EVERY object that matches (e.g. words with the oo sound)
+export function tapAll({ prompt, items, hints = [], word, onRight }) {   // items: [{ obj, label, ok }]
+  return new Promise(res => { aim();
+    const need = items.filter(i => i.ok).length; let got = 0; const L = ladder(hints, word);
+    const count = h('div', { class: 'tap-count' }, `0 / ${need}`);
+    task(prompt, count);
+    const objs = items.map(i => i.obj);
+    const take = async it => {
+      if (!it || it.done) return;
+      if (it.ok) { it.done = true; got++; sfx('chime'); count.textContent = `${got} / ${need}`; onRight && onRight(it); sparkles(it.obj.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 2, 0)), 0xC8FFD8);
+        if (got === need) { cv.removeEventListener('pointerup', click); await win(count); hideTask(); res({ first: L.first }); } }
+      else { sfx('bad'); shake(count); it.obj.userData.nope && it.obj.userData.nope(); L.wrong(() => take(items.find(i => i.ok && !i.done))); }
+    };
+    const click = e => { const hit = pickAt(e.clientX, e.clientY, objs); if (hit) take(items.find(i => i.obj === hit.obj)); };
+    window.__solve = async () => { for (const it of items.filter(i => i.ok)) { await take(it); await wait(200); } };
+    const cv = renderer.domElement; cv.addEventListener('pointerup', click);
+  });
+}
+
+// ---------------------------------------------------------------- activity: read the clue, then lean the cart LEFT or RIGHT
+export function steer({ prompt, clue, answer, hints = [], word }) {
+  return new Promise(res => {
+    const L = ladder(hints, word);
+    const go = async (side, btn) => {
+      if (side === answer) { row.querySelectorAll('button').forEach(b => b.disabled = true); btn.classList.add('right'); await win(); hideTask(); res({ first: L.first }); }
+      else { sfx('bad'); shake(btn); btn.classList.add('nope'); setTimeout(() => btn.classList.remove('nope'), 600); L.wrong(() => go(answer, row.querySelector(`[data-side="${answer}"]`))); }
+    };
+    const row = h('div', { class: 'steer' },
+      h('button', { class: 'tile steer-btn', 'data-side': 'left', onclick: e => go('left', e.currentTarget) }, '⬅ Left'),
+      h('button', { class: 'tile steer-btn', 'data-side': 'right', onclick: e => go('right', e.currentTarget) }, 'Right ➡'));
+    window.__solve = () => go(answer, row.querySelector(`[data-side="${answer}"]`));
+    task(prompt, h('div', { class: 'task-sentence' }, clue), row);
+  });
 }

@@ -2,7 +2,7 @@
 import { THREE, builder, toon, outline, newWorld, onTick, textPlane, textTexture, INK } from './gfx.js';
 import { makeCast } from './chars.js';
 
-const rnd = (s => () => (s = (s * 16807) % 2147483647) / 2147483647)(7);
+export const rnd = (s => () => (s = (s * 16807) % 2147483647) / 2147483647)(7);
 function tree(b, x, z, s = 1) { b.cyl(0.12 * s, 0.16 * s, 1 * s, 0x7A5236, x, 0.5 * s, z); b.cone(0.7 * s, 1.5 * s, 0x4FA35A, x, 1.6 * s, z); b.cone(0.55 * s, 1.1 * s, 0x5DBB66, x, 2.2 * s, z); }
 function ferris(b, x, y, z, s = 1) {
   const RED = 0xD93A35, g = new THREE.Group(); g.position.set(x, y, z); g.scale.setScalar(s); b.group.add(g); const fb = builder(g);
@@ -15,7 +15,7 @@ function ferris(b, x, y, z, s = 1) {
   onTick((t, dt) => { w.rotation.z += dt * 0.3; cabs.forEach(c => c.rotation.z = -w.rotation.z); });
   return g;
 }
-function cart(b, x, y, z) {
+export function cart(b, x, y, z) {
   const g = new THREE.Group(); g.position.set(x, y, z); b.group.add(g); const cb = builder(g);
   cb.box(1.3, 0.6, 1.8, 0x8A5A3B, 0, 0.55, 0, { line: 0.03 }); cb.box(1.1, 0.1, 1.6, 0x5A3A24, 0, 0.83, 0, { line: 0 });
   [-0.66, 0.66].forEach(xx => [-0.9, 0.9].forEach(zz => cb.box(0.06, 0.62, 0.08, 0x9C6B45, xx, 0.55, zz, { line: 0 })));
@@ -27,16 +27,20 @@ function cart(b, x, y, z) {
 export const STOPS = [
   { n: 1, name: 'The Meadow', ep: 1, p: [-19, 0.5, 7] },
   { n: 2, name: 'The Glowing Stone', ep: 1, p: [-14.6, 0.5, 9.4] },
-  { n: 3, name: 'The Dark Tunnel', ep: 1, p: [-9, -1.6, 6.5] },
-  { n: 4, name: 'Crystal Loop', ep: 2, p: [-3.5, -1.6, 4] },
-  { n: 5, name: "Leo's Side", ep: 3, p: [-6.5, -1.6, 0.5] },
-  { n: 6, name: 'The Lost Island', ep: 4, p: [2, 1.6, 2] },
-  { n: 7, name: 'The Ice', ep: 5, p: [10, 0.3, -5] },
-  { n: 8, name: 'The Gray Shore', ep: 6, p: [18, 0.6, -11] },
-  { n: 9, name: 'Out of the Fog', ep: 7, p: [23, 0.3, -2] },
-  { n: 10, name: 'The Chase', ep: 8, p: [18, 0.3, 8] },
-  { n: 11, name: "Varn's Story", ep: 9, p: [27, 0.6, 12] },
+  { n: 3, name: 'The Dark Tunnel', ep: 1, p: [-9.5, -1.6, 6.8] },
+  { n: 4, name: 'The Drop', ep: 2, p: [-6.6, -2.0, 5.4] },
+  { n: 5, name: 'Crystal Loop', ep: 2, p: [-3.6, -1.6, 4] },
+  { n: 6, name: 'The Swift River', ep: 2, p: [-0.8, -0.6, 2.8] },
+  { n: 7, name: "Leo's Side", ep: 3, p: [-6.5, -1.6, 0.8] },
+  { n: 8, name: 'The Lost Island', ep: 4, p: [2, 1.6, 2] },
+  { n: 9, name: 'The Ice', ep: 5, p: [10, 0.3, -5] },
+  { n: 10, name: 'The Gray Shore', ep: 6, p: [18, 0.6, -11] },
+  { n: 11, name: 'Out of the Fog', ep: 7, p: [23, 0.3, -2] },
+  { n: 12, name: 'The Chase', ep: 8, p: [18, 0.3, 8] },
+  { n: 13, name: "Varn's Story", ep: 9, p: [27, 0.6, 12] },
 ];
+export const EPISODES = { 1: { title: 'The Cave', stops: [1, 2, 3] }, 2: { title: 'The Cave 2', stops: [4, 5, 6] } };
+export const MAX_EP = 2;
 export function buildMap(S, onPick) {
   const w = newWorld({ sky: 0xBFE6F7, ambientI: 1.5, sunI: 1.5, fog: [0xBFE6F7, 70, 140] }); const b = builder(w);
   // sea with a dark seabed under it, so the secret tunnel shows through the water
@@ -44,12 +48,42 @@ export function buildMap(S, onPick) {
   const sea = new THREE.Mesh(new THREE.PlaneGeometry(160, 120, 40, 30), toon(0x3FA7D6, { transparent: true, opacity: 0.72 })); sea.rotation.x = -Math.PI / 2; w.add(sea);
   const pos = sea.geometry.attributes.position; onTick(t => { for (let i = 0; i < pos.count; i++) pos.setZ(i, Math.sin(pos.getX(i) * 0.3 + t) * 0.08 + Math.cos(pos.getY(i) * 0.4 + t * 0.8) * 0.06); pos.needsUpdate = true; });
   const land = (x, z, rx, rz, h, c = 0x8CC95E, side = 0xC9A46A) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(1, 1.15, h, 28), [toon(side), toon(c), toon(side)]); m.scale.set(rx, 1, rz); m.position.set(x, h / 2 - 0.3, z); outline(m, 0.05); w.add(m); return m; };
-  // hometown coast
-  land(-24, 2, 9, 13, 1.0); land(-15.5, 9.6, 3.8, 3.8, 1.0);
+  // the mainland: the hometown coast runs off the edge of the map (it is not an island)
+  const coast = z => -16.5 + 5.6 * Math.exp(-(((z - 10) / 5.5) ** 2)) + 0.7 * Math.sin(z * 0.37) + 0.35 * Math.sin(z * 1.1 + 1);
+  const shape = new THREE.Shape(); shape.moveTo(-95, 70);
+  for (let z = -70; z <= 70; z += 1.5) shape.lineTo(coast(z), -z);
+  shape.lineTo(-95, -70); shape.closePath();
+  const mainland = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth: 1.0, bevelEnabled: true, bevelSize: 0.6, bevelThickness: 0.3, bevelSegments: 2 }), [toon(0x8CC95E), toon(0xE2C48A)]);
+  mainland.rotation.x = -Math.PI / 2; mainland.position.y = -0.3; w.add(mainland);
+  // village: houses, a red Ferris wheel, a lighthouse, a little harbour
   ferris(b, -24, 0.7, -2, 0.75);
-  [[-27, 5, 0xEF5B4C], [-25.5, 7.5, 0x4AA3DF], [-21.5, 4.5, 0xFFC94A], [-27.5, -6, 0xB57EDC], [-21, -7, 0x5DBB4A], [-28, 1, 0xF28C38]].forEach(([x, z, c]) => { b.box(1.2, 1, 1.2, 0xFFF4D6, x, 1.2, z); const r = b.cone(1.0, 0.8, c, x, 2.1, z, { seg: 4, ry: Math.PI / 4 }); });
-  for (let i = 0; i < 14; i++) tree(b, -30 + rnd() * 12, -10 + rnd() * 20, 0.6);
-  // the cave hill in the meadow
+  const roofC = [0xEF5B4C, 0x4AA3DF, 0xFFC94A, 0xB57EDC, 0x5DBB4A, 0xF28C38, 0xE86A8E, 0x6FC3C8];
+  let placed = 0; for (let i = 0; i < 120 && placed < 30; i++) {
+    const x = -40 + rnd() * 21, z = -22 + rnd() * 42;
+    if (x > coast(z) - 2.2) continue; if (Math.hypot(x + 19, z - 7) < 3.6 || Math.hypot(x + 24, z + 2) < 2.8 || Math.hypot(x + 14.5, z - 11) < 4) continue;
+    const tall = rnd() < 0.3, hh = tall ? 1.7 : 1.0, c = roofC[placed % roofC.length];
+    b.box(1.1, hh, 1.1, 0xFFF4D6, x, 0.7 + hh / 2, z, { ry: rnd() * 0.6 }); b.cone(0.95, 0.75, c, x, 0.7 + hh + 0.37, z, { seg: 4, ry: Math.PI / 4 }); placed++;
+  }
+  for (let i = 0; i < 40; i++) { const x = -44 + rnd() * 26, z = -26 + rnd() * 50; if (x > coast(z) - 1.6) continue; tree(b, x, z, 0.55 + rnd() * 0.25); }
+  const lz = -9, lx = coast(lz) - 1.3; b.cyl(0.55, 0.75, 3.2, 0xFFFDF4, lx, 2.3, lz); [1.4, 2.6].forEach(y => b.cyl(0.62, 0.66, 0.4, 0xD93A35, lx, y, lz, { line: 0.02 }));
+  b.cyl(0.5, 0.5, 0.5, 0xFFE58A, lx, 4.15, lz, { line: 0.02 }); b.cone(0.65, 0.6, 0xD93A35, lx, 4.7, lz);
+  const beam = new THREE.Mesh(new THREE.ConeGeometry(1.2, 7, 16, 1, true), new THREE.MeshBasicMaterial({ color: 0xFFF2B0, transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false }));
+  beam.rotation.z = Math.PI / 2; beam.position.x = 3.5; const beamPivot = new THREE.Group(); beamPivot.position.set(lx, 4.15, lz); beamPivot.add(beam); w.add(beamPivot); onTick((t, dt) => { beamPivot.rotation.y += dt * 0.8; });
+  const pz = -3.5, px = coast(pz); b.box(5, 0.2, 0.9, 0x9C6B45, px + 2.2, 0.45, pz, { line: 0.02 }); for (let k = 0; k < 5; k++) b.cyl(0.08, 0.08, 1.4, 0x6B4A33, px + 0.4 + k, -0.2, pz + 0.45, { line: 0 });
+  const boats = [[px + 3.5, pz + 1.6, 0xEF5B4C], [px + 5.5, pz - 1.5, 0x4AA3DF], [px + 2, pz - 4, 0xFFC94A]].map(([x, z, c], i) => { const g = new THREE.Group(); g.position.set(x, 0.1, z); w.add(g); const bb = builder(g);
+    bb.box(1.3, 0.35, 0.55, c, 0, 0.1, 0, { line: 0.02 }); bb.cyl(0.03, 0.03, 1.2, 0xFFFDF4, 0, 0.8, 0, { line: 0 });
+    const sail = new THREE.Mesh(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0.35, 0.02), new THREE.Vector3(0, 1.35, 0.02), new THREE.Vector3(0.6, 0.4, 0.02)]), new THREE.MeshBasicMaterial({ color: 0xFFFDF4, side: THREE.DoubleSide })); g.add(sail);
+    onTick(t => { g.position.y = 0.1 + Math.sin(t * 1.6 + i) * 0.06; g.rotation.z = Math.sin(t * 1.2 + i) * 0.08; g.rotation.x = Math.sin(t + i) * 0.05; }); return g; });
+  // drifting clouds and wheeling gulls
+  const cloudMat = toon(0xFFFFFF, { transparent: true, opacity: 0.92 });
+  for (let i = 0; i < 9; i++) { const g = new THREE.Group(); g.position.set(-55 + rnd() * 95, 10 + rnd() * 3, -20 + rnd() * 40); w.add(g);
+    for (let k = 0; k < 4; k++) { const m = new THREE.Mesh(new THREE.SphereGeometry(1.2 + rnd(), 10, 8), cloudMat); m.position.set(k * 1.3 - 2, rnd() * 0.5, rnd() * 0.8); m.scale.y = 0.6; g.add(m); }
+    const sp = 0.4 + rnd() * 0.4; onTick((t, dt) => { g.position.x += sp * dt; if (g.position.x > 45) g.position.x = -60; }); }
+  const gullMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+  for (let i = 0; i < 6; i++) { const g = new THREE.Group(); w.add(g); const wl = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.04, 0.12), gullMat), wr = wl.clone(); wl.position.x = -0.22; wr.position.x = 0.22; g.add(wl, wr);
+    const cx = -18 + rnd() * 8, cz = -8 + rnd() * 16, r = 2 + rnd() * 3, ph = rnd() * 6, hy = 4 + rnd() * 2;
+    onTick(t => { const a = t * 0.5 + ph; g.position.set(cx + Math.cos(a) * r, hy + Math.sin(t * 2 + ph) * 0.2, cz + Math.sin(a) * r); g.rotation.y = -a; const f = Math.sin(t * 8 + ph) * 0.5; wl.rotation.z = f; wr.rotation.z = -f; }); }
+  // the cave hill on the coast (where the meadow is)
   const hill = b.rock(2.0, 0x8B8F9E, -14.0, 1.3, 12.2); hill.scale.set(1.2, 0.8, 0.9); b.ball(0.6, 0x1A1C2C, -14.4, 1.1, 10.8, { line: 0 }).scale.set(1, 0.9, 0.3);
   // the lost island
   land(2, 2, 4.5, 3.6, 1.0); const cliff = b.rock(2.2, 0x9A8C7A, 2.6, 1.8, 1.2); cliff.scale.set(1.2, 1.1, 1);
@@ -74,12 +108,12 @@ export function buildMap(S, onPick) {
   }
   // fog over places not yet open
   const fogMat = toon(0xF4F7FB, { transparent: true, opacity: 0.8 });
-  for (let i = 0; i < 44; i++) { const x = 0 + rnd() * 31, z = -15 + rnd() * 30; const m = new THREE.Mesh(new THREE.SphereGeometry(1.0 + rnd() * 1.3, 10, 8), fogMat); m.position.set(x, 1.2 + rnd() * 1.2, z); m.scale.y = 0.55; w.add(m);
+  for (let i = 0; i < 40; i++) { const x = 3.5 + rnd() * 28, z = -15 + rnd() * 30; const m = new THREE.Mesh(new THREE.SphereGeometry(1.0 + rnd() * 1.3, 10, 8), fogMat); m.position.set(x, 1.2 + rnd() * 1.2, z); m.scale.y = 0.55; w.add(m);
     const ph = rnd() * 6; onTick(t => { m.position.y = 1.4 + Math.sin(t * 0.4 + ph) * 0.25; }); }
   // markers
   const markers = [];
   STOPS.forEach(s => {
-    const open = s.ep <= 1, done = S.stops[s.n] && S.stops[s.n].done, next = open && !done && s.n === reached;
+    const open = s.ep <= MAX_EP, done = S.stops[s.n] && S.stops[s.n].done, next = open && !done && s.n === reached;
     const g = new THREE.Group(); g.position.set(s.p[0], s.p[1], s.p[2]); w.add(g); const mb = builder(g);
     if (!open) { if (s.p[0] < 4) { mb.cyl(0.35, 0.35, 0.1, 0x9AA0AE, 0, 0.3, 0); } markers.push(null); return; }
     mb.cyl(0.06, 0.06, 2, 0xFFFDF4, 0, 1, 0, { line: 0.015 });
@@ -113,10 +147,10 @@ export function buildMeadow() {
   b.rock(2.4, 0x7C8090, -6.5, 1, -11.5); b.rock(1.8, 0x9A9EAC, 6, 0.7, -11);
   // a real opening: a dark tunnel going back into the hill, framed by rocks
   const mouth = new THREE.Group(); mouth.position.set(0, 0, -8.4); w.add(mouth);
-  const dark = new THREE.MeshBasicMaterial({ color: 0x0B0C13, side: THREE.DoubleSide });
-  const arch = new THREE.Mesh(new THREE.CylinderGeometry(2.0, 2.0, 4, 20, 1, true, -Math.PI / 2, Math.PI), dark); arch.rotation.x = Math.PI / 2; arch.rotation.y = 0; arch.position.set(0, 0, -2); arch.scale.set(1, 1, 1.15); mouth.add(arch);
-  const back = new THREE.Mesh(new THREE.CircleGeometry(2.0, 20, 0, Math.PI), dark); back.position.z = -3.9; back.scale.y = 1.15; mouth.add(back);
-  const sill = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), new THREE.MeshBasicMaterial({ color: 0x23262F })); sill.rotation.x = -Math.PI / 2; sill.position.set(0, 0.03, -2); mouth.add(sill);
+  const gc = document.createElement('canvas'); gc.width = gc.height = 256; const gx = gc.getContext('2d');
+  const gr = gx.createRadialGradient(128, 256, 10, 128, 256, 250); gr.addColorStop(0, '#000000'); gr.addColorStop(0.55, '#07080E'); gr.addColorStop(1, '#2A2D3A'); gx.fillStyle = gr; gx.fillRect(0, 0, 256, 256);
+  const gt = new THREE.CanvasTexture(gc); gt.colorSpace = THREE.SRGBColorSpace;
+  const door = new THREE.Mesh(new THREE.CircleGeometry(2.05, 28, 0, Math.PI), new THREE.MeshBasicMaterial({ map: gt })); door.scale.y = 1.15; door.position.z = 0.01; mouth.add(door);
   const face = new THREE.Mesh(new THREE.RingGeometry(2.0, 4.6, 24, 1, 0, Math.PI), toon(0x8B8F9E)); face.scale.y = 1.15; face.position.z = 0.02; mouth.add(face); outline(face, 0.03);
   // pond and bush (where the other tracks go)
   const pond = new THREE.Mesh(new THREE.CircleGeometry(2.2, 24), toon(0x5BB8E8)); pond.rotation.x = -Math.PI / 2; pond.position.set(-9, 0.03, -2); pond.scale.set(1.3, 1, 1); w.add(pond);
@@ -203,7 +237,7 @@ export function buildChamber() {
 // ================================================================ stop 3: the tunnel ride
 export function buildTunnel() {
   const w = newWorld({ sky: 0x05060B, ambient: 0x9AA5C8, ambientI: 0.55, sunI: 0.25, fog: [0x05060B, 8, 34] }); const b = builder(w);
-  const pts = []; for (let i = 0; i <= 14; i++) pts.push(new THREE.Vector3(Math.sin(i * 0.7) * 6, -i * 1.1, -i * 9));
+  const pts = []; for (let i = 0; i <= 14; i++) pts.push(new THREE.Vector3(Math.sin(i * 0.7) * 6, -i * 2.6 - (i > 10 ? (i - 10) * 1.2 : 0), -i * 9));
   const path = new THREE.CatmullRomCurve3(pts);
   const tube = new THREE.Mesh(new THREE.TubeGeometry(path, 240, 3.2, 14), toon(0x2E3245, { side: THREE.BackSide })); w.add(tube);
   // rails + ties

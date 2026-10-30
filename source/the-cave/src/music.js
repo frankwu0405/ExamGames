@@ -34,18 +34,22 @@ function padOn(notes, vol = 0.035) { padOff(); const g = AC.createGain(), f = AC
 function padOff() { if (!pad) return; const p = pad; pad = null; p.g.gain.setTargetAtTime(0.0001, AC.currentTime, 0.6); setTimeout(() => p.os.forEach(o => { try { o.stop(); } catch (e) { } }), 3000); }
 
 // ---------------------------------------------------------------- the pieces
-// Map: an original sea shanty in D minor, 6/8 (lead, oom-pah bass, drum).
-const SHANTY = { beat: 0.2, len: 96,
-  mel: [[69,1],[74,2],[74,1],[72,1],[70,1],[69,2],[67,1],[65,2],[67,1],[69,2],[70,1],[72,2],[69,1],[67,3],[62,3],
-        [65,1],[67,2],[69,1],[70,1],[72,1],[74,2],[72,1],[70,2],[69,1],[67,2],[65,1],[64,2],[61,1],[62,6]],
-  roots: [50, 50, 53, 55, 53, 58, 57, 50] };
+// Map: an original pirate shanty in D minor, 6/8 — low accordion and fiddle, booming drum, stomping bass, a deep drone.
+const SHANTY = {
+  mel: [[57,1],[62,2],[62,1],[60,1],[58,1],[57,2],[55,1],[53,2],[55,1],[57,2],[58,1],[60,2],[57,1],[55,3],[50,3],
+        [53,1],[55,2],[57,1],[58,1],[60,1],[62,2],[60,1],[58,2],[57,1],[55,2],[53,1],[52,2],[49,1],[50,6]],
+  roots: [38, 38, 41, 43, 41, 46, 45, 38] };
+function tom(t, vol = 0.3, f0 = 95) { const o = AC.createOscillator(), g = AC.createGain(); o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(48, t + 0.35); env(g, t, 0.004, vol, 0.45); o.connect(g); g.connect(bus); o.start(t); o.stop(t + 0.5); noiseHit(t, { vol: vol * 0.4, f: 180, dec: 0.2 }); }
+function fiddle(m, t, dur, vol = 0.03) { const f = AC.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1400; f.Q.value = 0.8; const g = AC.createGain(); f.connect(g); g.connect(bus);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.08); g.gain.setValueAtTime(vol, t + dur * 0.75); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  const o = AC.createOscillator(); o.type = 'sawtooth'; o.frequency.value = mtof(m); const lfo = AC.createOscillator(), lg = AC.createGain(); lfo.frequency.value = 6; lg.gain.value = 12; lfo.connect(lg); lg.connect(o.detune); o.connect(f); o.start(t); lfo.start(t); o.stop(t + dur + 0.05); lfo.stop(t + dur + 0.05); }
 function shanty(t, i) {
-  const bar = Math.floor(i / 6) % 8, inBar = i % 6, root = SHANTY.roots[bar];
-  if (inBar === 0) { pluck(root - 12, t, 0.2, 'triangle', 0.5); kick(t, 0.3); }
-  if (inBar === 3) { pluck(root - 5, t, 0.16, 'triangle', 0.4); kick(t, 0.18); }
-  if (inBar === 2 || inBar === 5) { noiseHit(t, { vol: 0.05, f: 7000, type: 'highpass', dec: 0.06 }); pluck(root + 12, t, 0.035, 'square', 0.12); pluck(root + 15 + (bar % 2), t, 0.03, 'square', 0.12); }
-  let at = 0, k = i % 48; for (const [m, d] of SHANTY.mel) { if (at === k) accordion(m, t, d * SHANTY.beat * 0.95, 0.045); at += d; }
-  if (i % 96 >= 48) { let a2 = 0; for (const [m, d] of SHANTY.mel) { if (a2 === k) accordion(m - 9 + (m % 2), t, d * SHANTY.beat * 0.95, 0.02); a2 += d; } } // harmony on the repeat
+  const bar = Math.floor(i / 6) % 8, inBar = i % 6, root = SHANTY.roots[bar], B = 0.26;
+  if (inBar === 0) { tom(t, 0.4); pluck(root - 12, t, 0.22, 'triangle', 0.7); pluck(root - 5, t, 0.08, 'sawtooth', 0.5); }
+  if (inBar === 3) { tom(t, 0.22, 120); pluck(root - 5, t, 0.18, 'triangle', 0.5); }
+  if (inBar === 2 || inBar === 5) noiseHit(t, { vol: 0.07, f: 2500, type: 'bandpass', q: 1.2, dec: 0.08 });  // stomp
+  let at = 0; const k = i % 48;
+  for (const [m, d] of SHANTY.mel) { if (at === k) { accordion(m, t, d * B * 0.95, 0.05); accordion(m - 12, t, d * B * 0.95, 0.025); if (i % 96 >= 48) fiddle(m + 12 - 3 - (m % 3 === 0 ? 1 : 0), t, d * B * 0.95); } at += d; }
 }
 // Meadow: a light waltz in G (flute + plucked bass).
 const WALTZ = [[67,1],[71,1],[74,1],[76,2],[74,1],[72,1],[71,1],[69,1],[71,3],[67,1],[69,1],[71,1],[72,2],[76,1],[74,1],[72,1],[69,1],[67,3]];
@@ -66,7 +70,10 @@ function danger(t, i) {
   noiseHit(t, { vol: 0.03, f: 8000, type: 'highpass', dec: 0.04 });
   if (i % 16 === 0) accordion(n + 24, t, 0.9, 0.025); if (i % 16 === 8) accordion(n + 27, t, 0.9, 0.025);
 }
-const THEMES = { map: { fn: shanty, beat: 0.2, vol: 0.9 }, meadow: { fn: meadow, beat: 0.36, vol: 0.9 }, cave: { fn: cave, beat: 0.5, vol: 1, pad: [38, 45, 50] }, danger: { fn: danger, beat: 0.15, vol: 0.85, pad: [40, 47] } };
+// Wonder: quick bell arpeggios in A major pentatonic over a soft pad (the crystal room).
+const ARP = [[69, 73, 76, 81], [66, 69, 73, 78], [62, 66, 69, 74], [64, 68, 71, 76]];
+function wonder(t, i) { const ch = ARP[Math.floor(i / 8) % 4]; bell(ch[i % 4] + (i % 8 >= 4 ? 12 : 0), t, 0.03); if (i % 8 === 0) { pluck(ch[0] - 24, t, 0.14, 'triangle', 0.9); kick(t, 0.12); } }
+const THEMES = { shantyOld: null, wonder: { fn: wonder, beat: 0.17, vol: 0.9, pad: [45, 52, 57] }, map: { fn: shanty, beat: 0.26, vol: 0.95, pad: [26, 33] }, meadow: { fn: meadow, beat: 0.36, vol: 0.9 }, cave: { fn: cave, beat: 0.5, vol: 1, pad: [38, 45, 50] }, danger: { fn: danger, beat: 0.15, vol: 0.85, pad: [40, 47] } };
 
 export function playMusic(name) {
   want = name; if (!AC || !S.settings.music) return; if (theme === name) return;

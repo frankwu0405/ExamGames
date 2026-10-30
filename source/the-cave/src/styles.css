@@ -140,3 +140,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .kcard.lv2, .kcard.lv3 { box-shadow: none; }
 .card-flip .kcard { width: min(280px, 60vw); }
 @media (max-width: 600px) { .kcard { width: 140px; } }
+.binder-ep { font-family: var(--display); font-size: 24px; color: var(--paper); margin: 18px 0 6px; letter-spacing: .5px; }
+.tap-count { text-align: center; font-family: var(--display); font-size: 30px; margin-top: 8px; }
+.tap-count.right { color: #2C8A4A; }
+.steer { display: flex; justify-content: center; gap: 18px; margin-top: 12px; } .steer-btn { font-size: 30px; padding: 10px 26px; }
+/* while she taps things in the 3D scene, the panels get out of the way (taps go through them) */
+body.aim .story { pointer-events: none; opacity: .9; transform: translateX(-50%) scale(.88); transform-origin: bottom center; }
+body.aim .task { pointer-events: none; padding: 8px 14px 10px; } body.aim .task button { pointer-events: auto; }
+body.aim .task-prompt { font-size: clamp(15px, 2vw, 18px); }
+.kcard-img { border-radius: 6.5% / 4.3%; }
+.after { position: fixed; inset: 0; z-index: 46; display: grid; place-items: center; background: rgba(6,7,13,.55); }
+.after .mode-card { text-align: center; }

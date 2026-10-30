@@ -77,18 +77,24 @@ function pickVoice() {
 }
 if (window.speechSynthesis) speechSynthesis.onvoiceschanged = pickVoice;
 let speakToken = 0;
-export function say(text, { force, onWord } = {}) {
-  return new Promise(res => {
-    if (!window.speechSynthesis || !text || (!force && !S.settings.read)) return res();
-    const my = ++speakToken; speechSynthesis.cancel();
+let lastSpeech = Promise.resolve();
+// queue: wait for whatever is being read now, then read this (unless something new interrupted in between)
+export function say(text, { force, onWord, queue = false } = {}) {
+  if (!window.speechSynthesis || !text || (!force && !S.settings.read)) return Promise.resolve();
+  const my = queue ? speakToken : ++speakToken;
+  const run = () => new Promise(res => {
+    if (my !== speakToken) return res();
+    if (!queue) speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text.replace(/_{2,}/g, 'blank'));
     if (!voice) pickVoice(); if (voice) u.voice = voice;
     u.lang = (voice && voice.lang) || 'en-US'; u.rate = S.settings.rate; u.pitch = 1.05;
     if (onWord) u.onboundary = e => { if (e.name === 'word' || e.charIndex != null) onWord(e.charIndex); };
     let done = false; const fin = () => { if (!done) { done = true; if (window.__duck) window.__duck(false); res(); } };
-    if (window.__duck) window.__duck(true); const fin0 = fin; u.onend = () => { if (window.__duck) window.__duck(false); fin0(); }; u.onerror = u.onend; setTimeout(fin, 2500 + text.length * 110);
-    setTimeout(() => { if (my === speakToken) speechSynthesis.speak(u); }, 40);
+    if (window.__duck) window.__duck(true); u.onend = fin; u.onerror = fin; setTimeout(fin, 2500 + text.length * 110);
+    setTimeout(() => { if (my === speakToken) speechSynthesis.speak(u); else fin(); }, 40);
   });
+  const p = queue ? lastSpeech.then(run) : run();
+  lastSpeech = p; return p;
 }
 export function hush() { speakToken++; if (window.speechSynthesis) speechSynthesis.cancel(); }
 
