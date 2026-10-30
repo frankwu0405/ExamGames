@@ -5,6 +5,7 @@ import { buildMap, STOPS, setCamRef, EPISODES, MAX_EP } from './sets.js';
 window.__maxEp = MAX_EP;
 import { mountUI, openBinder, hideStory, hideTask, MODE, dueCards, ownedCount, cardTotal } from './ui.js';
 import { playMusic, setMusic } from './music.js';
+import { cloudsIn, cloudsCovered, cloudsOut } from './clouds.js';
 import { stop1, stop2, stop3, sumUp } from './ep1.js';
 import { stop4, stop5, stop6, sumUp2 } from './ep2.js';
 
@@ -25,7 +26,7 @@ function buildHud(mode) {
 }
 
 // Back to Pebble Town: fade to black around the blue glow, then the town opens at the cave mouth.
-async function goTown() { sfx('whoosh'); const p = h('div', { class: 'portal in' }); document.body.append(p); save(); await wait(700); location.href = 'index.html?from=cave'; }
+async function goTown() { sfx('whoosh'); save(); await cloudsIn(); location.href = 'index.html?from=cave'; }
 
 // Choose the reading voice. The best one on this device is picked automatically and starred.
 function voicePanel() {
@@ -123,6 +124,6 @@ function title() {
 load(); init(document.body); setCamRef(camera); mountUI();
 document.addEventListener('pointerdown', () => audioInit(), { once: true });
 const fromTown = new URLSearchParams(location.search).get('from') === 'town';
-if (fromTown) { history.replaceState(null, '', location.pathname); const p = h('div', { class: 'portal' }); document.body.append(p); setTimeout(() => { p.classList.add('out'); setTimeout(() => p.remove(), 1300); }, 500); showMap(); }
+if (fromTown) { history.replaceState(null, '', location.pathname); const cv = cloudsCovered(); showMap(); setTimeout(() => cloudsOut(cv), 700); }
 else if (sessionStorage.getItem('cave_skipTitle')) { sessionStorage.removeItem('cave_skipTitle'); showMap(); } else { setCam([-2, 40, 40], [0, 0, 0]); buildMap(S, null); title(); }
 window.__cave = { S, play, showMap };
