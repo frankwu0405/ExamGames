@@ -55,7 +55,7 @@ export function textPlane(text, wUnits, opts = {}) {
 export function init(container) {
   renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.setSize(innerWidth, innerHeight);
-  renderer.outputColorSpace = THREE.SRGBColorSpace; container.append(renderer.domElement);
+  renderer.outputColorSpace = THREE.SRGBColorSpace; container.append(renderer.domElement); initLook(renderer.domElement);
   scene = new THREE.Scene(); camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.05, 600);
   world = new THREE.Group(); scene.add(world);
   addEventListener('resize', () => { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); });
@@ -64,7 +64,7 @@ export function init(container) {
 }
 // Swap to a new place: clear the old world, set sky / fog / light.
 export function newWorld({ sky = 0x9FD8F5, fog = null, ambient = 0xffffff, ambientI = 1.6, sun = 0xffffff, sunI = 1.6, sunPos = [8, 14, 6] } = {}) {
-  ticks.clear(); ticks.add(camTick); document.body.classList.remove('cine'); const fr = document.querySelector('.frost'); if (fr) { fr.style.transition = 'none'; fr.style.opacity = 0; }
+  ticks.clear(); ticks.add(camTick); lookOff.set(0, 0, 0); Object.assign(LK, { yaw: 0, pitch: 0, zoom: 1, ty: 0, tp: 0, tz: 1 }); document.body.classList.remove('cine'); const fr = document.querySelector('.frost'); if (fr) { fr.style.transition = 'none'; fr.style.opacity = 0; }
   if (camera.fov !== 50) { camera.fov = 50; camera.updateProjectionMatrix(); }
   scene.remove(world); world.traverse(o => { if (o.geometry && !o.userData.isOutline) o.geometry.dispose(); });
   world = new THREE.Group(); scene.add(world);
@@ -77,10 +77,10 @@ export function newWorld({ sky = 0x9FD8F5, fog = null, ambient = 0xffffff, ambie
 // ---------------------------------------------------------------- camera moves
 let camMove = null;
 const ease = k => k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
-export function setCam(pos, target) { camMove = null; camera.position.set(...pos); lookAt.set(...target); camera.lookAt(lookAt); }
+export function setCam(pos, target) { camMove = null; lookOff.set(0, 0, 0); camera.position.set(...pos); lookAt.set(...target); camera.lookAt(lookAt); }
 export function flyCam(pos, target, ms = 1400, { linear = false, fov = null } = {}) {
   return new Promise(res => {
-    const p0 = camera.position.clone(), l0 = lookAt.clone(), p1 = new THREE.Vector3(...pos), l1 = new THREE.Vector3(...target);
+    const p0 = camera.position.clone().sub(lookOff), l0 = lookAt.clone(), p1 = new THREE.Vector3(...pos), l1 = new THREE.Vector3(...target);
     camMove = { p0, l0, p1, l1, t0: performance.now(), ms, res, linear, f0: camera.fov, f1: fov };
   });
 }
@@ -91,13 +91,41 @@ export function lens(fov, ms = 800) { const f0 = camera.fov; return tween(ms, e 
 export const camLook = () => lookAt.clone();
 let follow = null;   // () => [pos, target]  (camera tracks something every frame)
 export const followCam = f => { follow = f; camMove = null; };
+// ---- "look around": during story moments she can drag to swing the camera a little around the shot; it springs back.
+const lookOff = new THREE.Vector3(); const LK = { yaw: 0, pitch: 0, zoom: 1, ty: 0, tp: 0, tz: 1, drag: false, x: 0, y: 0, pinch: 0, ok: false, used: false };
+export const lookState = LK;
+const lookAllowed = () => !!document.querySelector('.story:not(.hidden)') && !document.querySelector('.task:not(.hidden), .letter-layer, .card-reveal, .stretch, .binder, .after, .mode-pick, .spy, .veil, .sumup, .ep-done, .tbc, .stop-title');
+export function initLook(el) {
+  const pts = new Map();
+  el.addEventListener('pointerdown', e => { if (!LK.ok) return; pts.set(e.pointerId, [e.clientX, e.clientY]); LK.drag = true; LK.x = e.clientX; LK.y = e.clientY; if (pts.size === 2) { const [a, b] = [...pts.values()]; LK.pinch = Math.hypot(a[0] - b[0], a[1] - b[1]); } });
+  addEventListener('pointermove', e => { if (!LK.drag || !pts.has(e.pointerId)) return; pts.set(e.pointerId, [e.clientX, e.clientY]);
+    if (pts.size === 2) { const [a, b] = [...pts.values()]; const d = Math.hypot(a[0] - b[0], a[1] - b[1]); if (LK.pinch) LK.tz = Math.max(0.7, Math.min(1.25, LK.tz * LK.pinch / d)); LK.pinch = d; return; }
+    LK.ty = Math.max(-0.65, Math.min(0.65, LK.ty - (e.clientX - LK.x) * 0.006)); LK.tp = Math.max(-0.22, Math.min(0.3, LK.tp + (e.clientY - LK.y) * 0.004)); LK.x = e.clientX; LK.y = e.clientY; LK.used = true; });
+  const up = e => { pts.delete(e.pointerId); if (!pts.size) { LK.drag = false; LK.pinch = 0; } };
+  addEventListener('pointerup', up); addEventListener('pointercancel', up);
+  el.addEventListener('wheel', e => { if (!LK.ok) return; LK.tz = Math.max(0.7, Math.min(1.25, LK.tz * (e.deltaY > 0 ? 1.06 : 0.94))); LK.used = true; }, { passive: true });
+}
+function applyLook() {
+  LK.ok = lookAllowed();
+  if (!LK.ok || !LK.drag) { const k = LK.ok ? 0.025 : 0.08; LK.ty -= LK.ty * k * 2; LK.tp -= LK.tp * k * 2; LK.tz += (1 - LK.tz) * k * 2; }
+  const t = performance.now() / 1000, drift = LK.ok ? Math.sin(t * 0.25) * 0.035 : 0, driftP = LK.ok ? Math.sin(t * 0.19) * 0.015 : 0;
+  LK.yaw += (LK.ty + drift - LK.yaw) * 0.12; LK.pitch += (LK.tp + driftP - LK.pitch) * 0.12; LK.zoom += (LK.tz - LK.zoom) * 0.12;
+  if (Math.abs(LK.yaw) + Math.abs(LK.pitch) + Math.abs(LK.zoom - 1) < 1e-4) return;
+  const d = camera.position.clone().sub(lookAt), len = d.length(); if (len < 1e-3) return;
+  d.applyAxisAngle(new THREE.Vector3(0, 1, 0), LK.yaw);
+  const side = new THREE.Vector3().crossVectors(d, new THREE.Vector3(0, 1, 0)).normalize(); const el0 = Math.asin(Math.max(-1, Math.min(1, d.y / len)));
+  const el1 = Math.max(-1.2, Math.min(1.35, el0 + LK.pitch)); d.applyAxisAngle(side, el0 - el1); d.multiplyScalar(LK.zoom);
+  const np = lookAt.clone().add(d); lookOff.copy(np).sub(camera.position); camera.position.copy(np); camera.lookAt(lookAt);
+}
 function camTick() {
+  camera.position.sub(lookOff); lookOff.set(0, 0, 0);
   if (camMove) {
     const k = Math.min(1, (performance.now() - camMove.t0) / camMove.ms), e = camMove.linear ? (k * k * (3 - 2 * k) * 0.35 + k * 0.65) : ease(k);
     camera.position.lerpVectors(camMove.p0, camMove.p1, e); lookAt.lerpVectors(camMove.l0, camMove.l1, e); camera.lookAt(lookAt);
     if (camMove.f1) { camera.fov = camMove.f0 + (camMove.f1 - camMove.f0) * e; camera.updateProjectionMatrix(); }
     if (k >= 1) { const r = camMove.res; camMove = null; r(); }
   } else if (follow) { const [p, l] = follow(); camera.position.lerp(p, 0.12); lookAt.lerp(l, 0.15); camera.lookAt(lookAt); }
+  applyLook();
 }
 export const stopFollow = () => { follow = null; };
 export let shakeAmt = 0;

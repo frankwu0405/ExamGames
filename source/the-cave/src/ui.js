@@ -1,7 +1,7 @@
 // Story panel, activity widgets, hints and keyword cards.
 import { S, save, say, hush, sfx, h, $, wait, shuffle, shake, miss } from './core.js';
 import { CARD_IMG } from './cards.gen.js';
-import { THREE, pickAt, rayFrom, renderer, camera, onTick, toScreen, sparkles, textTexture, snapshot, tween } from './gfx.js';
+import { THREE, pickAt, rayFrom, renderer, camera, onTick, toScreen, sparkles, textTexture, snapshot, tween, lookState } from './gfx.js';
 
 // ---------------------------------------------------------------- story panel
 let panel, textEl, nextBtn, taskEl, tobyEl, layer;
@@ -14,6 +14,14 @@ export function mountUI() {
   taskEl = h('div', { class: 'task hidden' });
   tobyEl = h('div', { class: 'toby-hint hidden' });
   layer.append(panel, taskEl, tobyEl); document.body.append(layer);
+  // the first time she can look around, a little hand shows her how (only until she has tried it, at most 3 times)
+  let shownFor = 0; setInterval(() => {
+    if ((S.lookTried || 0) >= 1 || (S.lookHints || 0) >= 3) return;
+    if (lookState.used) { S.lookTried = 1; save(); return; }
+    if (lookState.ok && !document.querySelector('.look-hint')) { shownFor++; if (shownFor < 4) return; shownFor = 0;
+      S.lookHints = (S.lookHints || 0) + 1; save(); const hint = h('div', { class: 'look-hint' }, h('span', { class: 'hand' }, '👆'), 'Drag to look around!');
+      document.body.append(hint); setTimeout(() => hint.classList.add('out'), 3800); setTimeout(() => hint.remove(), 4600); }
+  }, 1000);
 }
 let current = '';
 // text may contain {word} for a blank that gets filled later; returns when she taps ▶
