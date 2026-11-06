@@ -120,7 +120,8 @@ function title() {
   const t = h('div', { class: 'title' },
     h('div', { class: 'title-glow' }), h('h1', {}, 'The Cave'), h('div', { class: 'title-sub' }, 'Leo, Mia & Toby’s voyage'),
     h('button', { class: 'btn gold big', onclick: go }, S.stops[1] ? 'Keep going' : 'Start the voyage'),
-    h('div', { class: 'title-note' }, S.name ? `Welcome, ${S.name}!` : ''));
+    h('div', { class: 'title-note' }, S.name ? `Welcome, ${S.name}!` : ''),
+    h('div', { style: 'position:absolute;bottom:10px;left:0;right:0;text-align:center;font-size:11px;opacity:.55;color:#fff' }, 'Varn’s 3D model was made with Tripo (tripo3d.ai)'));
   document.body.append(t);
 }
 
@@ -130,5 +131,16 @@ const fromTown = new URLSearchParams(location.search).get('from') === 'town';
 if (fromTown) { history.replaceState(null, '', location.pathname); const cv = cloudsCovered(); showMap(); setTimeout(() => cloudsOut(cv), 700); }
 else if (sessionStorage.getItem('cave_skipTitle')) { sessionStorage.removeItem('cave_skipTitle'); showMap(); } else { setCam([-2, 40, 40], [0, 0, 0]); buildMap(S, null); title(); }
 import { buildBeach } from './sets2.js';
+import { makeCast } from './chars.js';
+import { makeVarn } from './varn.js';
+import { newWorld } from './gfx.js';
 import { buildCliff, buildShelf, buildCrack } from './sets3.js';
-window.__cave = { S, play, showMap, debugVarn, dbg: { buildShelf, buildCliff, buildCrack, setCam, stopFollow, THREE, camera: () => camera }, debugCliff: (cam, tgt, fov = 50) => { stopFollow(); const K = buildCliff(); setCam(cam, tgt); camera.fov = fov; camera.updateProjectionMatrix(); window.__K = K; }, debugBeach: (cam = [0, 2.2, -8], tgt = [0, 1, 1]) => { stopFollow(); buildBeach(); setCam(cam, tgt); } };
+window.__cave = { S, play, showMap, debugVarn, dbg: { makeCast, newWorld, makeVarn, buildShelf, buildCliff, buildCrack, setCam, stopFollow, THREE, camera: () => camera }, debugCliff: (cam, tgt, fov = 50) => { stopFollow(); const K = buildCliff(); setCam(cam, tgt); camera.fov = fov; camera.updateProjectionMatrix(); window.__K = K; }, debugBeach: (cam = [0, 2.2, -8], tgt = [0, 1, 1]) => { stopFollow(); buildBeach(); setCam(cam, tgt); } };
+
+// test helper: only appears when the page address has ?test (e.g. cave-test.html?test). The live page never shows it.
+if (new URLSearchParams(location.search).has('test')) {
+  const sel = h('select', { style: 'position:fixed;left:8px;bottom:8px;z-index:9999;padding:6px;font:14px sans-serif;max-width:55vw;opacity:.85' }, h('option', { value: '' }, 'TEST: jump to stop…'),
+    ...STOPS.filter(s => s.ep <= MAX_EP).map(s => h('option', { value: s.n }, `Ep${s.ep} · stop ${s.n}: ${s.name}`)));
+  sel.onchange = () => { const n = +sel.value; if (!n) return; sel.value = ''; audioInit(); document.querySelectorAll('.title,.after,.ep-done').forEach(e => e.remove()); play(n); };
+  document.body.append(sel);
+}

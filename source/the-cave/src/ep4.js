@@ -181,10 +181,10 @@ export async function stop12() {
   playMusic('danger');
   tell('Then, the dark water began to bubble. A massive, glowing shadow started to rise from the deep water in front of them...', { wait: false });
   C.bubbles.position.set(bx(), 0, z); C.bubbles.visible = true;
-  const V = makeVarn(C.w); V.g.position.set(bx(), -9.5, z - 2); V.set('swim'); V.state.glow = 2.4; V.state.sway = 0.6;
-  letterbox(true); cut([bx() + 2.4, 5.5, z + 7], [bx(), -2, z - 13], 50); dolly([bx() + 1.6, 4.6, z + 4.5], [bx(), -2, z - 14], 7000);
+  const V = makeVarn(C.w); V.g.position.set(bx(), -9.5, z - 40); V.set('swim'); V.state.glow = 2.4; V.state.sway = 0.6; V.state.clip = true; fogThicken(scene, { near: 3, far: 42, color: 0xB4C0CE, ms: 4500 });
+  letterbox(true); cut([bx() + 2.4, 3.6, z + 7], [bx(), -1, z - 22], 50); dolly([bx() + 1.6, 3.2, z + 4.5], [bx(), -1, z - 24], 7000);
   sfx('rumble'); quake(3, 0.12); dog.pose('bark'); sfx('bark');
-  await tween(5000, e => { V.g.position.y = -9.5 + e * 3.6; V.state.glow = 2.4 + e; V.state.anger = e; });
+  await tween(6000, e => { V.g.position.y = -9.5 + e * 3.6; V.g.position.z = z - 40 + e * 24; V.state.glow = 1.6 + e * 1.4; V.state.anger = e; });
   if (await offerStretch('A word that means the same.')) {
     await chooseWord(pickV(12, [
       { prompt: 'Bonus! massive means…', sentence: 'A {_} shadow rose from the water.', tiles: ['huge', 'tiny', 'thin'], answer: 'huge', note: 'massive = huge', hints: ['Massive is very, very big.', 'huge!'] },

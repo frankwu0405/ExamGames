@@ -22,6 +22,7 @@ function labels(w, words, around, r = 6, y0 = 2) {
 const flash = () => { const f = h('div', { class: 'veil memory' }); f.style.background = '#EAF7FF'; document.body.append(f); setTimeout(() => f.classList.add('out'), 80); setTimeout(() => f.remove(), 900); };
 // ---- cinematic beats
 async function burstOut(I) {
+  I.varn.state.clip = false;
   const V = I.varn; V.state.glow = 1.1; sfx('crash'); sfx('rumble'); quake(2.2, 0.35);
   I.hole.scale.setScalar(1); const c = new THREE.Vector3(1.3, 0.2, -15);
   shardBurst(I.w, c, { n: 36, power: 10 }); I.slabs.forEach((m, i) => { m.visible = true; const u = m.userData; tween(700 + i * 20, e => { m.rotation.x = u.rx * e; m.rotation.z = u.rz * e; m.position.y = 0.1 + u.y * e + Math.sin(e * Math.PI) * 1.5; }); });
@@ -46,7 +47,7 @@ function makeWave(w) {
 // ================================================================ stop 13 — Varn rises
 export async function stop13() {
   playMusic('cave');
-  const I = buildIce(); const { leo, mia, toby: dog } = I.boat.cast; const V = I.varn; V.set('circle'); V.state.glow = 1.6;
+  const I = buildIce(); const { leo, mia, toby: dog } = I.boat.cast; const V = I.varn; V.set('circle'); V.state.glow = 1.6; V.state.clip = true; // nothing of him may show above the ice while he circles
   letterbox(true); frost(0.45, 2000);
   // close on the kids: the ice cracks under them
   cut([2.4, 2.0, -4.8], [0, 1.15, 0], 40); dolly([1.8, 1.9, -4.0], [0, 1.2, 0], 6000);
@@ -179,7 +180,7 @@ export async function stop15() {
   await tell('Varn lifts a big, heavy tail to {smash} the ice.', { wait: false });
   await order({ prompt: 'What happens? Put it in order.', compact: true, items: ['Varn lifts his heavy tail.', 'The tail smashes the ice.', 'A huge wave rises.', 'The wave pushes the boat away.'], hints: ['First Varn lifts…', 'The wave comes after the smash.'] });
   // the tail lifts…
-  letterbox(true); V.lookAt(null, 0, 600); V.to('tailUp', 2200); sfx('rumble');
+  letterbox(true); V.lookAt(null, 0, 600); V.to('turnOver', 1000).then(() => V.to('tailUp', 1400)); sfx('rumble');
   await flyCam([11, 4, 6], [4, 6.5, -7], 2000, { fov: 60 }); await wait(500);
   setCam([0.6, 3.6, 5.6], [0, 0.6, -5]);
   // ---- spell SMASH on the cracked ice (each letter cracks it more) — rotates on replays
