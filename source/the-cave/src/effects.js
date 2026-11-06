@@ -4,20 +4,25 @@ import { THREE, onTick, tween, world, camera } from './gfx.js';
 
 const cache = {};
 // soft round glow (for magic light, eyes, mane wisps)
+// NOTE: these two soft textures are built as raw pixel data (always pure white, only the see-through amount changes) instead of
+// being painted on a canvas. On iPhone/iPad a canvas keeps colours pre-multiplied by their see-through amount, so the almost-clear
+// pixels turn into rainbow-coloured speckle ("confetti") when the page uploads them to the graphics chip.
+function softTex(w, h, alphaAt) {
+  const d = new Uint8Array(w * h * 4);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = (y * w + x) * 4; d[i] = d[i + 1] = d[i + 2] = 255; d[i + 3] = Math.max(0, Math.min(255, Math.round(alphaAt(x, y) * 255 + Math.random() - 0.5))); }
+  const t = new THREE.DataTexture(d, w, h, THREE.RGBAFormat); t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true; t.needsUpdate = true; return t;
+}
 export function glowTex() {
   if (cache.glow) return cache.glow;
-  const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d');
-  const g = x.createRadialGradient(64, 64, 0, 64, 64, 64); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.25, 'rgba(255,255,255,.6)'); g.addColorStop(1, 'rgba(255,255,255,0)');
-  x.fillStyle = g; x.fillRect(0, 0, 128, 128); const t = new THREE.CanvasTexture(c); return (cache.glow = t);
+  return (cache.glow = softTex(128, 128, (x, y) => { const r = Math.hypot(x - 63.5, y - 63.5) / 64; return r >= 1 ? 0 : r < 0.25 ? 1 - 0.4 * (r / 0.25) : 0.6 * (1 - (r - 0.25) / 0.75); }));
 }
 // soft cloudy puff (for fog and mist)
 export function cloudTex() {
   if (cache.cloud) return cache.cloud;
-  const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d');
-  for (let i = 0; i < 40; i++) { const px = 64 + Math.random() * 128, py = 70 + Math.random() * 116, r = 24 + Math.random() * 56;
-    const g = x.createRadialGradient(px, py, 0, px, py, r); g.addColorStop(0, 'rgba(255,255,255,.22)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 256, 256); }
-  const m = x.createRadialGradient(128, 128, 60, 128, 128, 128); x.globalCompositeOperation = 'destination-in'; m.addColorStop(0, 'rgba(0,0,0,1)'); m.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = m; x.fillRect(0, 0, 256, 256);
-  const t = new THREE.CanvasTexture(c); return (cache.cloud = t);
+  const N = 256, acc = new Float32Array(N * N).fill(1);
+  for (let k = 0; k < 40; k++) { const px = 64 + Math.random() * 128, py = 70 + Math.random() * 116, r = 24 + Math.random() * 56;
+    for (let y = Math.max(0, Math.floor(py - r)); y < Math.min(N, Math.ceil(py + r)); y++) for (let x = Math.max(0, Math.floor(px - r)); x < Math.min(N, Math.ceil(px + r)); x++) { const d = Math.hypot(x - px, y - py); if (d < r) acc[y * N + x] *= 1 - 0.22 * (1 - d / r); } }
+  return (cache.cloud = softTex(N, N, (x, y) => { const d = Math.hypot(x - 127.5, y - 127.5), m = d <= 60 ? 1 : Math.max(0, 1 - (d - 60) / 68); return (1 - acc[y * N + x]) * m; }));
 }
 export function glowSprite(color = 0x9FFFF4, size = 2, opacity = 1) {
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false }));
