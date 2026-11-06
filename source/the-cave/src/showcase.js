@@ -77,9 +77,10 @@ document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { SHOW.m
 document.querySelectorAll('[data-stage]').forEach(b => b.onclick = () => stage(b.dataset.stage));
 $('#spd').oninput = e => { SHOW.rate = +e.target.value; };
 $('#flap').oninput = e => { SHOW.flap = +e.target.value; };
+$('#tail').oninput = e => { SHOW.tail = +e.target.value; };
 $('#glow').oninput = e => { V.state.glow = +e.target.value; };
 $('#fol').onclick = e => { follow = !follow; e.target.classList.toggle('on', follow); };
 $('#orb').onclick = e => { ctl.autoRotate = !ctl.autoRotate; e.target.classList.toggle('on', ctl.autoRotate); };
 $('#hide').onclick = () => document.body.classList.toggle('hideui');
-SHOW.rate = 1; SHOW.flap = 1; V.state.glow = 1.1;
+SHOW.rate = 1; SHOW.flap = 1; SHOW.tail = 1; V.state.glow = 1.1;
 window.__show = { V, SHOW, ctl, stage, setFollow: v => { follow = v; } };

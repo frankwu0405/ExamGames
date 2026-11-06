@@ -35,7 +35,7 @@ const html = `<!doctype html>
 <div class="panel">
 <div class="row"><b>Motion</b><button data-mode="cruise" class="on">Cruise</button><button data-mode="hover">Dream drift</button><button data-mode="loop">Loop-the-loop</button><button data-mode="corkscrew">Corkscrew</button></div>
 <div class="row"><b>Stage</b><button data-stage="deep">Deep water</button><button data-stage="sky">Open sky</button><button data-stage="aurora">Aurora night</button></div>
-<div class="row"><b>Tune</b><label>Speed <input id="spd" type="range" min="0.3" max="1.8" step="0.05" value="1"></label><label>Flippers <input id="flap" type="range" min="0" max="2" step="0.05" value="1"></label><label>Glow <input id="glow" type="range" min="0.3" max="1.6" step="0.05" value="1.1"></label></div>
+<div class="row"><b>Tune</b><label>Speed <input id="spd" type="range" min="0.3" max="1.8" step="0.05" value="1"></label><label>Flippers <input id="flap" type="range" min="0" max="2" step="0.05" value="1"></label><label>Tail <input id="tail" type="range" min="0" max="2" step="0.05" value="1"></label><label>Glow <input id="glow" type="range" min="0.3" max="1.6" step="0.05" value="1.1"></label></div>
 <div class="row"><b>Camera</b><button id="fol" class="on">Follow Varn</button><button id="orb">Auto-orbit</button></div>
 </div>
 <button id="hide">hide menu</button>
