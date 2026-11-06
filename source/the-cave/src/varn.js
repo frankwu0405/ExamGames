@@ -143,7 +143,7 @@ const SHOWPATH = {
   // a wide lazy figure-of-eight, rising and sinking, banking through the turns
   cruise: s => { const a = s / 15; return new THREE.Vector3(Math.sin(a) * 17, Math.sin(a * 2) * 3.2 + Math.sin(a * 0.5) * 1.4, Math.sin(a * 2) * 9); },
   // one slow, tight spiral coil that rises and falls, like a whale drifting in a dream
-  hover: s => { const a = s / 6.5, r = 6.2 + Math.sin(s / 20) * 1.6; return new THREE.Vector3(Math.cos(a) * r, Math.sin(s / 11) * 4.2, Math.sin(a) * r); },
+  hover: s => { const a = s / 8.5, r = 8.4 + Math.sin(s / 20) * 1.6; return new THREE.Vector3(Math.cos(a) * r, Math.sin(s / 11) * 4.2, Math.sin(a) * r); },
   // loop-the-loop in a vertical ring that slowly turns round, so the loop sweeps the whole scene
   loop: s => { const a = s / 8.6, ps = s * 0.012, e1x = Math.cos(ps), e1z = Math.sin(ps); const x = Math.sin(a) * 8.6, y = (1 - Math.cos(a)) * 8.6 - 8.6; return new THREE.Vector3(e1x * x, y * 0.95, e1z * x + 0); },
   // the sky dance: a corkscrew that climbs and dives, big and fast
@@ -153,10 +153,15 @@ SHOW.speeds = { cruise: 5.2, hover: 2.4, loop: 6.4, corkscrew: 6.8 };
 SHOW.amp = { cruise: 0.9, hover: 0.55, loop: 0.7, corkscrew: 1.1 };
 POSES.show = t => {
   const m = SHOW.mode, path = SHOWPATH[m], sp = SHOW.speeds[m] * SHOW.rate, u = t * sp, A = SHOW.amp[m] * Math.min(1, 0.4 + SHOW.rate * 0.6);
-  return Array.from({ length: 9 }, (_, i) => { const p = path(u - i * SEG); const f = Math.pow(i / 8, 1.3), w = t * 3.1 * Math.min(1.6, SHOW.rate) - i * 0.85;
-    // the swimming wave: the body ripples sideways more and more towards the tail
-    const q = path(u - i * SEG + 0.5).sub(path(u - i * SEG - 0.5)); q.y = 0; if (q.lengthSq() < 1e-6) q.set(1, 0, 0); q.normalize();
-    p.x += -q.z * Math.sin(w) * A * f * 1.7; p.z += q.x * Math.sin(w) * A * f * 1.7; p.y += Math.sin(w + 1.1) * A * f * 0.9; return p; });
+  // the body is laid along the path with every joint exactly SEG from the last, so tight turns and slow-downs can never squash or bunch it up
+  const out = [path(u)], d0 = new THREE.Vector3(); let d = 0;
+  for (let i = 1; i < 9; i++) { const prev = out[i - 1]; let lo = d, hi = d; for (let k = 1; k < 400; k++) { hi = d + k * 0.06; if (path(u - hi).distanceTo(prev) >= SEG) break; lo = hi; }
+    for (let k = 0; k < 8; k++) { const mid = (lo + hi) / 2; if (path(u - mid).distanceTo(prev) >= SEG) hi = mid; else lo = mid; } d = hi; out.push(path(u - d)); }
+  // the swimming wave: the body ripples sideways more and more towards the tail
+  const res = out.map((p, i) => { const f = Math.pow(i / 8, 1.0) * (1 + (i > 5 ? (i - 5) * 0.35 : 0)), w = t * 3.1 * Math.min(1.6, SHOW.rate) - i * 0.85, q = d0.copy(out[Math.max(0, i - 1)]).sub(out[Math.min(8, i + 1)]); q.y = 0; if (q.lengthSq() < 1e-6) q.set(1, 0, 0); q.normalize();
+    return new THREE.Vector3(p.x - q.z * Math.sin(w) * A * f * 1.7, p.y + Math.sin(w + 1.1) * A * f * 0.9, p.z + q.x * Math.sin(w) * A * f * 1.7); });
+  for (let i = 1; i < 9; i++) { const v = res[i].sub(res[i - 1]); res[i] = v.setLength(SEG).add(res[i - 1]); }
+  return res;
 };
 export function makeVarn(parent) {
   const V = new THREE.Group(); parent.add(V);
@@ -271,7 +276,7 @@ export function makeVarn(parent) {
       const mapPt = (s, a, b, out) => { const fi = Math.pow(s, 1 / SPOW) * (M - 1), k = Math.max(0, Math.min(M - 2, Math.floor(fi))), f = Math.max(0, Math.min(1, fi - k)), kk = K();
         return out.set(0, 0, 0).addScaledVector(pts[k], 1 - f).addScaledVector(pts[k + 1], f).addScaledVector(N[k], a * kk * (1 - f)).addScaledVector(N[k + 1], a * kk * f).addScaledVector(B[k], -b * kk * (1 - f)).addScaledVector(B[k + 1], -b * kk * f); };
       model.update = t => { const kk = K(), pp = pos2, nn = nor2; { const A = SHOW.flap * 0.2; for (let g = 0; g < 4; g++) { const ph = t * 3.1 * Math.min(1.6, SHOW.rate) * 0.55 + (g >> 1) * 0.9 + (g & 1) * 0.0; fa[g] = Math.sin(ph) * A; fb[g] = Math.cos(ph) * A * 0.5; } } { const cp = st.clip ? iceCut : null; if (mat.clippingPlanes !== cp) { mat.clippingPlanes = cp; ink2.material.clippingPlanes = cp; mat.needsUpdate = ink2.material.needsUpdate = true; } rim2.visible = !st.clip; capGlow.visible = !st.clip; } const kF = model.kF || 0, wv = t * 3.1 * Math.min(1.6, SHOW.rate) - 8 * 0.85, th = Math.atan2(T[kF].y, N[kF].y) + SHOW.tail * 0.55 * Math.sin(wv + 2.4), yw = SHOW.tail * 0.22 * Math.sin(wv + 0.9), cF = Math.cos(th), sFn = Math.sin(th);
-        for (let i = 0; i < cnt; i++) { const k = i0[i], f = fr[i], g = 1 - f, ca = isF[i] ? cF : 1, sa = isF[i] ? sFn : 0, a = (oy[i] * ca - ot[i] * sa + (fw[i] ? fw[i] * fa[fg[i]] : 0)) * kk, b = -oz[i] * kk + (isF[i] ? yw * (oy[i] * sFn + ot[i] * cF) * kk : 0), c0 = (oy[i] * sa + ot[i] * ca + (fw[i] ? fw[i] * fb[fg[i]] : 0)) * kk, A = pts[k], A2 = pts[k + 1], NA = N[k], NB2 = N[k + 1], BA = B[k], BB = B[k + 1], TT = T[k], TT2 = T[k + 1];
+        for (let i = 0; i < cnt; i++) { const k = i0[i], f = fr[i], g = 1 - f, ca = isF[i] ? cF : 1, sa = isF[i] ? sFn : 0, a = (oy[i] * ca - ot[i] * sa + (fw[i] ? fw[i] * fa[fg[i]] : 0) + (isF[i] ? SHOW.tail * Math.sin(wv + 3.2 - ot[i] * 14) * (ot[i] * 1.6 + Math.abs(oz[i]) * 0.55) : 0)) * kk, b = -oz[i] * kk + (isF[i] ? yw * (oy[i] * sFn + ot[i] * cF) * kk : 0), c0 = (oy[i] * sa + ot[i] * ca + (fw[i] ? fw[i] * fb[fg[i]] : 0)) * kk, A = pts[k], A2 = pts[k + 1], NA = N[k], NB2 = N[k + 1], BA = B[k], BB = B[k + 1], TT = T[k], TT2 = T[k + 1];
           pp[i * 3] = A.x * g + A2.x * f + (NA.x * g + NB2.x * f) * a + (BA.x * g + BB.x * f) * b + (TT.x * g + TT2.x * f) * c0; pp[i * 3 + 1] = A.y * g + A2.y * f + (NA.y * g + NB2.y * f) * a + (BA.y * g + BB.y * f) * b + (TT.y * g + TT2.y * f) * c0; pp[i * 3 + 2] = A.z * g + A2.z * f + (NA.z * g + NB2.z * f) * a + (BA.z * g + BB.z * f) * b + (TT.z * g + TT2.z * f) * c0;
           const nx = N0.getX(i), ny = N0.getY(i), nz = N0.getZ(i), TA = T[k], TB = T[k + 1], qy0 = ny, qz = -nz / (xs[i] < FX ? 1 : wAt(xs[i])), qx0 = -nx, qy = qy0 * ca - qx0 * sa, qx = qy0 * sa + qx0 * ca;
           nn[i * 3] = (TA.x * g + TB.x * f) * qx + (NA.x * g + NB2.x * f) * qy + (BA.x * g + BB.x * f) * qz; nn[i * 3 + 1] = (TA.y * g + TB.y * f) * qx + (NA.y * g + NB2.y * f) * qy + (BA.y * g + BB.y * f) * qz; nn[i * 3 + 2] = (TA.z * g + TB.z * f) * qx + (NA.z * g + NB2.z * f) * qy + (BA.z * g + BB.z * f) * qz; }
