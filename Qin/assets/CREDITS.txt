@@ -1,0 +1,2 @@
+Free models in this folder are CC0 (public domain): Quaternius (https://quaternius.com) and Kenney (https://kenney.nl).
+Optimised copies from the npm package @netforge/asset-library-files (CC0 1.0). See CC0-1.0.txt.
