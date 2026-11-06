@@ -274,7 +274,8 @@ export function makeVarn(parent) {
     { v3.copy(up).addScaledVector(T[0], -T[0].dot(up)); const hz = v3.lengthSq();
       if (!st.n0) { st.n0 = new THREE.Vector3(); st.t0 = new THREE.Vector3(); if (hz < 1e-4) v3.set(0, 0, 1).addScaledVector(T[0], -T[0].z); st.n0.copy(v3).normalize(); st.t0.copy(T[0]); }
       q.setFromUnitVectors(st.t0, T[0]); N[0].copy(st.n0).applyQuaternion(q); N[0].addScaledVector(T[0], -T[0].dot(N[0])).normalize();
-      if (hz > 0.25) { v3.normalize(); if (v3.dot(N[0]) > 0) { N[0].lerp(v3, 0.06); N[0].addScaledVector(T[0], -T[0].dot(N[0])).normalize(); } }
+      // once his head is roughly level again, roll him smoothly back so his back is on top (this is what stops the tail coming down upside down)
+      if (hz > 0.25) { v3.normalize(); const ang = Math.atan2(T[0].dot(v2.crossVectors(N[0], v3)), N[0].dot(v3)); N[0].applyAxisAngle(T[0], ang * 0.08 * Math.min(1, (hz - 0.25) / 0.5)); }
       st.n0.copy(N[0]); st.t0.copy(T[0]); }
     for (let i = 1; i < M; i++) { q.setFromUnitVectors(T[i - 1], T[i]); N[i].copy(N[i - 1]).applyQuaternion(q); N[i].addScaledVector(T[i], -T[i].dot(N[i])).normalize(); }
     for (let i = 0; i < M; i++) B[i].crossVectors(T[i], N[i]).normalize();
