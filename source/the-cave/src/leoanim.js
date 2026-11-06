@@ -129,8 +129,14 @@ function splitArms(geo, si, sw) {
   const A = geo.attributes, P = A.position.array, N = A.normal.array, U = A.uv.array, map = new Map(), oi = [], oc = [], ni = [];
   for (let t = 0; t < idx.length; t += 3) { const c = [cls[idx[t]], cls[idx[t + 1]], cls[idx[t + 2]]]; const tc = c[0] === c[1] || c[0] === c[2] ? c[0] : c[1] === c[2] ? c[1] : c[0];
     for (let j = 0; j < 3; j++) { const v = idx[t + j], k = v * 3 + tc; let m = map.get(k); if (m === undefined) { m = oi.length; map.set(k, m); oi.push(v); oc.push(tc); } ni.push(m); } }
+  // plug the armholes: a slightly inset copy of the upper-arm / sleeve skin stays on the body, so lifting an arm never leaves a window in the shirt
+  const base = oi.length, plug = new Map(), extra = []; const chestI = names.indexOf('chest');
+  for (let t = 0; t < ni.length; t += 3) { const a = ni[t], b = ni[t + 1], c = ni[t + 2]; if (!oc[a] || oc[a] !== oc[b] || oc[a] !== oc[c]) continue; const cy = (P[oi[a] * 3 + 1] + P[oi[b] * 3 + 1] + P[oi[c] * 3 + 1]) / 3; if (cy < .5) continue;
+    for (const q of [a, b, c]) { let m2 = plug.get(q); if (m2 === undefined) { m2 = base + plug.size; plug.set(q, m2); } extra.push(m2); } }
+  const plugList = [...plug.keys()]; for (const q of plugList) { oi.push(oi[q]); oc.push(-1); } for (const e of extra) ni.push(e);
   const m = oi.length, P2 = new Float32Array(m * 3), N2 = new Float32Array(m * 3), U2 = new Float32Array(m * 2), S2 = new Uint16Array(m * 4), W2 = new Float32Array(m * 4);
-  for (let q = 0; q < m; q++) { const v = oi[q], tc = oc[q]; for (let j = 0; j < 3; j++) { P2[q * 3 + j] = P[v * 3 + j]; N2[q * 3 + j] = N[v * 3 + j]; } U2[q * 2] = U[v * 2]; U2[q * 2 + 1] = U[v * 2 + 1];
+  for (let q = 0; q < m; q++) { const v = oi[q], tc = oc[q]; for (let j = 0; j < 3; j++) { P2[q * 3 + j] = P[v * 3 + j]; N2[q * 3 + j] = N[v * 3 + j]; }
+    if (tc < 0) { P2[q * 3] *= .86; U2[q * 2] = U[v * 2]; U2[q * 2 + 1] = U[v * 2 + 1]; S2[q * 4] = chestI; W2[q * 4] = 1; continue; } U2[q * 2] = U[v * 2]; U2[q * 2 + 1] = U[v * 2 + 1];
     let tot = 0; const ws = []; for (let j = 0; j < 4; j++) { const b = si[v * 4 + j], w = sw[v * 4 + j], isL = IL.includes(b), isR = IR.includes(b), ok = tc === 1 ? isL : tc === 2 ? isR : !(isL || isR); if (ok && w > 0) { ws.push([b, w]); tot += w; } }
     if (!ws.length) { ws.push([tc === 1 ? IL[0] : tc === 2 ? IR[0] : names.indexOf('chest'), 1]); tot = 1; }
     for (let j = 0; j < 4; j++) { S2[q * 4 + j] = j < ws.length ? ws[j][0] : 0; W2[q * 4 + j] = j < ws.length ? ws[j][1] / tot : 0; } }
