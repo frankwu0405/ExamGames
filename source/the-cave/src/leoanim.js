@@ -13,7 +13,7 @@ INKM.onBeforeCompile = s => { s.vertexShader = s.vertexShader.replace('#include 
 const err = e => { const d = document.createElement('div'); d.style.cssText = 'position:fixed;top:8px;left:8px;color:#fff;background:#a00;padding:6px 10px;font:12px sans-serif;z-index:9'; d.textContent = 'Failed: ' + (e && e.message || e); document.body.append(d); };
 
 // ---------- skeleton (model space, 1 unit tall, facing +z) ----------
-const JP = { hips: [0, .46, 0], chest: [0, .56, 0], head: [0, .68, 0], shL: [.11, .63, 0], elL: [.17, .49, 0], wrL: [.20, .37, 0], shR: [-.11, .63, 0], elR: [-.17, .49, 0], wrR: [-.20, .37, 0],
+const JP = { hips: [0, .46, 0], chest: [0, .56, 0], head: [0, .68, 0], shL: [.118, .585, 0], elL: [.17, .49, 0], wrL: [.20, .37, 0], shR: [-.118, .585, 0], elR: [-.17, .49, 0], wrR: [-.20, .37, 0],
   hpL: [.06, .45, 0], knL: [.06, .25, 0], anL: [.06, .05, 0], hpR: [-.06, .45, 0], knR: [-.06, .25, 0], anR: [-.06, .05, 0] };
 const PAR = { hips: null, chest: 'hips', head: 'chest', shL: 'chest', elL: 'shL', wrL: 'elL', shR: 'chest', elR: 'shR', wrR: 'elR', hpL: 'hips', knL: 'hpL', anL: 'knL', hpR: 'hips', knR: 'hpR', anR: 'knR' };
 const B = {}; const bones = [];
@@ -22,7 +22,7 @@ for (const k in JP) { const p = PAR[k]; if (p) { B[p].add(B[k]); B[k].position.s
 const names = Object.keys(JP);
 // weight segments (bone → [a,b] in model space); each influence is a capsule axis
 const SEG = [['hips', [0, .40, 0], [0, .50, 0]], ['chest', [0, .52, 0], [0, .64, 0]], ['head', [0, .72, 0.01], [0, .88, 0.01]],
-  ['shL', [.11, .63, 0], [.17, .49, 0]], ['elL', [.17, .49, 0], [.21, .33, 0]], ['shR', [-.11, .63, 0], [-.17, .49, 0]], ['elR', [-.17, .49, 0], [-.21, .33, 0]],
+  ['shL', [.118, .585, 0], [.17, .49, 0]], ['elL', [.17, .49, 0], [.21, .33, 0]], ['shR', [-.118, .585, 0], [-.17, .49, 0]], ['elR', [-.17, .49, 0], [-.21, .33, 0]],
   ['hpL', [.06, .45, 0], [.06, .25, 0]], ['knL', [.06, .25, 0], [.06, .03, .02]], ['hpR', [-.06, .45, 0], [-.06, .25, 0]], ['knR', [-.06, .25, 0], [-.06, .03, .02]]];
 const dseg = (p, a, b) => { const ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], ap = [p[0] - a[0], p[1] - a[1], p[2] - a[2]]; const l = ab[0] ** 2 + ab[1] ** 2 + ab[2] ** 2; let t = (ap[0] * ab[0] + ap[1] * ab[1] + ap[2] * ab[2]) / l; t = Math.max(0, Math.min(1, t)); const q = [a[0] + ab[0] * t - p[0], a[1] + ab[1] * t - p[1], a[2] + ab[2] * t - p[2]]; return Math.hypot(q[0], q[1], q[2]); };
 const RAD = { hips: .115, chest: .10, head: .17, shL: .06, elL: .058, shR: .06, elR: .058, hpL: .05, knL: .05, hpR: .05, knR: .05 };
@@ -44,10 +44,10 @@ function smoothFace(geo) {
   for (let i = 0; i < n; i++) { const g = gid[i], l = Math.hypot(acc[g * 3], acc[g * 3 + 1], acc[g * 3 + 2]) || 1; nrm.setXYZ(i, acc[g * 3] / l, acc[g * 3 + 1] / l, acc[g * 3 + 2] / l); }
 }
 
-function skinAttrs(pos) {
+function skinAttrs(pos, nrm) {
   const n = pos.count, si = new Uint16Array(n * 4), sw = new Float32Array(n * 4), p = [0, 0, 0];
-  for (let i = 0; i < n; i++) { p[0] = pos.getX(i); p[1] = pos.getY(i); p[2] = pos.getZ(i);
-    const w = SEG.map(([k, a, b]) => [names.indexOf(k), Math.exp(-Math.max(0, dseg(p, a, b) - (RAD[k] || .05)) / 0.009) * ((/^(sh|el)/.test(k) && ((Math.abs(p[0]) < .118 && p[1] < .60 && p[1] > .40) || (Math.abs(p[0]) < .13 && p[1] < .44 && p[1] > .24))) ? 0.0003 : 1)]).sort((x, y) => y[1] - x[1]).slice(0, 4);
+  for (let i = 0; i < n; i++) { p[0] = pos.getX(i); p[1] = pos.getY(i); p[2] = pos.getZ(i); const nx = nrm.getX(i);
+    const w = SEG.map(([k, a, b]) => [names.indexOf(k), Math.exp(-Math.max(0, dseg(p, a, b) - (RAD[k] || .05)) / 0.009) * ((/^(sh|el)/.test(k) && ((p[1] < .62 && p[1] > .40 && (Math.abs(p[0]) < .097 || (Math.abs(p[0]) < .122 && Math.sign(p[0]) * nx > .3))) || (Math.abs(p[0]) < .13 && p[1] < .44 && p[1] > .24))) ? 0.0003 : 1)]).sort((x, y) => y[1] - x[1]).slice(0, 4);
     const s = w.reduce((a, c) => a + c[1], 0); for (let j = 0; j < 4; j++) { si[i * 4 + j] = w[j][0]; sw[i * 4 + j] = w[j][1] / s; } }
   return [si, sw];
 }
@@ -121,16 +121,33 @@ function drawFace() {
 const FACE_MAT = new THREE.MeshToonMaterial({ map: ftex, gradientMap: gm, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
 FACE_MAT.onBeforeCompile = s => { s.vertexShader = s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n transformed += normal * 0.0016;'); };
 
+
+// Arms become their own rigid pieces: triangles that bridge arm and body are given wholly to one side, so lifting an arm opens a clean crack at the armpit instead of dragging a web of skin
+function splitArms(geo, si, sw) {
+  const IL = [names.indexOf('shL'), names.indexOf('elL')], IR = [names.indexOf('shR'), names.indexOf('elR')], n = geo.attributes.position.count, idx = geo.index.array;
+  const cls = new Int8Array(n); for (let i = 0; i < n; i++) { let l = 0, r = 0; for (let j = 0; j < 4; j++) { const b = si[i * 4 + j], w = sw[i * 4 + j]; if (IL.includes(b)) l += w; if (IR.includes(b)) r += w; } cls[i] = l > .5 ? 1 : r > .5 ? 2 : 0; }
+  const A = geo.attributes, P = A.position.array, N = A.normal.array, U = A.uv.array, map = new Map(), oi = [], oc = [], ni = [];
+  for (let t = 0; t < idx.length; t += 3) { const c = [cls[idx[t]], cls[idx[t + 1]], cls[idx[t + 2]]]; const tc = c[0] === c[1] || c[0] === c[2] ? c[0] : c[1] === c[2] ? c[1] : c[0];
+    for (let j = 0; j < 3; j++) { const v = idx[t + j], k = v * 3 + tc; let m = map.get(k); if (m === undefined) { m = oi.length; map.set(k, m); oi.push(v); oc.push(tc); } ni.push(m); } }
+  const m = oi.length, P2 = new Float32Array(m * 3), N2 = new Float32Array(m * 3), U2 = new Float32Array(m * 2), S2 = new Uint16Array(m * 4), W2 = new Float32Array(m * 4);
+  for (let q = 0; q < m; q++) { const v = oi[q], tc = oc[q]; for (let j = 0; j < 3; j++) { P2[q * 3 + j] = P[v * 3 + j]; N2[q * 3 + j] = N[v * 3 + j]; } U2[q * 2] = U[v * 2]; U2[q * 2 + 1] = U[v * 2 + 1];
+    let tot = 0; const ws = []; for (let j = 0; j < 4; j++) { const b = si[v * 4 + j], w = sw[v * 4 + j], isL = IL.includes(b), isR = IR.includes(b), ok = tc === 1 ? isL : tc === 2 ? isR : !(isL || isR); if (ok && w > 0) { ws.push([b, w]); tot += w; } }
+    if (!ws.length) { ws.push([tc === 1 ? IL[0] : tc === 2 ? IR[0] : names.indexOf('chest'), 1]); tot = 1; }
+    for (let j = 0; j < 4; j++) { S2[q * 4 + j] = j < ws.length ? ws[j][0] : 0; W2[q * 4 + j] = j < ws.length ? ws[j][1] / tot : 0; } }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(P2, 3)); g.setAttribute('normal', new THREE.BufferAttribute(N2, 3)); g.setAttribute('uv', new THREE.BufferAttribute(U2, 2));
+  g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(S2, 4)); g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(W2, 4)); g.setIndex(ni); return g;
+}
 // ---------- build the character ----------
 let skel = null, root = null;
 function build(gltf, img) {
   const src = []; gltf.scene.traverse(m => { if (m.isMesh) src.push(m); });
-  const geo = src[0].geometry.clone(); const pos = geo.attributes.position;
-  smoothFace(geo); const [si, sw] = skinAttrs(pos); window.__geo = geo; window.__si = si; window.__sw = sw; geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
+  let geo = src[0].geometry.clone(); smoothFace(geo); const [si, sw] = skinAttrs(geo.attributes.position, geo.attributes.normal);
+  geo = splitArms(geo, si, sw); const pos = geo.attributes.position; window.__geo = geo;
   root = new THREE.Group(); root.add(B.hips); root.updateMatrixWorld(true); skel = new THREE.Skeleton(bones);
   const tex = new THREE.Texture(img); tex.flipY = false; tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4; tex.needsUpdate = true;
   const mk = (g, mat, cast) => { const m = new THREE.SkinnedMesh(g, mat); m.frustumCulled = false; m.bind(skel, new THREE.Matrix4()); m.castShadow = !!cast; return m; };
-  const body = mk(geo, new THREE.MeshToonMaterial({ map: tex, gradientMap: gm }), true); const ink = mk(geo, INKM);
+  if (/dbg/.test(location.search)) { const cl = new Float32Array(pos.count * 3), si2 = geo.attributes.skinIndex.array, sw2 = geo.attributes.skinWeight.array; for (let i = 0; i < pos.count; i++) { let l = 0, r = 0, b = 0; for (let j = 0; j < 4; j++) { const bi = si2[i * 4 + j], w = sw2[i * 4 + j]; if (bi === 3 || bi === 4) l += w; else if (bi === 6 || bi === 7) r += w; else b += w; } cl[i * 3] = l; cl[i * 3 + 1] = b * .5; cl[i * 3 + 2] = r; } geo.setAttribute('color', new THREE.BufferAttribute(cl, 3)); }
+  const body = mk(geo, (/dbg/.test(location.search) ? new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide }) : new THREE.MeshToonMaterial({ map: tex, gradientMap: gm, side: THREE.DoubleSide })), true); const ink = mk(geo, INKM);
   // face decal: front-facing triangles of the head
   const idx = geo.index.array, nrm = geo.attributes.normal, keep = [];
   for (let i = 0; i < idx.length; i += 3) { let ok = true; for (let j = 0; j < 3; j++) { const v = idx[i + j], x = pos.getX(v), y = pos.getY(v), z = pos.getZ(v); if (y < FC.y0 || y > FC.y1 || Math.abs(x) > FC.x1 || z < 0.06 || nrm.getZ(v) < 0.1) ok = false; } if (ok) keep.push(idx[i], idx[i + 1], idx[i + 2]); }
