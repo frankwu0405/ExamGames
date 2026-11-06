@@ -55,9 +55,9 @@ const fcv = document.createElement('canvas'); fcv.width = FC.W; fcv.height = FC.
 const ftex = new THREE.CanvasTexture(fcv); ftex.colorSpace = THREE.SRGBColorSpace; ftex.anisotropy = 4;
 const FX = x => (x - FC.x0) / (FC.x1 - FC.x0) * FC.W, FY = y => (FC.y1 - y) / (FC.y1 - FC.y0) * FC.H, FL = l => l / (FC.x1 - FC.x0) * FC.W;
 // landmarks in model units (tuned by ?grid)
-const LM = { eyeX: .066, eyeY: .778, eyeR: .03, browY: .85, mouthY: .697, mouthW: .05, skin: '#8A5333', skinD: '#6E3E25', ink: '#2A1B24' };
+const LM = { eyeX: .056, eyeY: .778, eyeR: .027, browY: .84, mouthY: .697, mouthW: .05, skin: '#8A5333', skinD: '#6E3E25', ink: '#2A1B24' };
 const EXPR = {
-  smile: null, // the baked smile, untouched
+  smile: { brow: [0, 0, 0], eye: 'open', mouth: 'smile' },
   happy: { brow: [-.004, 0, 0], eye: 'happy', mouth: 'grin' },
   surprised: { brow: [.016, .008, 0], eye: 'wide', mouth: 'o' },
   sad: { brow: [-.01, .006, -.2], eye: 'sad', mouth: 'frown' },
@@ -72,14 +72,19 @@ function drawFace() {
   fx.clearRect(0, 0, FC.W, FC.H);
   const e = EXPR[cur];
   if (GRID) { fx.strokeStyle = '#fff'; fx.fillStyle = '#fff'; fx.font = '16px sans-serif'; for (let x = -.14; x <= .14; x += .02) { fx.beginPath(); fx.moveTo(FX(x), 0); fx.lineTo(FX(x), FC.H); fx.stroke(); fx.fillText(x.toFixed(2), FX(x) + 2, 14); } for (let y = .68; y <= .95; y += .02) { fx.beginPath(); fx.moveTo(0, FY(y)); fx.lineTo(FC.W, FY(y)); fx.stroke(); fx.fillText(y.toFixed(2), 2, FY(y) - 2); } return; }
-  if (!e && !blink) return;
+  // clean skin base: replaces the lumpy baked face (eye-socket shadows, brow smudges, mouth) with smooth painted skin
+  { const cx = FX(0), cy = FY(.77), rx = FL(.123), ry = FL(.112); fx.save(); fx.translate(cx, cy); fx.scale(1, ry / rx);
+    let g = fx.createRadialGradient(0, 0, 0, 0, 0, rx); g.addColorStop(0, '#9A6140'); g.addColorStop(.72, '#8D5A3B'); g.addColorStop(.86, '#8D5A3Bee'); g.addColorStop(1, '#8D5A3B00'); fx.fillStyle = g; fx.beginPath(); fx.arc(0, 0, rx, 0, 6.3); fx.fill(); fx.restore();
+    for (const s of [-1, 1]) { const bx = FX(s * .085), by = FY(.72), br = FL(.032); const bg = fx.createRadialGradient(bx, by, 0, bx, by, br); bg.addColorStop(0, '#C0693F88'); bg.addColorStop(1, '#C0693F00'); fx.fillStyle = bg; fx.beginPath(); fx.arc(bx, by, br, 0, 6.3); fx.fill(); }
+    // nose: small soft shadow + two nostril ticks
+    fx.fillStyle = '#6B3A2455'; fx.beginPath(); fx.ellipse(FX(0), FY(.738), FL(.018), FL(.011), 0, 0, 6.3); fx.fill(); fx.strokeStyle = '#5A2F1C'; fx.lineWidth = FL(.0035); fx.lineCap = 'round'; for (const s of [-1, 1]) { fx.beginPath(); fx.arc(FX(s * .009), FY(.735), FL(.006), .2, 2.6 + (s > 0 ? 0 : .3)); fx.stroke(); } }
   const eye = blink ? 'closed' : (e ? e.eye : 'open');
   const skinPatch = (cx, cy, rx, ry) => { const g = fx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(rx, ry)); g.addColorStop(0, LM.skin); g.addColorStop(.72, LM.skin); g.addColorStop(1, LM.skin + '00'); fx.save(); fx.translate(cx, cy); fx.scale(rx / Math.max(rx, ry), ry / Math.max(rx, ry)); fx.translate(-cx, -cy); fx.fillStyle = g; fx.beginPath(); fx.arc(cx, cy, Math.max(rx, ry), 0, 6.3); fx.fill(); fx.restore(); };
   fx.lineCap = 'round'; fx.lineJoin = 'round';
   // eyes: cover the baked ones with skin, then draw new
   for (const s of [-1, 1]) {
     const ex = s * LM.eyeX, ey = LM.eyeY, r = FL(LM.eyeR);
-    if (eye !== 'open' || blink) { skinPatch(FX(ex), FY(ey), r * 2.25, r * 2.0); }
+
     fx.strokeStyle = LM.ink; fx.fillStyle = LM.ink;
     const cx = FX(ex), cy = FY(ey);
     const wink = e && e.eye === 'wink' && s < 0;
@@ -87,19 +92,21 @@ function drawFace() {
     else if (eye === 'happy') { fx.lineWidth = r * .34; fx.beginPath(); fx.arc(cx, cy + r * .55, r * .95, 1.15 * Math.PI, 1.85 * Math.PI); fx.stroke(); }
     else if (eye === 'sad') { fx.lineWidth = r * .3; fx.beginPath(); fx.arc(cx, cy - r * .3, r * .95, .15 * Math.PI, .85 * Math.PI); fx.stroke(); fx.fillStyle = '#7ec8ff'; fx.beginPath(); fx.ellipse(cx + s * r * .6, cy + r * 1.6, r * .22, r * .36, 0, 0, 6.3); fx.fill(); }
     else if (eye === 'narrow') { fx.lineWidth = r * .3; skinPatch(cx, cy - r * .6, r * 1.8, r * .8); fx.strokeStyle = LM.ink; fx.beginPath(); fx.moveTo(cx - s * r * 1.0, cy - r * .55); fx.lineTo(cx + s * r * 1.0, cy - r * .05); fx.stroke(); }
+    else if (eye === 'open') { fx.fillStyle = '#FBF7EE'; fx.beginPath(); fx.ellipse(cx, cy, r * 1.0, r * 1.08, 0, 0, 6.3); fx.fill(); fx.fillStyle = '#6A3A1A'; fx.beginPath(); fx.arc(cx + s * r * .04, cy + r * .06, r * .66, 0, 6.3); fx.fill(); fx.fillStyle = '#3A1E0C'; fx.beginPath(); fx.arc(cx + s * r * .04, cy + r * .06, r * .42, 0, 6.3); fx.fill(); fx.fillStyle = '#fff'; fx.beginPath(); fx.arc(cx - r * .2, cy - r * .22, r * .2, 0, 6.3); fx.fill(); fx.beginPath(); fx.arc(cx + r * .22, cy + r * .28, r * .09, 0, 6.3); fx.fill();
+      fx.strokeStyle = LM.ink; fx.lineWidth = r * .3; fx.beginPath(); fx.ellipse(cx, cy, r * 1.0, r * 1.08, 0, 1.12 * Math.PI, 1.88 * Math.PI); fx.stroke(); fx.lineWidth = r * .1; fx.beginPath(); fx.ellipse(cx, cy, r * 1.0, r * 1.08, 0, 0, 1.0 * Math.PI); fx.stroke(); }
     else if (eye === 'wide') { fx.fillStyle = '#fff'; fx.beginPath(); fx.ellipse(cx, cy, r * 1.15, r * 1.3, 0, 0, 6.3); fx.fill(); fx.lineWidth = r * .18; fx.stroke(); fx.fillStyle = '#4A2A14'; fx.beginPath(); fx.arc(cx, cy, r * .62, 0, 6.3); fx.fill(); fx.fillStyle = LM.ink; fx.beginPath(); fx.arc(cx, cy, r * .32, 0, 6.3); fx.fill(); fx.fillStyle = '#fff'; fx.beginPath(); fx.arc(cx - r * .2, cy - r * .22, r * .18, 0, 6.3); fx.fill(); }
   }
   // brows
-  if (e) { fx.strokeStyle = '#2A1408'; fx.lineCap = 'round'; for (const s of [-1, 1]) { const cx = FX(s * LM.eyeX * 1.02), cy = FY(LM.browY + e.brow[0] + (s < 0 && e.eye === 'wink' ? .01 : 0)), w = FL(.026), tilt = e.brow[2] * s * -1;
-      skinPatch(FX(s * .07), FY(.845), FL(.05), FL(.026)); fx.lineWidth = w * .36; fx.beginPath(); fx.moveTo(cx - w * Math.cos(tilt) * s, cy - w * Math.sin(tilt) * s * -1 + FL(e.brow[1]) * -1); fx.lineTo(cx + w * Math.cos(tilt) * s, cy + w * Math.sin(tilt) * s * -1 + FL(e.brow[1]) * -1); fx.stroke(); } }
+  { const e2 = e; fx.strokeStyle = '#2A1408'; fx.lineCap = 'round'; for (const s of [-1, 1]) { const cx = FX(s * LM.eyeX * 1.02), cy = FY(LM.browY + e.brow[0] + (s < 0 && e.eye === 'wink' ? .01 : 0)), w = FL(.026), tilt = e.brow[2] * s * -1;
+      fx.lineWidth = w * .36; fx.beginPath(); fx.moveTo(cx - w * Math.cos(tilt) * s, cy - w * Math.sin(tilt) * s * -1 + FL(e.brow[1]) * -1); fx.lineTo(cx + w * Math.cos(tilt) * s, cy + w * Math.sin(tilt) * s * -1 + FL(e.brow[1]) * -1); fx.stroke(); } }
   // mouth
   if (e) {
     const mx = FX(0), my = FY(LM.mouthY), mw = FL(LM.mouthW);
-    skinPatch(mx, my - mw * .1, mw * 2.2, mw * 1.7);
     const m = e.mouth === 'talk' ? (talkOpen > .66 ? 'o2' : talkOpen > .33 ? 'grin' : 'small') : e.mouth;
     fx.fillStyle = '#4A1620'; fx.strokeStyle = LM.ink; fx.lineWidth = mw * .16;
     const mouth = (path, fill) => { fx.beginPath(); path(); if (fill) { fx.fillStyle = fill; fx.fill(); } fx.stroke(); };
-    if (m === 'grin') { mouth(() => { fx.moveTo(mx - mw, my - mw * .2); fx.quadraticCurveTo(mx, my + mw * 1.5, mx + mw, my - mw * .2); fx.closePath(); }, '#4A1620'); fx.fillStyle = '#fff'; fx.beginPath(); fx.moveTo(mx - mw * .85, my - mw * .17); fx.quadraticCurveTo(mx, my + mw * .22, mx + mw * .85, my - mw * .17); fx.quadraticCurveTo(mx, my - mw * .02, mx - mw * .85, my - mw * .17); fx.fill(); fx.fillStyle = '#E0607A'; fx.beginPath(); fx.ellipse(mx, my + mw * .62, mw * .42, mw * .2, 0, 0, 6.3); fx.fill(); }
+    if (m === 'smile') { mouth(() => { fx.moveTo(mx - mw * .85, my - mw * .15); fx.quadraticCurveTo(mx, my + mw * 1.25, mx + mw * .85, my - mw * .15); fx.quadraticCurveTo(mx, my + mw * .05, mx - mw * .85, my - mw * .15); fx.closePath(); }, '#4A1620'); fx.fillStyle = '#fff'; fx.beginPath(); fx.moveTo(mx - mw * .7, my - mw * .13); fx.quadraticCurveTo(mx, my + mw * .12, mx + mw * .7, my - mw * .13); fx.quadraticCurveTo(mx, my - mw * .02, mx - mw * .7, my - mw * .13); fx.fill(); fx.fillStyle = '#E0607A'; fx.beginPath(); fx.ellipse(mx, my + mw * .5, mw * .36, mw * .17, 0, 0, 6.3); fx.fill(); }
+    else if (m === 'grin') { mouth(() => { fx.moveTo(mx - mw, my - mw * .2); fx.quadraticCurveTo(mx, my + mw * 1.5, mx + mw, my - mw * .2); fx.closePath(); }, '#4A1620'); fx.fillStyle = '#fff'; fx.beginPath(); fx.moveTo(mx - mw * .85, my - mw * .17); fx.quadraticCurveTo(mx, my + mw * .22, mx + mw * .85, my - mw * .17); fx.quadraticCurveTo(mx, my - mw * .02, mx - mw * .85, my - mw * .17); fx.fill(); fx.fillStyle = '#E0607A'; fx.beginPath(); fx.ellipse(mx, my + mw * .62, mw * .42, mw * .2, 0, 0, 6.3); fx.fill(); }
     else if (m === 'o' || m === 'o2') { const r = mw * (m === 'o' ? .5 : .62); mouth(() => fx.ellipse(mx, my + mw * .1, r * .82, r, 0, 0, 6.3), '#4A1620'); fx.fillStyle = '#E0607A'; fx.beginPath(); fx.ellipse(mx, my + r * .55, r * .5, r * .26, 0, 0, 6.3); fx.fill(); }
     else if (m === 'frown') { fx.lineWidth = mw * .2; fx.beginPath(); fx.moveTo(mx - mw * .8, my + mw * .35); fx.quadraticCurveTo(mx, my - mw * .55, mx + mw * .8, my + mw * .35); fx.stroke(); }
     else if (m === 'wobble') { fx.lineWidth = mw * .18; fx.beginPath(); fx.moveTo(mx - mw * .8, my + mw * .1); for (let i = 1; i <= 6; i++) fx.lineTo(mx - mw * .8 + mw * 1.6 * i / 6, my + mw * .1 + (i % 2 ? -1 : 1) * mw * .18); fx.stroke(); }
