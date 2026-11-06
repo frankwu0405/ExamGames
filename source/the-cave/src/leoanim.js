@@ -32,8 +32,11 @@ function smoothFace(geo) {
   const nb = Array.from({ length: ng }, () => new Set()); for (let i = 0; i < idx.length; i += 3) for (let j = 0; j < 3; j++) { const a = gid[idx[i + j]], b = gid[idx[i + (j + 1) % 3]]; nb[a].add(b); nb[b].add(a); }
   const P = new Float32Array(ng * 3), M = new Float32Array(ng); for (let i = 0; i < n; i++) { const g = gid[i]; P[g * 3] = pos.getX(i); P[g * 3 + 1] = pos.getY(i); P[g * 3 + 2] = pos.getZ(i); }
   for (let g = 0; g < ng; g++) { const x = P[g * 3], y = P[g * 3 + 1], z = P[g * 3 + 2]; // face + cheeks, feathered; keep hair, ears and neck
-    const fy = Math.min(1, Math.max(0, (y - .66) / .04)) * Math.min(1, Math.max(0, (.93 - y) / .04)), fx2 = Math.min(1, Math.max(0, (.135 - Math.abs(x)) / .03)), fz = Math.min(1, Math.max(0, (z - .02) / .04)); M[g] = fy * fx2 * fz; }
+    const fy = Math.min(1, Math.max(0, (y - .62) / .04)) * Math.min(1, Math.max(0, (.93 - y) / .04)), fx2 = Math.min(1, Math.max(0, (.135 - Math.abs(x)) / .03)), fz = Math.min(1, Math.max(0, (z - .02) / .04)); M[g] = fy * fx2 * fz; }
   for (let it = 0; it < 6; it++) { const Q = P.slice(); for (let g = 0; g < ng; g++) { if (M[g] < .01 || !nb[g].size) continue; let ax = 0, ay = 0, az = 0; nb[g].forEach(h => { ax += P[h * 3]; ay += P[h * 3 + 1]; az += P[h * 3 + 2]; }); const c = nb[g].size, l = .55 * M[g]; Q[g * 3] += (ax / c - P[g * 3]) * l; Q[g * 3 + 1] += (ay / c - P[g * 3 + 1]) * l; Q[g * 3 + 2] += (az / c - P[g * 3 + 2]) * l; } P.set(Q); }
+  // close the open mouth: relax the mouth area into a smooth closed surface so painted mouths sit on the skin, not inside a hole
+  const MM = new Float32Array(ng); for (let g = 0; g < ng; g++) { const x = P[g * 3], y = P[g * 3 + 1], z = P[g * 3 + 2]; const e = Math.hypot(x / .085, (y - .692) / .055); MM[g] = z > -.01 ? Math.min(1, Math.max(0, (1.12 - e) / .3)) : 0; }
+  for (let it = 0; it < 120; it++) { const Q = P.slice(); for (let g = 0; g < ng; g++) { if (MM[g] < .01 || !nb[g].size) continue; let ax = 0, ay = 0, az = 0; nb[g].forEach(h => { ax += P[h * 3]; ay += P[h * 3 + 1]; az += P[h * 3 + 2]; }); const c = nb[g].size, l = .6 * MM[g]; Q[g * 3] += (ax / c - P[g * 3]) * l; Q[g * 3 + 1] += (ay / c - P[g * 3 + 1]) * l; Q[g * 3 + 2] += (az / c - P[g * 3 + 2]) * l; } P.set(Q); }
   for (let i = 0; i < n; i++) { const g = gid[i]; pos.setXYZ(i, P[g * 3], P[g * 3 + 1], P[g * 3 + 2]); }
   geo.computeVertexNormals();
   // the cut at UV seams leaves doubled vertices with split normals; share them
@@ -50,7 +53,7 @@ function skinAttrs(pos) {
 }
 
 // ---------- face decal canvas (eyes / brows / mouth drawn over the baked face) ----------
-const FC = { x0: -.15, x1: .15, y0: .66, y1: .96, W: 768, H: 768 };
+const FC = { x0: -.15, x1: .15, y0: .62, y1: .96, W: 768, H: 768 };
 const fcv = document.createElement('canvas'); fcv.width = FC.W; fcv.height = FC.H; const fx = fcv.getContext('2d');
 const ftex = new THREE.CanvasTexture(fcv); ftex.colorSpace = THREE.SRGBColorSpace; ftex.anisotropy = 4;
 const FX = x => (x - FC.x0) / (FC.x1 - FC.x0) * FC.W, FY = y => (FC.y1 - y) / (FC.y1 - FC.y0) * FC.H, FL = l => l / (FC.x1 - FC.x0) * FC.W;
@@ -73,7 +76,7 @@ function drawFace() {
   const e = EXPR[cur];
   if (GRID) { fx.strokeStyle = '#fff'; fx.fillStyle = '#fff'; fx.font = '16px sans-serif'; for (let x = -.14; x <= .14; x += .02) { fx.beginPath(); fx.moveTo(FX(x), 0); fx.lineTo(FX(x), FC.H); fx.stroke(); fx.fillText(x.toFixed(2), FX(x) + 2, 14); } for (let y = .68; y <= .95; y += .02) { fx.beginPath(); fx.moveTo(0, FY(y)); fx.lineTo(FC.W, FY(y)); fx.stroke(); fx.fillText(y.toFixed(2), 2, FY(y) - 2); } return; }
   // clean skin base: replaces the lumpy baked face (eye-socket shadows, brow smudges, mouth) with smooth painted skin
-  { const cx = FX(0), cy = FY(.77), rx = FL(.123), ry = FL(.112); fx.save(); fx.translate(cx, cy); fx.scale(1, ry / rx);
+  { const cx = FX(0), cy = FY(.76), rx = FL(.123), ry = FL(.122); fx.save(); fx.translate(cx, cy); fx.scale(1, ry / rx);
     let g = fx.createRadialGradient(0, 0, 0, 0, 0, rx); g.addColorStop(0, '#9A6140'); g.addColorStop(.72, '#8D5A3B'); g.addColorStop(.86, '#8D5A3Bee'); g.addColorStop(1, '#8D5A3B00'); fx.fillStyle = g; fx.beginPath(); fx.arc(0, 0, rx, 0, 6.3); fx.fill(); fx.restore();
     for (const s of [-1, 1]) { const bx = FX(s * .085), by = FY(.72), br = FL(.032); const bg = fx.createRadialGradient(bx, by, 0, bx, by, br); bg.addColorStop(0, '#C0693F88'); bg.addColorStop(1, '#C0693F00'); fx.fillStyle = bg; fx.beginPath(); fx.arc(bx, by, br, 0, 6.3); fx.fill(); }
     // nose: small soft shadow + two nostril ticks
