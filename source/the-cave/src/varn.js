@@ -136,6 +136,28 @@ POSES.arch = POSES.rise;
 POSES.straight = () => Array.from({ length: 9 }, (_, i) => new THREE.Vector3(11 - i * 2.75, 3, -12));
 POSES.swim = () => Array.from({ length: 9 }, (_, i) => new THREE.Vector3(8 - i * 2.2, 3 + Math.sin(i * 0.7) * 0.4 + (i > 5 ? Math.pow(i - 5, 2) * 0.18 : 0), -12));
 
+// ---- the showcase: a time-based swim, designed as a path the head follows with the whole body trailing exactly along it
+export const SHOW = { mode: 'cruise', flap: 0, rate: 1 };
+const SEG = 2.45;
+const SHOWPATH = {
+  // a wide lazy figure-of-eight, rising and sinking, banking through the turns
+  cruise: s => { const a = s / 15; return new THREE.Vector3(Math.sin(a) * 17, Math.sin(a * 2) * 3.2 + Math.sin(a * 0.5) * 1.4, Math.sin(a * 2) * 9); },
+  // one slow, tight spiral coil that rises and falls, like a whale drifting in a dream
+  hover: s => { const a = s / 6.5, r = 6.2 + Math.sin(s / 20) * 1.6; return new THREE.Vector3(Math.cos(a) * r, Math.sin(s / 11) * 4.2, Math.sin(a) * r); },
+  // loop-the-loop in a vertical ring that slowly turns round, so the loop sweeps the whole scene
+  loop: s => { const a = s / 8.6, ps = s * 0.012, e1x = Math.cos(ps), e1z = Math.sin(ps); const x = Math.sin(a) * 8.6, y = (1 - Math.cos(a)) * 8.6 - 8.6; return new THREE.Vector3(e1x * x, y * 0.95, e1z * x + 0); },
+  // the sky dance: a corkscrew that climbs and dives, big and fast
+  corkscrew: s => { const a = s / 11, r = 10 + Math.sin(s / 30) * 3; return new THREE.Vector3(Math.cos(a) * r, Math.sin(s / 17) * 7, Math.sin(a) * r * 0.8 + Math.cos(s / 23) * 6); },
+};
+SHOW.speeds = { cruise: 5.2, hover: 2.4, loop: 6.4, corkscrew: 6.8 };
+SHOW.amp = { cruise: 0.9, hover: 0.55, loop: 0.7, corkscrew: 1.1 };
+POSES.show = t => {
+  const m = SHOW.mode, path = SHOWPATH[m], sp = SHOW.speeds[m] * SHOW.rate, u = t * sp, A = SHOW.amp[m] * Math.min(1, 0.4 + SHOW.rate * 0.6);
+  return Array.from({ length: 9 }, (_, i) => { const p = path(u - i * SEG); const f = Math.pow(i / 8, 1.3), w = t * 3.1 * Math.min(1.6, SHOW.rate) - i * 0.85;
+    // the swimming wave: the body ripples sideways more and more towards the tail
+    const q = path(u - i * SEG + 0.5).sub(path(u - i * SEG - 0.5)); q.y = 0; if (q.lengthSq() < 1e-6) q.set(1, 0, 0); q.normalize();
+    p.x += -q.z * Math.sin(w) * A * f * 1.7; p.z += q.x * Math.sin(w) * A * f * 1.7; p.y += Math.sin(w + 1.1) * A * f * 0.9; return p; });
+};
 export function makeVarn(parent) {
   const V = new THREE.Group(); parent.add(V);
   const { map, emi } = skinTextures();
@@ -229,6 +251,11 @@ export function makeVarn(parent) {
       const FX = -0.405, cy = 'y', cz = 'z', WID = 1.0, WB = 1.9, HB = 1.22, hAt = x => 1 + (HB - 1) * Math.max(0, Math.min(1, (0.32 - x) / 0.2)), wAt = x => 1 + (WB - 1) * Math.max(0, Math.min(1, (0.32 - x) / 0.2)), CUTX = 0.27, CUTY = 0.40;
       const sv = new Float32Array(cnt), oy = new Float32Array(cnt), oz = new Float32Array(cnt), i0 = new Uint16Array(cnt), fr = new Float32Array(cnt), ot = new Float32Array(cnt), isF = new Uint8Array(cnt);
       const sF0 = model.sF = (x1 - FX) / (x1 - x0);
+      // flipper weights (how much each vertex belongs to a flipper), so the showcase can make them flap
+      const fw = new Float32Array(cnt), fg = new Uint8Array(cnt), fa = new Float32Array(4), fb = new Float32Array(4);
+      for (let i = 0; i < cnt; i++) { const x = xs[i], z = P0.getZ(i), az = Math.abs(z); let w = 0;
+        if (x > 0.08 && x < 0.33) w = (az - 0.13) / 0.16; else if (x < -0.12 && x > -0.33) w = (az - 0.09) / 0.12;
+        w = Math.max(0, Math.min(1, w)); fw[i] = w * Math.sqrt(w); fg[i] = (x > 0 ? 0 : 2) + (z > 0 ? 0 : 1); }
       for (let i = 0; i < cnt; i++) { const tl0 = xs[i] < FX, s = (x1 - Math.max(xs[i], FX)) / (x1 - x0); sv[i] = s; { let yy = P0.getY(i); if (xs[i] > CUTX && yy > CUTY) yy = CUTY - 0.02 + (yy - CUTY) * 0.03; oy[i] = tl0 ? (yy - cAt(cy, FX)) : (yy - cAt(cy, xs[i])) * hAt(xs[i]); } oz[i] = tl0 ? P0.getZ(i) : (P0.getZ(i) - cAt(cz, xs[i])) * wAt(xs[i]); ot[i] = tl0 ? (FX - xs[i]) / (x1 - x0) : 0; isF[i] = tl0 ? 1 : 0; if (tl0) model.kF = Math.max(0, Math.min(M - 2, Math.floor(Math.pow(sF0, 1 / SPOW) * (M - 1))));
         const fi = Math.pow(s, 1 / SPOW) * (M - 1), k = Math.max(0, Math.min(M - 2, Math.floor(fi))); i0[i] = k; fr[i] = Math.max(0, Math.min(1, fi - k)); }
       const geo2 = new THREE.BufferGeometry(); const pos2 = new Float32Array(cnt * 3), nor2 = new Float32Array(cnt * 3);
@@ -243,8 +270,8 @@ export function makeVarn(parent) {
       const K = () => Math.max(LEN, 17), tmp = new THREE.Vector3();
       const mapPt = (s, a, b, out) => { const fi = Math.pow(s, 1 / SPOW) * (M - 1), k = Math.max(0, Math.min(M - 2, Math.floor(fi))), f = Math.max(0, Math.min(1, fi - k)), kk = K();
         return out.set(0, 0, 0).addScaledVector(pts[k], 1 - f).addScaledVector(pts[k + 1], f).addScaledVector(N[k], a * kk * (1 - f)).addScaledVector(N[k + 1], a * kk * f).addScaledVector(B[k], -b * kk * (1 - f)).addScaledVector(B[k + 1], -b * kk * f); };
-      model.update = t => { const kk = K(), pp = pos2, nn = nor2; { const cp = st.clip ? iceCut : null; if (mat.clippingPlanes !== cp) { mat.clippingPlanes = cp; ink2.material.clippingPlanes = cp; mat.needsUpdate = ink2.material.needsUpdate = true; } rim2.visible = !st.clip; capGlow.visible = !st.clip; } const kF = model.kF || 0, th = Math.atan2(T[kF].y, N[kF].y), cF = Math.cos(th), sFn = Math.sin(th);
-        for (let i = 0; i < cnt; i++) { const k = i0[i], f = fr[i], g = 1 - f, ca = isF[i] ? cF : 1, sa = isF[i] ? sFn : 0, a = (oy[i] * ca - ot[i] * sa) * kk, b = -oz[i] * kk, c0 = (oy[i] * sa + ot[i] * ca) * kk, A = pts[k], A2 = pts[k + 1], NA = N[k], NB2 = N[k + 1], BA = B[k], BB = B[k + 1], TT = T[k], TT2 = T[k + 1];
+      model.update = t => { const kk = K(), pp = pos2, nn = nor2; { const A = SHOW.flap * 0.2; for (let g = 0; g < 4; g++) { const ph = t * 3.1 * Math.min(1.6, SHOW.rate) * 0.55 + (g >> 1) * 0.9 + (g & 1) * 0.0; fa[g] = Math.sin(ph) * A; fb[g] = Math.cos(ph) * A * 0.5; } } { const cp = st.clip ? iceCut : null; if (mat.clippingPlanes !== cp) { mat.clippingPlanes = cp; ink2.material.clippingPlanes = cp; mat.needsUpdate = ink2.material.needsUpdate = true; } rim2.visible = !st.clip; capGlow.visible = !st.clip; } const kF = model.kF || 0, th = Math.atan2(T[kF].y, N[kF].y), cF = Math.cos(th), sFn = Math.sin(th);
+        for (let i = 0; i < cnt; i++) { const k = i0[i], f = fr[i], g = 1 - f, ca = isF[i] ? cF : 1, sa = isF[i] ? sFn : 0, a = (oy[i] * ca - ot[i] * sa + (fw[i] ? fw[i] * fa[fg[i]] : 0)) * kk, b = -oz[i] * kk, c0 = (oy[i] * sa + ot[i] * ca + (fw[i] ? fw[i] * fb[fg[i]] : 0)) * kk, A = pts[k], A2 = pts[k + 1], NA = N[k], NB2 = N[k + 1], BA = B[k], BB = B[k + 1], TT = T[k], TT2 = T[k + 1];
           pp[i * 3] = A.x * g + A2.x * f + (NA.x * g + NB2.x * f) * a + (BA.x * g + BB.x * f) * b + (TT.x * g + TT2.x * f) * c0; pp[i * 3 + 1] = A.y * g + A2.y * f + (NA.y * g + NB2.y * f) * a + (BA.y * g + BB.y * f) * b + (TT.y * g + TT2.y * f) * c0; pp[i * 3 + 2] = A.z * g + A2.z * f + (NA.z * g + NB2.z * f) * a + (BA.z * g + BB.z * f) * b + (TT.z * g + TT2.z * f) * c0;
           const nx = N0.getX(i), ny = N0.getY(i), nz = N0.getZ(i), TA = T[k], TB = T[k + 1], qy0 = ny, qz = -nz / (xs[i] < FX ? 1 : wAt(xs[i])), qx0 = -nx, qy = qy0 * ca - qx0 * sa, qx = qy0 * sa + qx0 * ca;
           nn[i * 3] = (TA.x * g + TB.x * f) * qx + (NA.x * g + NB2.x * f) * qy + (BA.x * g + BB.x * f) * qz; nn[i * 3 + 1] = (TA.y * g + TB.y * f) * qx + (NA.y * g + NB2.y * f) * qy + (BA.y * g + BB.y * f) * qz; nn[i * 3 + 2] = (TA.z * g + TB.z * f) * qx + (NA.z * g + NB2.z * f) * qy + (BA.z * g + BB.z * f) * qz; }
@@ -315,6 +342,7 @@ export function makeVarn(parent) {
     lookAt(v, k = 1, ms = 900) { const k0 = st.lookK; if (v) st.look = v.clone(); return tween(ms, e => { st.lookK = k0 + ((v ? k : 0) - k0) * e; }); },
     roar(ms = 1400) { return tween(ms, (e, k) => { st.lift = Math.sin(k * Math.PI) * 0.8; st.glow = 1.3 + Math.sin(k * Math.PI) * 0.8; }); },
     at(s) { return V.localToWorld(pts[iOf(s)].clone()); },
+    mid() { return V.localToWorld(pts[iOf(0.4)].clone()); },
     headPos() { return V.localToWorld(pts[iOf(0.08)].clone()); },
   };
 }
