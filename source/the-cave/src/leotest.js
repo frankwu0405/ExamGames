@@ -1,0 +1,25 @@
+// Leo: the sculpted model (slimmed, repainted, toon-shaded) beside the game's current Leo
+import { THREE, init, newWorld, onTick, setCam, toon, renderer, camera } from './gfx.js';
+import { makeCast } from './chars.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+init(document.body);
+const world = newWorld({ sky: 0x9FD8F5, ambientI: 1.7, sunI: 1.7, fog: [0xBFE3F5, 30, 90] });
+renderer.shadowMap.enabled = true;
+const ground = new THREE.Mesh(new THREE.CircleGeometry(40, 48), toon(0x8CC95E)); ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; world.add(ground);
+const cast = makeCast(world); const old = cast.leo; old.g.position.set(-0.9, 0, 0); old.g.rotation.y = 0.25; old.pose && old.pose('idle');
+cast.mia.g.visible = false; cast.toby.g.visible = false;
+const gm = (() => { const t = new THREE.DataTexture(new Uint8Array([140, 195, 255]), 3, 1, THREE.RedFormat); t.needsUpdate = true; t.minFilter = t.magFilter = THREE.NearestFilter; return t; })();
+const INK = new THREE.MeshBasicMaterial({ color: 0x2E2A4F, side: THREE.BackSide }); INK.onBeforeCompile = s => { s.vertexShader = s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n transformed += normalize(normal) * 0.0042;'); };
+let nl = null;
+new GLTFLoader().load('leo/leo.glb', g => { nl = g.scene; const ms = []; nl.traverse(m => { if (m.isMesh) ms.push(m); });
+  ms.forEach(m => { const mat = new THREE.MeshToonMaterial({ map: m.material.map, gradientMap: gm }); if (mat.map) mat.map.anisotropy = 4; m.material = mat; m.castShadow = true; m.add(new THREE.Mesh(m.geometry, INK)); });
+  const box = new THREE.Box3().setFromObject(nl); const h = box.max.y - box.min.y; nl.scale.setScalar(1.75 / h); nl.position.set(0.9, -box.min.y * 1.75 / h, 0); nl.rotation.y = -0.25; world.add(nl); });
+const lab = (t, x) => { const c = document.createElement('canvas'); c.width = 512; c.height = 128; const g = c.getContext('2d'); g.font = '700 54px Andika, sans-serif'; g.textAlign = 'center'; g.fillStyle = '#2E2A4F'; g.fillText(t, 256, 80); const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true })); s.scale.set(1.6, 0.4, 1); s.position.set(x, 2.45, 0); world.add(s); };
+lab('Game now', -0.9); lab('Sculpted', 0.9);
+setCam([0, 1.1, 4.6], [0, 0.65, 0]);
+const ctl = new OrbitControls(camera, renderer.domElement); ctl.target.set(0, 0.65, 0); ctl.enableDamping = true; ctl.minDistance = 0.8; ctl.maxDistance = 14; ctl.maxPolarAngle = Math.PI * 0.52; camera.position.set(0, 1.1, 4.6); ctl.update();
+onTick(() => { ctl.update(); });
+const bar = document.createElement('div'); bar.style.cssText = 'position:fixed;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:8px;z-index:3;font:700 14px Andika,sans-serif';
+[['Both', [0, 1.1, 4.6], [0, 0.65, 0]], ['Faces', [0, 1.15, 1.9], [0, 1.0, 0]], ['Side view', [3.5, 1, 2.2], [0, 0.65, 0]], ['Back', [0, 1.1, -4.6], [0, 0.65, 0]]].forEach(([n, p, t]) => { const b = document.createElement('button'); b.textContent = n; b.style.cssText = 'padding:9px 15px;border-radius:999px;border:1px solid #fff9;background:#0B2A3FCC;color:#E8FBFF;cursor:pointer;font:inherit'; b.onclick = () => { camera.position.set(...p); ctl.target.set(...t); ctl.update(); }; bar.append(b); });
+document.body.append(bar); window.__ctl = ctl; window.__cam = camera;

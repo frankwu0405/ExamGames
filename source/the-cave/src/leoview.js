@@ -1,0 +1,11 @@
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(640, 800); r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.NeutralToneMapping; document.body.append(r.domElement);
+const sc = new THREE.Scene(); sc.background = new THREE.Color(0xBFE3F5); sc.add(new THREE.HemisphereLight(0xffffff, 0x9aa6b8, 1.5)); const d = new THREE.DirectionalLight(0xFFF3E0, 1.6); d.position.set(2, 3, 4); sc.add(d);
+const cam = new THREE.PerspectiveCamera(30, 640 / 800, 0.05, 50);
+let obj; const file = new URLSearchParams(location.search).get('f') || 'leo.glb';
+const gm = (() => { const t = new THREE.DataTexture(new Uint8Array([150, 200, 255]), 3, 1, THREE.RedFormat); t.needsUpdate = true; t.minFilter = t.magFilter = THREE.NearestFilter; return t; })();
+const INK = new THREE.MeshBasicMaterial({ color: 0x2E2A4F, side: THREE.BackSide }); INK.onBeforeCompile = s => { s.vertexShader = s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n transformed += normalize(normal) * 0.004;'); };
+new GLTFLoader().load(file, g => { obj = g.scene; sc.add(obj); const ms = []; obj.traverse(m => { if (m.isMesh) ms.push(m); }); ms.forEach(m => { { m.userData.o = m.material; const t = new THREE.MeshToonMaterial({ map: m.material.map, gradientMap: gm }); m.userData.t = t; const ink = new THREE.Mesh(m.geometry, INK); ink.visible = false; m.add(ink); m.userData.ink = ink; } }); window.__ready = true; });
+window.__shot = (ang, mode, y = 0.5, dist = 2.6, ty = 0.5) => { obj.rotation.y = ang; cam.position.set(0, y, dist); cam.lookAt(0, ty, 0);
+  obj.traverse(m => { if (m.isMesh && m.userData.o) { m.material = mode === 'toon' ? m.userData.t : m.userData.o; m.userData.ink.visible = mode === 'toon'; } }); r.render(sc, cam); };
