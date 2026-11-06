@@ -123,8 +123,8 @@ const POSES = {
   rear: () => P([0, 6.6, -4.6], [0, 6.2, -6.8], [0, 4.8, -8.5], [0.2, 2.8, -9.8], [0.4, 0.6, -10.8], [0.6, -1.6, -11.6], [0.8, -3.8, -12.2], [1, -5.8, -12.4], [1.2, -7.6, -12]),
   // head down into the water, tail fluke lifted high beside the boat
   tailUp: () => P([1.5, -6, -15.7], [1.5, -4.2, -14.6], [1.5, -2.6, -13.2], [1.5, -1.2, -11.7], [1.5, 0.4, -10.0], [1.5, 2.6, -8.8], [1.5, 5, -8.2], [1.5, 7.4, -8.0], [1.5, 9.8, -8.0]),
-  // halfway through turning over for the tail lift: head arcing over high and far, tail low towards the boat (a quarter turn from each end)
-  turnOver: () => P([1.20, 5, -20], [1.24, 3.9, -18.1], [1.28, 2.8, -16.2], [1.32, 1.7, -14.3], [1.36, 0.6, -12.4], [1.40, -0.5, -10.5], [1.44, -1.6, -8.6], [1.48, -2.7, -6.7], [1.52, -3.8, -4.8]),
+  // halfway through the tail lift: head dives forward and down near the boat while the tail swings up and away over the water, so his back stays on top the whole time (turning the other way round would roll him belly-up)
+  turnOver: () => P([1.20, -3.5, -5.5], [1.24, -2.47, -7.44], [1.28, -1.44, -9.38], [1.32, -0.41, -11.32], [1.36, 0.62, -13.26], [1.40, 1.65, -15.2], [1.44, 2.68, -17.14], [1.48, 3.71, -19.08], [1.52, 4.74, -21.02]),
   // …and slammed down flat onto the ice
   tailSmash: () => P([-4, -5, -12], [-2.6, -3.4, -11], [-1, -1.6, -10], [0.6, -0.4, -9], [2, 0.4, -7.8], [3, 0.6, -6.2], [3.6, 0.5, -4.6], [3.9, 0.3, -3], [4, 0.2, -1.4]),
   // diving back into the deep in one great arc
