@@ -26,10 +26,25 @@ const SEG = [['hips', [0, .40, 0], [0, .50, 0]], ['chest', [0, .52, 0], [0, .64,
   ['hpL', [.06, .45, 0], [.06, .25, 0]], ['knL', [.06, .25, 0], [.06, .03, .02]], ['hpR', [-.06, .45, 0], [-.06, .25, 0]], ['knR', [-.06, .25, 0], [-.06, .03, .02]]];
 const dseg = (p, a, b) => { const ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], ap = [p[0] - a[0], p[1] - a[1], p[2] - a[2]]; const l = ab[0] ** 2 + ab[1] ** 2 + ab[2] ** 2; let t = (ap[0] * ab[0] + ap[1] * ab[1] + ap[2] * ab[2]) / l; t = Math.max(0, Math.min(1, t)); const q = [a[0] + ab[0] * t - p[0], a[1] + ab[1] * t - p[1], a[2] + ab[2] * t - p[2]]; return Math.hypot(q[0], q[1], q[2]); };
 const RAD = { hips: .115, chest: .10, head: .17, shL: .06, elL: .058, shR: .06, elR: .058, hpL: .05, knL: .05, hpR: .05, knR: .05 };
+function smoothFace(geo) {
+  const pos = geo.attributes.position, n = pos.count, idx = geo.index.array, key = new Map(), gid = new Int32Array(n); let ng = 0;
+  for (let i = 0; i < n; i++) { const k = Math.round(pos.getX(i) * 4000) + ',' + Math.round(pos.getY(i) * 4000) + ',' + Math.round(pos.getZ(i) * 4000); let g = key.get(k); if (g === undefined) { g = ng++; key.set(k, g); } gid[i] = g; }
+  const nb = Array.from({ length: ng }, () => new Set()); for (let i = 0; i < idx.length; i += 3) for (let j = 0; j < 3; j++) { const a = gid[idx[i + j]], b = gid[idx[i + (j + 1) % 3]]; nb[a].add(b); nb[b].add(a); }
+  const P = new Float32Array(ng * 3), M = new Float32Array(ng); for (let i = 0; i < n; i++) { const g = gid[i]; P[g * 3] = pos.getX(i); P[g * 3 + 1] = pos.getY(i); P[g * 3 + 2] = pos.getZ(i); }
+  for (let g = 0; g < ng; g++) { const x = P[g * 3], y = P[g * 3 + 1], z = P[g * 3 + 2]; // face + cheeks, feathered; keep hair, ears and neck
+    const fy = Math.min(1, Math.max(0, (y - .66) / .04)) * Math.min(1, Math.max(0, (.93 - y) / .04)), fx2 = Math.min(1, Math.max(0, (.135 - Math.abs(x)) / .03)), fz = Math.min(1, Math.max(0, (z - .02) / .04)); M[g] = fy * fx2 * fz; }
+  for (let it = 0; it < 6; it++) { const Q = P.slice(); for (let g = 0; g < ng; g++) { if (M[g] < .01 || !nb[g].size) continue; let ax = 0, ay = 0, az = 0; nb[g].forEach(h => { ax += P[h * 3]; ay += P[h * 3 + 1]; az += P[h * 3 + 2]; }); const c = nb[g].size, l = .55 * M[g]; Q[g * 3] += (ax / c - P[g * 3]) * l; Q[g * 3 + 1] += (ay / c - P[g * 3 + 1]) * l; Q[g * 3 + 2] += (az / c - P[g * 3 + 2]) * l; } P.set(Q); }
+  for (let i = 0; i < n; i++) { const g = gid[i]; pos.setXYZ(i, P[g * 3], P[g * 3 + 1], P[g * 3 + 2]); }
+  geo.computeVertexNormals();
+  // the cut at UV seams leaves doubled vertices with split normals; share them
+  const nrm = geo.attributes.normal, acc = new Float32Array(ng * 3); for (let i = 0; i < n; i++) { const g = gid[i]; acc[g * 3] += nrm.getX(i); acc[g * 3 + 1] += nrm.getY(i); acc[g * 3 + 2] += nrm.getZ(i); }
+  for (let i = 0; i < n; i++) { const g = gid[i], l = Math.hypot(acc[g * 3], acc[g * 3 + 1], acc[g * 3 + 2]) || 1; nrm.setXYZ(i, acc[g * 3] / l, acc[g * 3 + 1] / l, acc[g * 3 + 2] / l); }
+}
+
 function skinAttrs(pos) {
   const n = pos.count, si = new Uint16Array(n * 4), sw = new Float32Array(n * 4), p = [0, 0, 0];
   for (let i = 0; i < n; i++) { p[0] = pos.getX(i); p[1] = pos.getY(i); p[2] = pos.getZ(i);
-    const w = SEG.map(([k, a, b]) => [names.indexOf(k), Math.exp(-Math.max(0, dseg(p, a, b) - (RAD[k] || .05)) / 0.009)]).sort((x, y) => y[1] - x[1]).slice(0, 4);
+    const w = SEG.map(([k, a, b]) => [names.indexOf(k), Math.exp(-Math.max(0, dseg(p, a, b) - (RAD[k] || .05)) / 0.009) * ((/^(sh|el)/.test(k) && ((Math.abs(p[0]) < .118 && p[1] < .60 && p[1] > .40) || (Math.abs(p[0]) < .13 && p[1] < .44 && p[1] > .24))) ? 0.0003 : 1)]).sort((x, y) => y[1] - x[1]).slice(0, 4);
     const s = w.reduce((a, c) => a + c[1], 0); for (let j = 0; j < 4; j++) { si[i * 4 + j] = w[j][0]; sw[i * 4 + j] = w[j][1] / s; } }
   return [si, sw];
 }
@@ -101,7 +116,7 @@ let skel = null, root = null;
 function build(gltf, img) {
   const src = []; gltf.scene.traverse(m => { if (m.isMesh) src.push(m); });
   const geo = src[0].geometry.clone(); const pos = geo.attributes.position;
-  const [si, sw] = skinAttrs(pos); window.__geo = geo; window.__si = si; window.__sw = sw; geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
+  smoothFace(geo); const [si, sw] = skinAttrs(pos); window.__geo = geo; window.__si = si; window.__sw = sw; geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
   root = new THREE.Group(); root.add(B.hips); root.updateMatrixWorld(true); skel = new THREE.Skeleton(bones);
   const tex = new THREE.Texture(img); tex.flipY = false; tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4; tex.needsUpdate = true;
   const mk = (g, mat, cast) => { const m = new THREE.SkinnedMesh(g, mat); m.frustumCulled = false; m.bind(skel, new THREE.Matrix4()); m.castShadow = !!cast; return m; };
