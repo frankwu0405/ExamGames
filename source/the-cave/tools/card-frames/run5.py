@@ -1,8 +1,8 @@
 import sys,base64; sys.path.insert(0,'/tmp/cf/gen')
-import d5,lowpoly
+import d5,lowpoly,ref3
 from playwright.sync_api import sync_playwright
 seed=int(sys.argv[1]) if len(sys.argv)>1 else 3
-s=lowpoly.chunky_svg(seed);open('/tmp/cf/gen/diamond.svg','w').write(s)
+s=ref3.frame(seed);open('/tmp/cf/gen/diamond.svg','w').write(s)
 b64=base64.b64encode(s.encode()).decode()
 cards=['explore','rumble']
 def tile(card,bg,wd):
