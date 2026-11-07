@@ -4923,7 +4923,7 @@ const polishLevel = own => Math.max(1, Math.min(4, own?.lvl || 1));
 const polishOwned = () => Object.keys(CARDS).filter(w => S.cards[w] && CARDS[w].ep <= MAX_EP);
 const polishReady = word => {
   const own = S.cards[word];
-  return own && polishLevel(own) < 4 && Date.now() >= (own.due || 0);
+  return own && polishLevel(own) < 4;
 };
 const dueCards = () => polishOwned().filter(polishReady);
 const mixCards = values => {
@@ -5008,7 +5008,7 @@ function openPolishCollection(onClose) {
   }
   function render() {
     const all = polishOwned(), words = all.filter(w => filter === 'all' || CARDS[w].ep === +filter);
-    { const n = dueCards().length; overview.textContent = !all.length ? 'Find cards in the story.' : n ? `${n} card${n > 1 ? 's' : ''} ready to polish` : 'All cards are resting. Come back tomorrow!'; }
+    { const n = dueCards().length; overview.textContent = !all.length ? 'Find cards in the story.' : n ? `${n} card${n > 1 ? 's' : ''} ready to polish` : 'Every card is Diamond!'; }
     content.replaceChildren();
     if (!words.length) content.append(h('div', { class: 'wt-empty' }, '✧', h('h3', {}, 'Your cards go here.')));
     for (const word of words) {
@@ -5023,10 +5023,8 @@ function openPolishCollection(onClose) {
 }
 
 // Shine needed to move up from each frame: Bronze→Silver 2, Silver→Gold 3, Gold→Diamond 5.
-// A card earns at most one shine per day, and only when it's right on the first try.
+// A card earns a shine every time it's right on the first try. No waiting: practise as much as you like.
 const SHINE_NEED = [0, 2, 3, 5];
-const SHINE_REST = 0.8;            // days a card rests after earning a shine
-const UPGRADE_REST = [0, 1, 2, 3]; // days a card rests after reaching a new frame
 const ROUND_QUESTIONS = 8;
 function openPolishGame(words, demo, onReturn) {
   suspendPolishBackdrop();
@@ -5206,18 +5204,17 @@ function openPolishGame(words, demo, onReturn) {
     if (S.settings.read) say(lineFor(w).replace('{_}', w), { force: true });
     seenCount[w] = (seenCount[w] || 0) + 1;
     tc.classList.add('wipe'); sparkle(clean ? 14 : 5); sfx(clean ? 'good' : 'card');
-    const o = own(w), eligible = startReady[w] && !r.gained && lvlOf(w) < 4;
+    const o = own(w), eligible = lvlOf(w) < 4;
     let upgraded = false;
     if (clean && eligible) {
-      o.shine = (o.shine || 0) + 1; r.gained = 1;
-      if (o.shine >= SHINE_NEED[lvlOf(w)]) { o.lvl = lvlOf(w) + 1; o.shine = 0; o.due = Date.now() + UPGRADE_REST[o.lvl - 1] * POLISH_DAY; upgraded = true; }
-      else o.due = Date.now() + SHINE_REST * POLISH_DAY;
+      o.shine = (o.shine || 0) + 1; r.gained = (r.gained || 0) + 1;
+      if (o.shine >= SHINE_NEED[lvlOf(w)]) { o.lvl = lvlOf(w) + 1; o.shine = 0; upgraded = true; }
     }
     if (!clean) o.polishHelp = true; else if (eligible) o.polishHelp = false;
     o.polishSeen = Date.now();
     if (!demo) save();
     r.lvl = lvlOf(w);
-    say2(!clean ? 'Got it! No shine this time.' : !eligible ? (lvlOf(w) >= 4 ? 'Shiny! Already Diamond.' : 'Shiny! (It’s resting today.)') : streak >= 3 ? `⚡ ${streak} in a row! +1 shine` : 'Shiny! +1 shine ✨');
+    say2(!clean ? 'Got it! No shine this time.' : !eligible ? 'Shiny! Already Diamond.' : streak >= 3 ? `⚡ ${streak} in a row! +1 shine` : 'Shiny! +1 shine ✨');
     qi++; renderProgress(); renderDeck();
     const dots = shineDots(w, 'pg-tray-dots'); tray.append(dots);
     await wait(700);
@@ -5249,10 +5246,10 @@ function openPolishGame(words, demo, onReturn) {
     const label = w => {
       const r = results[w], l = r.lvl;
       if (l > r.lvl0) return [h('b', { class: 'up' }, '⬆ ' + FRAME_NAMES[l] + '!'), shineDots(w)];
-      if (r.gained) return [h('b', {}, '+1 shine'), shineDots(w)];
+      if (r.gained) return [h('b', {}, `+${r.gained} shine`), shineDots(w)];
       if (l >= 4) return [h('b', {}, '💎 Max shine')];
       if (r.missed && !r.gained) return [h('b', {}, 'No shine')];
-      return [h('b', {}, '🌙 Resting'), shineDots(w)];
+      return [h('b', {}, 'Polished'), shineDots(w)];
     };
     const more = !demo && dueCards().length > 0;
     const panel = h('div', { class: 'pg-end' },
