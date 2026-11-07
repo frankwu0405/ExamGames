@@ -274,7 +274,7 @@ html:has(.wt-overlay),body:has(.wt-overlay){touch-action:pan-y}body:has(.wt-over
 .wt-tier-3 .wt-ornament{left:-27.34375%;top:-19.08397%;width:154.6875%;height:138.16794%}
 
 /* ===== Polish game (tray slot, drag to play, visible polishing) ===== */
-.pg{--cw:clamp(78px,min(12vw,19vh),150px);--th:clamp(200px,min(40vh,46vw),360px)}
+.pg{--cw:clamp(78px,min(12vw,16.5vh),150px);--th:clamp(190px,min(35vh,46vw),360px)}
 .pg-shell{position:relative;width:min(1180px,100%);min-height:100dvh;margin:auto;padding:18px 28px 22px;display:flex;flex-direction:column;gap:10px}
 .pg-top{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .pg-top h1{margin:0;font-family:var(--display);font-size:clamp(24px,3vw,32px);color:#fff1c9;text-shadow:0 3px #122735;font-weight:400}
@@ -366,9 +366,9 @@ html:has(.wt-overlay),body:has(.wt-overlay){touch-action:pan-y}body:has(.wt-over
 /* ===== Polish game v2: held fan, deck, send-off, shine dots ===== */
 .pg-counter{font-family:var(--display);font-size:22px;color:#ffe7ad;margin-left:auto;text-shadow:0 2px #122735}
 .pg-progress{margin-left:0}
-.pg-table{position:relative;display:flex;justify-content:center;align-items:flex-end;padding:calc(var(--cw) * .5) 20px 6px}
+.pg-table{position:relative;display:flex;justify-content:center;align-items:flex-end;padding:calc(var(--cw) * .42) 20px 14px}
 .pg-hand{display:flex;justify-content:center;align-items:flex-end;gap:0;padding:0}
-.pg-slot{display:flex;flex-direction:column;align-items:center;gap:calc(var(--cw) * .16);margin:0 calc(var(--cw) * -.04);transform:translateY(var(--lift)) rotate(var(--rot));transform-origin:50% 120%;transition:transform .25s}
+.pg-slot{display:flex;flex-direction:column;align-items:center;gap:calc(var(--cw) * .16);margin:0 calc(var(--cw) * .05);transform:translateY(var(--lift)) rotate(var(--rot));transform-origin:50% 120%;transition:transform .25s}
 .pg-slot:hover{z-index:30!important}
 .pg-slot:has(.pg-hcard:hover:not(:disabled)),.pg-slot:has(.pg-hcard:focus-visible){transform:translateY(calc(var(--lift) - 18px)) rotate(calc(var(--rot) * .5))}
 .pg-hcard:hover:not(:disabled),.pg-hcard:focus-visible{transform:none}
@@ -382,12 +382,12 @@ html:has(.wt-overlay),body:has(.wt-overlay){touch-action:pan-y}body:has(.wt-over
 .pg-tray-dots{position:absolute;left:50%;bottom:-11%;transform:translateX(-50%);display:flex;gap:8px;padding:6px 12px;border-radius:999px;background:#140f26cc;z-index:4;animation:pg-pop .4s cubic-bezier(.2,1.6,.4,1)}
 .pg-tray-dots .pg-pip{width:16px;height:16px}
 .pg-tray-dots .pg-pip.on:last-of-type{animation:pg-pop .5s}
-.pg-end-row{display:grid;grid-template-columns:repeat(min(var(--count),4),auto);gap:clamp(56px,8vh,90px) clamp(48px,6vw,84px);padding:clamp(40px,6vh,70px) 30px 10px}
+.pg-end-row{display:grid;gap:clamp(56px,8vh,90px) clamp(48px,6vw,84px);padding:clamp(40px,6vh,70px) 30px 10px}
 .pg-end-card{width:clamp(80px,min(11vw,15vh),140px);gap:calc(clamp(80px,min(11vw,15vh),140px) * .3)}
 .pg-end-label .pg-pips{justify-content:center;margin-top:4px}
 .pg-end-label b.up{color:#ffe27a}
 @media (orientation:portrait),(max-width:760px){
-  .pg-end-row{grid-template-columns:repeat(min(var(--count),4),auto);gap:clamp(48px,6vh,76px) clamp(34px,6vw,64px);padding-top:clamp(30px,4vh,56px)}
+  .pg-end-row{gap:clamp(48px,6vh,76px) clamp(34px,6vw,64px);padding-top:clamp(30px,4vh,56px)}
   .pg-end-card{width:clamp(62px,min(16vw,11vh),140px);gap:calc(clamp(62px,min(16vw,11vh),140px) * .3)}
   .pg-deck{right:8px}
 }
@@ -5118,7 +5118,7 @@ function openPolishGame(words, demo, onReturn) {
       const off = i - (n - 1) / 2;
       const btn = h('button', { class: 'pg-hcard' + (tried.has(w) ? ' tried' : ''), 'aria-label': `Play ${w}`, 'data-w': w, disabled: tried.has(w) || busy }, cardNode(w));
       bindDrag(btn, w);
-      const slot = h('div', { class: 'pg-slot' + (w === entering ? ' entering' : ''), style: { '--rot': `${off * 6}deg`, '--lift': `${Math.abs(off) * Math.abs(off) * 7}px`, zIndex: 10 + i } }, btn, shineDots(w));
+      const slot = h('div', { class: 'pg-slot' + (w === entering ? ' entering' : ''), style: `--rot:${off * 7}deg;--lift:${Math.abs(off) * Math.abs(off) * 9}px;z-index:${10 + i}` }, btn, shineDots(w));
       return slot;
     }));
   }
@@ -5257,7 +5257,7 @@ function openPolishGame(words, demo, onReturn) {
     const panel = h('div', { class: 'pg-end' },
       h('h2', {}, demo ? 'Practice done!' : 'Round done!'),
       h('p', {}, `Right on the first try: ${firstTry} of ${total}` + (bestStreak >= 3 ? ` · best streak ${bestStreak}` : '') + (demo ? ' · practice, nothing saved' : '')),
-      h('div', { class: 'pg-end-row', style: { '--count': played.length } }, ...played.map(w => h('div', { class: 'pg-end-card' }, cardNode(w), h('div', { class: 'pg-end-label' }, ...label(w))))),
+      h('div', { class: 'pg-end-row', style: `grid-template-columns:repeat(${Math.min(4, played.length)},auto)` }, ...played.map(w => h('div', { class: 'pg-end-card' }, cardNode(w), h('div', { class: 'pg-end-label' }, ...label(w))))),
       h('div', { class: 'pg-end-actions' },
         more ? h('button', { class: 'wt-btn wt-primary', onclick: () => { closed = true; hush(); ov.remove(); document.removeEventListener('keydown', escape); openPolishGame([], false, onReturn); } }, '✨ Another round') : null,
         h('button', { class: 'wt-btn' + (more ? '' : ' wt-primary'), onclick: leave }, 'Done')));
