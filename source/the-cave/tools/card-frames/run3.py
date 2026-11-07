@@ -1,5 +1,5 @@
 import sys,importlib; sys.path.insert(0,'/tmp/cf/gen')
-import t3;importlib.reload(t3)
+import t4 as t3;importlib.reload(t3)
 from playwright.sync_api import sync_playwright
 import base64
 names=sys.argv[1:] or ['gold']
