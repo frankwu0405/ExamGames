@@ -243,3 +243,82 @@ def ice(seed=8):
         sx=-1 if cx==0 else 1;sy=-1 if cy==0 else 1
         C.add(twinkle(C,cx+sx*54,cy+sy*84,9))
     return C.svg()
+
+# ===================== POLISHED BIG BLOCKS =====================
+def gem_block(C,x,y,L,w,ang,fam,rng,dim=0.0,glint=False):
+    a=math.radians(ang);u=(math.sin(a),-math.cos(a));p=(math.cos(a),math.sin(a))
+    bL=dot((-p[0],-p[1]),LIGHT)*.8;bR=dot(p,LIGHT)*.8;bC=.3+dot(u,LIGHT)*.2
+    tL=dot(norm((-p[0]*.6+u[0]*.7,-p[1]*.6+u[1]*.7)),LIGHT)*.9+.2
+    tC=dot(u,LIGHT)*.6+.5
+    tR=dot(norm((p[0]*.6+u[0]*.7,p[1]*.6+u[1]*.7)),LIGHT)*.9+.1
+    sh=L*.5
+    bl=(-w/2,0);br=(w/2,0);sl=(-w/2,-sh);sr=(w/2,-sh)
+    m1=(-w*.2,-sh-w*.12);m2=(w*.2,-sh-w*.12);b1=(-w*.2,0);b2=(w*.2,0);tip=(0,-L)
+    P=lambda *q:' '.join(f'{a_:.1f},{b_:.1f}' for a_,b_ in q)
+    def face(pts,b,across=True,band=.45):
+        b=b-dim
+        st=[(0,tone(fam,b-.2)),(band-.18,tone(fam,b)),(band,tone(fam,b+.4)),(band+.14,tone(fam,b+.12)),(1,tone(fam,b-.1))]
+        g=C.grad(st,0,0,1,0) if across else C.grad(st,0,1,0,0)
+        return f'<polygon points="{P(*pts)}" fill="{g}"/>'
+    s=f'<g transform="translate({x:.1f} {y:.1f}) rotate({ang:.1f})">'
+    s+=face((bl,sl,m1,b1),bL,True,.62)+face((b1,m1,m2,b2),bC,True,.35)+face((b2,m2,sr,br),bR,True,.55)
+    s+=face((sl,tip,m1),tL,False,.5)+face((m1,tip,m2),tC,False,.6)+face((m2,tip,sr),tR,False,.4)
+    # soft reflection sheen sweeping diagonally across the whole crystal
+    i=uid('k')
+    s+=f'<defs><clipPath id="{i}"><polygon points="{P(bl,sl,tip,sr,br)}"/></clipPath></defs>'
+    s+=f'<g clip-path="url(#{i})"><polygon points="{-w:.1f},{-L*.18:.1f} {w:.1f},{-L*.5:.1f} {w:.1f},{-L*.62:.1f} {-w:.1f},{-L*.3:.1f}" fill="#ffffff" opacity=".16"/></g>'
+    hi=FAM[fam][4]
+    # crisp ridges
+    lit_side_left=bL>bR
+    s+=f'<path d="M{m1[0]:.1f} {m1[1]:.1f}L{b1[0]:.1f} 0M{m2[0]:.1f} {m2[1]:.1f}L{b2[0]:.1f} 0M{sl[0]:.1f} {sl[1]:.1f}L{m1[0]:.1f} {m1[1]:.1f}L{m2[0]:.1f} {m2[1]:.1f}L{sr[0]:.1f} {sr[1]:.1f}" fill="none" stroke="{hi}" stroke-width="1.5" opacity=".7" stroke-linejoin="round"/>'
+    s+=f'<path d="M{m1[0]:.1f} {m1[1]:.1f}L0 {-L:.1f}L{m2[0]:.1f} {m2[1]:.1f}" fill="none" stroke="#fff" stroke-width="1.8" opacity=".85" stroke-linejoin="round"/>'
+    s+=f'<polygon points="{P(bl,sl,tip,sr,br)}" fill="none" stroke="{FAM[fam][0]}" stroke-width="2.8" stroke-linejoin="round"/>'
+    # edge highlight on the lit silhouette edge
+    ex=-w/2+2 if lit_side_left else w/2-2;ey=-sh
+    s+=f'<path d="M{ex:.1f} {-L*.08:.1f}L{ex:.1f} {ey+4:.1f}L{(ex*.1):.1f} {-L+8:.1f}" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/>'
+    sx=-w*.3 if lit_side_left else w*.3
+    s+=f'<path d="M{sx:.1f} {-L*.16:.1f}L{sx:.1f} {-sh*.78:.1f}" stroke="#fff" stroke-width="{max(3,w*.07):.1f}" stroke-linecap="round" opacity=".75"/>'
+    if glint:
+        r=w*.16;s+=f'<path transform="translate({m1[0]*.4:.1f} {-L*.78:.1f})" d="M0 {-r}Q{r*.12} {-r*.12} {r} 0Q{r*.12} {r*.12} 0 {r}Q{-r*.12} {r*.12} {-r} 0Q{-r*.12} {-r*.12} 0 {-r}Z" fill="#fff"/>'
+    return s+'</g>'
+
+def polished(seed=3):
+    C=Ctx('diamond');rng=random.Random(seed)
+    C.defs.append('<filter id="ds" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="2" dy="5" stdDeviation="4" flood-color="#0b1a4a" flood-opacity=".5"/></filter>')
+    def famfor(x,y):
+        h=(x+y)/(W+H)+rng.uniform(-.2,.2);return 'icev' if h>.78 else 'ice'
+    def lim(L,ang,base,margin):
+        c=abs(math.cos(math.radians(ang-base)));return min(L,margin/max(c,.3))
+    pieces=[]
+    corners=[(0,0),(W,0),(W,H),(0,H)]
+    sides=[((0,0),(W,0),(0,-1),104),((W,0),(W,H),(1,0),96),((W,H),(0,H),(0,1),104),((0,H),(0,0),(-1,0),96)]
+    leans=[-20,10,-6,24,-14,4,18,-24,8]
+    for si,(A,B,n,margin) in enumerate(sides):
+        Ls=math.hypot(B[0]-A[0],B[1]-A[1]);d=((B[0]-A[0])/Ls,(B[1]-A[1])/Ls)
+        base=math.degrees(math.atan2(n[0],-n[1]))
+        start=58;end=Ls-58;s=start;k=si*2
+        slots=[]
+        while s<end:
+            if k%4==2:
+                R=rng.uniform(38,42);w=R*2.0;slots.append(('gem',s+w/2,R));s+=w*.86
+            else:
+                w=rng.uniform(62,76);L=rng.uniform(88,106);slots.append(('cr',s+w/2,(w,L,leans[k%len(leans)]+rng.uniform(-4,4))));s+=w*.84
+            k+=1
+        # stretch slots to fill the side evenly so there are no gaps or bunching
+        tot=slots[-1][1]-slots[0][1];want=(end-24)-(start+24)
+        for kind,pos,v in slots:
+            pos=start+24+(pos-slots[0][1])*want/max(tot,1)
+            bx=A[0]+d[0]*pos-n[0]*2;by=A[1]+d[1]*pos-n[1]*2;f=famfor(bx,by)
+            if kind=='gem':
+                pieces.append((1,cutgem(C,bx+n[0]*34,by+n[1]*34,v,rng.uniform(0,90),'ice','icev' if f=='icev' else 'ice',rng,rng.choice([7,8]),1.12)))
+            else:
+                w,L,lean=v;ang=base+lean
+                pieces.append((0,gem_block(C,bx,by,lim(L,ang,base,margin),w,ang,f,rng,glint=rng.random()<.3)))
+    for cx,cy in corners:
+        sx=-1 if cx==0 else 1;sy=-1 if cy==0 else 1
+        diag=math.degrees(math.atan2(sx,-sy));ox,oy=cx+sx*2,cy+sy*2
+        for off,Lc,wc in ((-50,96,74),(50,96,74),(0,124,82)):
+            pieces.append((2,gem_block(C,ox,oy,Lc,wc,diag+off,famfor(cx,cy),rng,glint=off==0)))
+    pieces.sort(key=lambda q:q[0])
+    C.add('<g filter="url(#ds)">'+''.join(p for _,p in pieces)+'</g>')
+    return C.svg()

@@ -1,8 +1,8 @@
 import sys,base64; sys.path.insert(0,'/tmp/cf/gen')
 import d5
 from playwright.sync_api import sync_playwright
-seed=int(sys.argv[1]) if len(sys.argv)>1 else 8
-s=d5.ice(seed);open('/tmp/cf/gen/diamond.svg','w').write(s)
+seed=int(sys.argv[1]) if len(sys.argv)>1 else 3
+s=d5.polished(seed);open('/tmp/cf/gen/diamond.svg','w').write(s)
 b64=base64.b64encode(s.encode()).decode()
 cards=['explore','rumble']
 def tile(card,bg,wd):
