@@ -165,3 +165,81 @@ def diamond(seed=4):
     C.add(f'<g filter="url(#ds)">{body}</g>')
     for x,y,r in twk[:8]: C.add(twinkle(C,x,y,r))
     return C.svg()
+
+# ===================== ICE BLOCK VERSION =====================
+FAM['ice']=['#2a3aa8','#2e6ce0','#45a8ff','#aee9ff','#f4fdff']
+FAM['icev']=['#2f2296','#4f48e0','#6f8cff','#c8d4ff','#f6f6ff']
+def block(C,x,y,L,w,ang,fam,rng,dim=0.0,frost=True,cracks=True):
+    a=math.radians(ang);u=(math.sin(a),-math.cos(a));p=(math.cos(a),math.sin(a))
+    bL=dot((-p[0],-p[1]),LIGHT)*.85;bR=dot(p,LIGHT)*.85;bC=.25+dot(u,LIGHT)*.2
+    tL=dot(norm((-p[0]*.6+u[0]*.7,-p[1]*.6+u[1]*.7)),LIGHT)*.9+.15
+    tC=dot(u,LIGHT)*.7+.45
+    tR=dot(norm((p[0]*.6+u[0]*.7,p[1]*.6+u[1]*.7)),LIGHT)*.9+.1
+    shl=L*rng.uniform(.5,.66);shr=L*rng.uniform(.5,.66);tx=w*rng.uniform(-.18,.22)
+    bl=(-w/2,0);br=(w/2,0);sl=(-w/2,-shl);sr=(w/2,-shr)
+    c1=-w*rng.uniform(.1,.2);c2=w*rng.uniform(.14,.26)
+    m1=(c1,-(shl+shr)/2-w*.14);m2=(c2,-(shl+shr)/2-w*.12);b1=(c1,0);b2=(c2,0);tip=(tx,-L)
+    P=lambda *q:' '.join(f'{a_:.1f},{b_:.1f}' for a_,b_ in q)
+    def face(pts,b):
+        b=b-dim;c=tone(fam,b)
+        base=mix(c,'#ffffff',.32) if frost else mix(c,FAM[fam][0],.3)
+        g=C.grad([(0,base),(.35,c),(1,mix(c,'#ffffff',.18))],0,1,0,0)
+        return f'<polygon points="{P(*pts)}" fill="{g}"/>'
+    s=f'<g transform="translate({x:.1f} {y:.1f}) rotate({ang:.1f})">'
+    s+=face((bl,sl,m1,b1),bL)+face((b1,m1,m2,b2),bC)+face((b2,m2,sr,br),bR)
+    s+=face((sl,tip,m1),tL)+face((m1,tip,m2),tC)+face((m2,tip,sr),tR)
+    hi=FAM[fam][4]
+    s+=f'<path d="M{m1[0]:.1f} {m1[1]:.1f}L{b1[0]:.1f} 0M{m2[0]:.1f} {m2[1]:.1f}L{b2[0]:.1f} 0M{sl[0]:.1f} {sl[1]:.1f}L{m1[0]:.1f} {m1[1]:.1f}L{m2[0]:.1f} {m2[1]:.1f}L{sr[0]:.1f} {sr[1]:.1f}M{m1[0]:.1f} {m1[1]:.1f}L{tip[0]:.1f} {tip[1]:.1f}M{m2[0]:.1f} {m2[1]:.1f}L{tip[0]:.1f} {tip[1]:.1f}" fill="none" stroke="{hi}" stroke-width="1.4" opacity=".6" stroke-linejoin="round"/>'
+    if cracks:
+        # internal refraction / fracture lines
+        for _ in range(rng.randint(1,2)):
+            y0=-L*rng.uniform(.15,.45);x0=rng.uniform(c1,c2)
+            s+=f'<path d="M{x0:.1f} {y0:.1f}l{w*rng.uniform(.12,.25):.1f} {-L*rng.uniform(.08,.16):.1f}l{-w*rng.uniform(.04,.1):.1f} {-L*rng.uniform(.06,.12):.1f}" fill="none" stroke="#fff" stroke-width="1.2" opacity=".55" stroke-linecap="round"/>'
+        s+=f'<path d="M{c1+w*.06:.1f} {-L*.08:.1f}L{(c1+c2)/2:.1f} {-L*.52:.1f}" stroke="#ffffff" stroke-width="{w*.06:.1f}" opacity=".22" stroke-linecap="round"/>'
+    s+=f'<polygon points="{P(bl,sl,tip,sr,br)}" fill="none" stroke="{FAM[fam][0]}" stroke-width="2.6" stroke-linejoin="round"/>'
+    bx=-w*.36 if bL>bR else w*.36
+    s+=f'<path d="M{bx:.1f} {-L*.14:.1f}L{bx:.1f} {-min(shl,shr)*.85:.1f}" stroke="#fff" stroke-width="{max(2.2,w*.06):.1f}" stroke-linecap="round" opacity=".9"/>'
+    return s+'</g>'
+
+def ice(seed=8):
+    C=Ctx('diamond');rng=random.Random(seed)
+    C.defs.append('<filter id="ds" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="2" dy="4" stdDeviation="3.5" flood-color="#0b1a4a" flood-opacity=".45"/></filter>')
+    def famfor(x,y):
+        h=(x+y)/(W+H)+rng.uniform(-.25,.25)
+        return 'icev' if h>.72 else 'ice'
+    back=[];front=[];top=[]
+    corners=[(0,0),(W,0),(W,H),(0,H)]
+    sides=[((0,0),(W,0),(0,-1)),((W,0),(W,H),(1,0)),((W,H),(0,H),(0,1)),((0,H),(0,0),(-1,0))]
+    for A,B,n in sides:
+        Ls=math.hypot(B[0]-A[0],B[1]-A[1]);d=((B[0]-A[0])/Ls,(B[1]-A[1])/Ls)
+        base=math.degrees(math.atan2(n[0],-n[1]));ph=rng.uniform(0,6.28)
+        s=44;k=0
+        while s<Ls-44:
+            t=s/Ls
+            bump=1+.12*math.sin(t*math.pi*4+ph)
+            r=rng.random()
+            if k%3==1: L=rng.uniform(92,104);w=L*rng.uniform(.66,.76)      # hero block
+            elif r<.5: L=rng.uniform(50,62);w=L*rng.uniform(.64,.78)       # small
+            else: L=rng.uniform(66,80);w=L*rng.uniform(.6,.72)
+            L*=bump
+            bx=A[0]+d[0]*s-n[0]*2;by=A[1]+d[1]*s-n[1]*2
+            ang=base+(1 if rng.random()<.5 else -1)*(rng.uniform(0,14) if k%3==1 else rng.uniform(16,42))
+            front.append((L,block(C,bx,by,L,w,ang,famfor(bx,by),rng)))
+            if k%3!=1 and rng.random()<.6:
+                L2=L*rng.uniform(1.05,1.25);a2=base+rng.uniform(-34,34)
+                back.append(block(C,bx+d[0]*w*.35+n[0]*4,by+d[1]*w*.35+n[1]*4,L2,L2*.58,a2,famfor(bx,by),rng,dim=.18,cracks=False))
+            s+=w*rng.uniform(.55,.68);k+=1
+    for cx,cy in corners:
+        sx=-1 if cx==0 else 1;sy=-1 if cy==0 else 1
+        diag=math.degrees(math.atan2(sx,-sy));ox,oy=cx+sx*6,cy+sy*6
+        items=[]
+        for off,Lc,wr in ((-72,78,.7),(72,78,.7),(-44,96,.66),(46,94,.66),(-14,112,.62),(16,108,.62)):
+            items.append((Lc,block(C,ox+rng.uniform(-4,4),oy+rng.uniform(-4,4),Lc*rng.uniform(.94,1.04),Lc*wr,diag+off+rng.uniform(-6,6),famfor(cx,cy),rng)))
+        items.sort(key=lambda q:-q[0]);top+= [q[1] for q in items]
+        top.append(cutgem(C,cx+sx*14,cy+sy*14,36,diag+rng.uniform(-20,20),'ice','icev',rng,7,1.15))
+    front.sort(key=lambda q:-q[0])
+    C.add('<g filter="url(#ds)">'+''.join(back)+''.join(q[1] for q in front)+''.join(top)+'</g>')
+    for cx,cy in corners:
+        sx=-1 if cx==0 else 1;sy=-1 if cy==0 else 1
+        C.add(twinkle(C,cx+sx*54,cy+sy*84,9))
+    return C.svg()
