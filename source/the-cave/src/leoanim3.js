@@ -153,7 +153,7 @@ function build(bodyG, bodyImg, headG, headImg) {
   const first = g => { let m = null; g.scene.traverse(o => { if (o.isMesh && !m) m = o; }); return m; };
   // body: the new model without its own head (the old, better-liked head replaces it)
   let geo = first(bodyG).geometry.clone(); { const ix = geo.index.array, P = geo.attributes.position, out = [];
-    for (let i = 0; i < ix.length; i += 3) { let cut = false; for (let j = 0; j < 3; j++) { const v = ix[i + j]; if (P.getY(v) > .655 && Math.abs(P.getX(v)) < .13) cut = true; } if (!cut) out.push(ix[i], ix[i + 1], ix[i + 2]); } geo.setIndex(out); }
+    for (let i = 0; i < ix.length; i += 3) { let cut = false; for (let j = 0; j < 3; j++) { const v = ix[i + j]; if (P.getY(v) > .655 && Math.abs(P.getX(v)) < .13 && !(P.getY(v) < .695 && Math.abs(P.getX(v)) < .072 && P.getZ(v) < .045)) cut = true; } if (!cut) out.push(ix[i], ix[i + 1], ix[i + 2]); } geo.setIndex(out); }
   const pos = geo.attributes.position; const [si, sw] = skinAttrs(pos); geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
   // head: rigid on the head bone, easing into the chest at the neck
   const hg = first(headG).geometry.clone(); smoothFace(hg); const hp = hg.attributes.position, hn = hp.count, hsi = new Uint16Array(hn * 4), hsw = new Float32Array(hn * 4);
@@ -193,6 +193,7 @@ const QT = new THREE.Quaternion(), EU = new THREE.Euler(), QHL = new THREE.Quate
 const smooth = {}; names.forEach(n => smooth[n] = [0, 0, 0]);
 const hipsOffset = { y: 0, z: 0, x: 0 }, rootState = { x: 0, z: 0, ry: 0 };
 const sn = Math.sin, cs = Math.cos;
+const WAVETW = +(new URLSearchParams(location.search).get('tw') ?? -1.3);
 function pose(t, a) {
   const P = {}; names.forEach(n => P[n] = [0, 0, 0]); let hy = 0, hx = 0, ry = 0;
   const br = sn(t * 1.9) * .012;
@@ -204,7 +205,7 @@ function pose(t, a) {
     P.hpL[0] = -sw * A; P.hpR[0] = sw * A; P.knL[0] = Math.max(0, sn(k + 1.6)) * A * 1.4 * (a === 'run' ? 1.4 : 1); P.knR[0] = Math.max(0, sn(k + 1.6 + Math.PI)) * A * 1.4 * (a === 'run' ? 1.4 : 1);
     P.shL[0] = sw * A * .9; P.shR[0] = -sw * A * .9; P.elL[0] = -.35 - (a === 'run' ? .6 : 0); P.elR[0] = -.35 - (a === 'run' ? .6 : 0);
     P.hips[1] = sw * .12; P.chest[1] = -sw * .1; P.head[1] = sw * .05; P.chest[0] += a === 'run' ? -.15 : -.04; hy = -Math.abs(cs(k)) * (a === 'run' ? .05 : .025) + .02; P.hips[2] = sn(k) * .04; }
-  if (a === 'wave') { P.shL[2] = 1.75; P.elL[2] = 1.15 + sn(t * 8) * .45; P.head[2] = .1; P.head[1] = -.2; P.chest[2] = -.05; }
+  if (a === 'wave') { P.shL[2] = 1.75; P.elL[2] = 1.15 + sn(t * 8) * .45; P.elL[1] = WAVETW; P.head[2] = .1; P.head[1] = -.2; P.chest[2] = -.05; }
   if (a === 'cheer') { const j = Math.abs(sn(t * 5)); P.shL[2] = 1.9 + sn(t * 10) * .1; P.shR[2] = -1.9 - sn(t * 10) * .1; P.elL[2] = .9; P.elR[2] = -.9; P.hpL[0] = -j * .5; P.hpR[0] = -j * .5; P.knL[0] = j * .9; P.knR[0] = j * .9; hy = j * .12; P.head[0] = -.2; }
   if (a === 'jump') { const u = (t % 1.6) / 1.6, c = u < .28 ? -sn(u / .28 * Math.PI) * .12 : 0, air = u > .28 && u < .8 ? sn((u - .28) / .52 * Math.PI) : 0;
     hy = air * .32 + c; const crouch = u < .28 ? sn(u / .28 * Math.PI) : 0; P.hpL[0] = -crouch * .7 - air * .4; P.hpR[0] = P.hpL[0]; P.knL[0] = crouch * 1.2 + air * .8; P.knR[0] = P.knL[0]; P.shL[2] = .08 + air * .9 + crouch * -.1; P.shR[2] = -P.shL[2]; P.shL[0] = crouch * .8; P.shR[0] = crouch * .8; P.chest[0] += crouch * .25; }
@@ -235,7 +236,7 @@ onTick((t, dt) => {
   const { P, hy, hx } = pose(t, act);
   const k = 1 - Math.exp(-dt * 12);
   for (const n of names) { for (let i = 0; i < 3; i++) smooth[n][i] += (P[n][i] - smooth[n][i]) * k;
-    const q = QT.setFromEuler(EU.set(smooth[n][0], smooth[n][1], smooth[n][2], 'XYZ'));
+    const q = QT.setFromEuler(EU.set(smooth[n][0], smooth[n][1], smooth[n][2], n[0] === 'e' ? 'ZXY' : 'XYZ'));
     if (n === 'shL') B[n].quaternion.copy(q).multiply(QHL); else if (n === 'shR') B[n].quaternion.copy(q).multiply(QHR);
     else if (n === 'elL') B[n].quaternion.copy(QHL).invert().multiply(q).multiply(QHL); else if (n === 'elR') B[n].quaternion.copy(QHR).invert().multiply(q).multiply(QHR);
     else B[n].quaternion.copy(q); }
