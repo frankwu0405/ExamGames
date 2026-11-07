@@ -21,3 +21,8 @@ big=fr.resize((round(fr.size[0]*sx*k),round(fr.size[1]*sy*k)),Image.LANCZOS)
 can=Image.new('RGBA',(round(912*k),round(1186*k)),(0,0,0,0))
 can.paste(big,(round((200-x0*sx)*k),round((200-y0*sy)*k)),big)
 can.save('diamond-frame.webp',quality=88,method=6)
+
+# --- Overlap pass: keep the crystals that sit ON TOP of the card in the reference ---
+# Crystal pixels inside the card box are grown from the frame outside it, through anything that is not a
+# card colour (gold/cream/brown), never entering the art window. Those pixels stay opaque over our card.
+# (In practice run this before the hole punch above and combine: alpha = min(frame, max(hole, keep)).)
