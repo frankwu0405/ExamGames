@@ -383,7 +383,7 @@ html:has(.wt-overlay),body:has(.wt-overlay){touch-action:pan-y}body:has(.wt-over
 .pg-tray-dots .pg-pip{width:16px;height:16px}
 .pg-tray-dots .pg-pip.on:last-of-type{animation:pg-pop .5s}
 .pg-end-row{display:grid;gap:clamp(34px,5vh,80px) clamp(48px,6vw,84px);padding:clamp(28px,4.5vh,70px) 30px 6px}
-.pg-end-card{width:clamp(70px,min(10vw,12vh),140px);gap:calc(clamp(70px,min(10vw,12vh),140px) * .26)}
+.pg-end-card{width:clamp(70px,min(10vw,11vh),140px);gap:calc(clamp(70px,min(10vw,11vh),140px) * .26)}
 .pg-end{gap:10px}
 .pg-end-label .pg-pips{justify-content:center;margin-top:4px}
 .pg-end-label b.up{color:#ffe27a}
@@ -5251,7 +5251,7 @@ function openPolishGame(words, demo, onReturn) {
       if (l > r.lvl0) return [h('b', { class: 'up' }, '⬆ ' + FRAME_NAMES[l] + '!'), shineDots(w)];
       if (r.gained) return [h('b', {}, '+1 shine'), shineDots(w)];
       if (l >= 4) return [h('b', {}, '💎 Max shine')];
-      if (r.missed && !r.gained) return [h('b', {}, 'No shine'), h('small', {}, 'Comes back soon')];
+      if (r.missed && !r.gained) return [h('b', {}, 'No shine')];
       return [h('b', {}, '🌙 Resting'), shineDots(w)];
     };
     const more = !demo && dueCards().length > 0;
