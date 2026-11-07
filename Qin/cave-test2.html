@@ -354,8 +354,9 @@ html:has(.wt-overlay),body:has(.wt-overlay){touch-action:pan-y}body:has(.wt-over
   .pg{--th:clamp(190px,30vh,380px);--cw:clamp(64px,min(17vw,15vh),150px)}
   .pg-stage{grid-template-columns:1fr;gap:clamp(40px,6vh,80px);align-content:center}
   .pg-hand{gap:calc(var(--cw) * .3)}
-  .pg-end-row{display:grid;grid-template-columns:repeat(2,auto);gap:clamp(70px,9vh,110px) clamp(70px,14vw,120px)}
-  .pg-end-card{width:clamp(110px,24vw,190px);gap:calc(clamp(110px,24vw,190px) * .32)}
+  .pg-end-row{display:grid;grid-template-columns:repeat(2,auto);gap:clamp(56px,7vh,84px) clamp(60px,13vw,110px);padding-top:clamp(30px,4vh,56px)}
+  .pg-end-card{width:clamp(84px,min(21vw,14.5vh),165px);gap:calc(clamp(84px,min(21vw,14.5vh),165px) * .3)}
+  .pg-end-label b{font-size:20px}.pg-end-label{font-size:13px}
 }
 @media (max-width:560px){.pg-shell{padding:12px 12px 14px}.pg-progress{min-width:100%;order:3}.pg-scroll{padding:18px 16px 14px}.pg-pill{font-size:15px;min-height:42px;padding:6px 13px}}
 /* collection: one clear way in */
