@@ -192,30 +192,32 @@ def D_spray(C,x,y,ang,sc,pair,rng,count=5):
         g+=D_prism(C,x+rng.uniform(-5,5),y+rng.uniform(-5,5),L,L*rng.uniform(.34,.46),a,pr)
     return g
 def diamond():
-    C=Ctx('diamond');rng=random.Random(33)
-    d=perim_dense(34);T=len(d);n=35
-    slots=[]
-    for i in range(n):
-        slots.append(d[int((i+.5+rng.uniform(-.12,.12))*T/n)%T])
-    # corners get an extra big piece
-    corners=[min(d,key=lambda q:(q[0]-cx)**2+(q[1]-cy)**2) for cx,cy in ((0,0),(W,0),(0,H),(W,H))]
-    out=[]
-    for kind,(x,y,nx,ny) in [('s',s_) for s_ in slots]+[('c',c_) for c_ in corners]:
-        o=deg(nx,ny);tan=o+90
-        pair=rng.choice(PAIRS)
-        r=rng.random()
-        if kind=='c':
-            out.append((1,lambda x=x,y=y,o=o,pair=pair:D_spray(C,x,y,o,1.35,pair,rng,7)))
-            out.append((3,lambda x=x+nx*16,y=y+ny*16,pair=rng.choice(PAIRS):D_gem(C,x,y,48,rng.uniform(0,360),pair,rng)))
-        elif r<.34:   # lying prisms along the edge
-            a=tan+rng.choice([0,180])+rng.uniform(-14,14)
-            out.append((1,lambda x=x,y=y,a=a,pair=pair:D_prism(C,x,y,rng.uniform(96,126),40,a,pair)))
-            out.append((2,lambda x=x+nx*18,y=y+ny*18,a=a+rng.uniform(-18,18),pair=rng.choice(PAIRS):D_prism(C,x,y,rng.uniform(70,96),32,a,pair)))
-        elif r<.68:   # hero gem + small spray
-            out.append((1,lambda x=x,y=y,o=o,pair=pair:D_spray(C,x+nx*10,y+ny*10,o+rng.uniform(-30,30),1.0,pair,rng,4)))
-            out.append((3,lambda x=x,y=y,pair=pair:D_gem(C,x,y,rng.uniform(34,48),rng.uniform(0,360),pair,rng)))
-        else:         # spray
-            out.append((2,lambda x=x,y=y,o=o,pair=pair:D_spray(C,x,y,o+rng.uniform(-35,35),1.15,pair,rng,rng.randint(4,6))))
-            out.append((3,lambda x=x-nx*4,y=y-ny*4,pair=rng.choice(PAIRS):D_gem(C,x,y,rng.uniform(24,32),rng.uniform(0,360),pair,rng,5)))
+    C=Ctx('diamond');rng=random.Random(12)
+    d=perim_dense(32);T=len(d)
+    out=[];i=rng.randint(0,40)
+    while i<T+30:
+        x,y,nx,ny=d[i%T];o=deg(nx,ny);tan=o+90;pair=rng.choice(PAIRS);r=rng.random()
+        if r<.3:
+            L=rng.uniform(96,128);a=tan+rng.choice([0,180])+rng.uniform(-16,16);foot=L*.8
+            out.append((rng.random(),lambda x=x,y=y,a=a,pair=pair,L=L:D_prism(C,x,y,L,L*.34,a,pair)))
+            if rng.random()<.7: out.append((rng.random(),lambda x=x+nx*16,y=y+ny*16,a=a+rng.uniform(-24,24),pair=rng.choice(PAIRS),L=L*.7:D_prism(C,x,y,L,L*.32,a,pair)))
+        elif r<.62:
+            R=rng.uniform(32,48);foot=R*2
+            out.append((rng.random()*.5+.5,lambda x=x,y=y,R=R,pair=pair:D_gem(C,x,y,R,rng.uniform(0,360),pair,rng)))
+            if rng.random()<.8: out.append((rng.random()*.5,lambda x=x+nx*8,y=y+ny*8,o=o+rng.uniform(-40,40),pair=pair:D_spray(C,x,y,o,.95,pair,rng,rng.randint(3,5))))
+        else:
+            sc=rng.uniform(1.0,1.3);foot=70*sc
+            out.append((rng.random()*.6,lambda x=x,y=y,o=o+rng.uniform(-30,30),sc=sc,pair=pair:D_spray(C,x,y,o,sc,pair,rng,rng.randint(4,6))))
+            if rng.random()<.6: out.append((.9,lambda x=x-nx*2,y=y-ny*2,pair=rng.choice(PAIRS):D_gem(C,x,y,rng.uniform(22,30),rng.uniform(0,360),pair,rng,5)))
+        # small connecting buds in the seam
+        if rng.random()<.35:
+            j=(i+int(foot*.5))%T;sx,sy,snx,sny=d[j]
+            out.append((rng.random(),lambda x=sx,y=sy,o=deg(snx,sny)+rng.uniform(-50,50),pair=rng.choice(PAIRS):D_spray(C,x,y,o,.55,pair,rng,3)))
+        i+=int(foot*rng.uniform(.68,.88))
+    # corners: make sure they're lush
+    for cx,cy in ((0,0),(W,0),(0,H),(W,H)):
+        x,y,nx,ny=min(d,key=lambda q:(q[0]-cx)**2+(q[1]-cy)**2);o=deg(nx,ny)
+        out.append((.3,lambda x=x,y=y,o=o,pair=rng.choice(PAIRS):D_spray(C,x,y,o,1.35,pair,rng,7)))
+        out.append((.95,lambda x=x+nx*10,y=y+ny*10,pair=rng.choice(PAIRS):D_gem(C,x,y,44,rng.uniform(0,360),pair,rng)))
     for z,f in sorted(out,key=lambda t:t[0]): C.add(f())
     return C.svg()
