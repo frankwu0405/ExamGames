@@ -153,7 +153,7 @@ function build(bodyG, bodyImg, headG, headImg) {
   const first = g => { let m = null; g.scene.traverse(o => { if (o.isMesh && !m) m = o; }); return m; };
   // body: the new model without its own head (the old, better-liked head replaces it)
   let geo = first(bodyG).geometry.clone(); { const ix = geo.index.array, P = geo.attributes.position, out = [];
-    for (let i = 0; i < ix.length; i += 3) { let cut = false; for (let j = 0; j < 3; j++) { const v = ix[i + j]; if (P.getY(v) > .655 && Math.abs(P.getX(v)) < .13 && !(P.getY(v) < .695 && Math.abs(P.getX(v)) < .072 && P.getZ(v) < .045)) cut = true; } if (!cut) out.push(ix[i], ix[i + 1], ix[i + 2]); } geo.setIndex(out); }
+    for (let i = 0; i < ix.length; i += 3) { let cut = false; for (let j = 0; j < 3; j++) { const v = ix[i + j]; if (P.getY(v) > .655 && Math.abs(P.getX(v)) < .13 && !(P.getY(v) < .715 && Math.abs(P.getX(v)) < .072 && P.getZ(v) < .045)) cut = true; } if (!cut) out.push(ix[i], ix[i + 1], ix[i + 2]); } geo.setIndex(out); }
   const pos = geo.attributes.position; const [si, sw] = skinAttrs(pos); geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
   // head: rigid on the head bone, easing into the chest at the neck
   const hg = first(headG).geometry.clone(); smoothFace(hg); const hp = hg.attributes.position, hn = hp.count, hsi = new Uint16Array(hn * 4), hsw = new Float32Array(hn * 4);
@@ -170,6 +170,7 @@ function build(bodyG, bodyImg, headG, headImg) {
   const fg = new THREE.BufferGeometry(); for (const k of ['position', 'normal', 'skinIndex', 'skinWeight']) fg.setAttribute(k, hg.attributes[k]);
   const uv = new Float32Array(hn * 2); for (let i = 0; i < hn; i++) { uv[i * 2] = (hp.getX(i) - FC.x0) / (FC.x1 - FC.x0); uv[i * 2 + 1] = (hp.getY(i) - FC.y0) / (FC.y1 - FC.y0); }
   fg.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); fg.setIndex(keep);
+  hg.translate(0, .05, 0); // lift head off the shoulders so a neck shows
   const face = mk(fg, FACE_MAT); face.renderOrder = 3;
   root.scale.setScalar(S);
   const g = new THREE.Group(); g.add(root); root.add(body, bink, head, hink, face); world.add(g); return g;
@@ -193,7 +194,7 @@ const QT = new THREE.Quaternion(), EU = new THREE.Euler(), QHL = new THREE.Quate
 const smooth = {}; names.forEach(n => smooth[n] = [0, 0, 0]);
 const hipsOffset = { y: 0, z: 0, x: 0 }, rootState = { x: 0, z: 0, ry: 0 };
 const sn = Math.sin, cs = Math.cos;
-const WAVETW = +(new URLSearchParams(location.search).get('tw') ?? -1.3);
+const WAVETW = +(new URLSearchParams(location.search).get('tw') ?? 1.3);
 function pose(t, a) {
   const P = {}; names.forEach(n => P[n] = [0, 0, 0]); let hy = 0, hx = 0, ry = 0;
   const br = sn(t * 1.9) * .012;
