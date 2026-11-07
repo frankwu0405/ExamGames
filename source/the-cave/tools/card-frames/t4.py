@@ -150,70 +150,72 @@ def gold():
     for px,py,r in ((-76,130,9),(W+76,H-130,9),(150,-92,8),(W-150,H+92,8)): C.add(star(px,py,r,'#fff8d0',.9))
     return C.svg()
 
-# ================= DIAMOND (flat vector crystal clusters)
-GR={'bl':[('#2f4cf2','#6c9bff'),('#4f7dff','#9ed0ff'),('#233fd0','#4f7dff')],'vi':[('#5a2fe0','#9a63ff'),('#7b4cf5','#c49cff'),('#4423b8','#7b4cf5')],
-    'pk':[('#c45ae8','#ffa8f2'),('#e07af0','#ffd0f8'),('#9a3cc8','#d070ec')],'cy':[('#2f9af2','#7de0ff'),('#5cc4ff','#c8f4ff'),('#2278d0','#4fb0f4')]}
-def fg(C,k,tone,vert=True):
-    a,b=GR[k][tone];return C.grad([(0,a),(1,b)],0,1,1,0)
-def prism5(C,x,y,L,wd,ang,k,rng):
-    bl=(-wd/2,0);br=(wd/2,0);sl=(-wd*.5,-.64*L);sr=(wd*.5,-.64*L);m1=(-wd*.12,-.7*L);m2=(wd*.22,-.7*L);b1=(-wd*.12,0);b2=(wd*.22,0);tip=(wd*.06,-L)
+# ================= DIAMOND (flat-vector crystal wreath, after reference)
+def mix(h1,h2,t):
+    a=[int(h1[i:i+2],16) for i in (1,3,5)];b=[int(h2[i:i+2],16) for i in (1,3,5)]
+    return '#%02x%02x%02x'%tuple(int(a[i]+(b[i]-a[i])*t) for i in range(3))
+PAIRS=[('#2f55f0','#ff9bf0'),('#6a3cf0','#5fc8ff'),('#4aa8ff','#c79bff'),('#8a4cf0','#ffb0f4'),('#3f6cff','#8ef0ff'),('#7a3cf0','#ff9ae8'),('#2a7af0','#b49cff')]
+def fgrad(C,pair,t_light,ang=135):
+    a=mix(pair[0],'#ffffff',t_light) if t_light>0 else mix(pair[0],'#10186e',-t_light)
+    b=mix(pair[1],'#ffffff',t_light) if t_light>0 else mix(pair[1],'#10186e',-t_light)
+    r=math.radians(ang);x2=.5+.5*math.cos(r);y2=.5+.5*math.sin(r)
+    return C.grad([(0,a),(1,b)],1-x2,1-y2,x2,y2)
+def D_prism(C,x,y,L,wd,ang,pair):
+    bl=(-wd/2,0);br=(wd/2,0);sl=(-wd*.5,-.62*L);sr=(wd*.5,-.62*L);m1=(-wd*.1,-.7*L);m2=(wd*.24,-.7*L);b1=(-wd*.1,0);b2=(wd*.24,0);tip=(wd*.07,-L)
     P=lambda *a:' '.join(f'{u:.1f},{v:.1f}' for u,v in a)
-    g=f'<g transform="translate({x} {y}) rotate({ang})">'
-    g+=f'<polygon points="{P(bl,sl,m1,b1)}" fill="{fg(C,k,1)}"/><polygon points="{P(b1,m1,m2,b2)}" fill="{fg(C,k,0)}"/><polygon points="{P(b2,m2,sr,br)}" fill="{fg(C,k,2)}"/>'
-    g+=f'<polygon points="{P(sl,tip,m1)}" fill="{GR[k][1][1]}"/><polygon points="{P(m1,tip,m2)}" fill="{GR[k][0][1]}"/><polygon points="{P(m2,tip,sr)}" fill="{GR[k][2][0]}"/>'
-    g+=f'<path d="M{sl[0]:.1f} {sl[1]:.1f}L{m1[0]:.1f} {m1[1]:.1f}L{tip[0]:.1f} {tip[1]:.1f}" fill="none" stroke="#fff" stroke-width="1.4" opacity=".55"/>'
+    g=f'<g transform="translate({x:.1f} {y:.1f}) rotate({ang:.1f})">'
+    g+=f'<polygon points="{P(bl,sl,m1,b1)}" fill="{fgrad(C,pair,.3,90)}"/><polygon points="{P(b1,m1,m2,b2)}" fill="{fgrad(C,pair,.05,120)}"/><polygon points="{P(b2,m2,sr,br)}" fill="{fgrad(C,pair,-.3,120)}"/>'
+    g+=f'<polygon points="{P(sl,tip,m1)}" fill="{fgrad(C,pair,.5,45)}"/><polygon points="{P(m1,tip,m2)}" fill="{fgrad(C,pair,.2,60)}"/><polygon points="{P(m2,tip,sr)}" fill="{fgrad(C,pair,-.15,60)}"/>'
     return g+'</g>'
-def hero(C,x,y,R,rot,k,rng):
-    """faceted rough gem like the reference: table + side planes, flat colour, no outline"""
-    n=rng.choice([5,6,6,7]);ang=[i*2*math.pi/n+rng.uniform(-.2,.2) for i in range(n)]
-    V=[(R*rng.uniform(.88,1.08)*math.cos(a),R*rng.uniform(.88,1.08)*math.sin(a)*.92) for a in ang]
-    c0=(-R*.08,-R*.1);U=[(c0[0]+(v[0]-c0[0])*.52,c0[1]+(v[1]-c0[1])*.52) for v in V]
-    g=f'<g transform="translate({x} {y}) rotate({rot})">'
+def D_gem(C,x,y,R,rot,pair,rng,n=None):
+    n=n or rng.choice([5,6,6,7]);el=rng.uniform(.8,1.25)
+    ang=[i*2*math.pi/n+rng.uniform(-.18,.18)+.3 for i in range(n)]
+    V=[(R*rng.uniform(.9,1.08)*math.cos(a)*el,R*rng.uniform(.9,1.08)*math.sin(a)/el) for a in ang]
+    c0=(-R*.12,-R*.14);U=[(c0[0]+(v[0]-c0[0])*.46,c0[1]+(v[1]-c0[1])*.46) for v in V]
+    g=f'<g transform="translate({x:.1f} {y:.1f}) rotate({rot:.1f})">'
     for i in range(n):
         j=(i+1)%n;mx=(V[i][0]+V[j][0])/2;my=(V[i][1]+V[j][1])/2;b=math.cos(math.atan2(my,mx)-math.radians(-135))
-        tone=0 if b>.35 else (1 if b>-.4 else 2)
-        kk=k if rng.random()>.18 else rng.choice(['bl','vi','pk','cy'])
-        g+=f'<polygon points="{V[i][0]:.1f},{V[i][1]:.1f} {V[j][0]:.1f},{V[j][1]:.1f} {U[j][0]:.1f},{U[j][1]:.1f} {U[i][0]:.1f},{U[i][1]:.1f}" fill="{fg(C,kk,tone)}"/>'
-    # table: split into 2-3 facets
-    for i in range(0,n-2):
-        a,b2,c=U[0],U[i+1],U[i+2];tone=(i%3)
-        g+=f'<polygon points="{a[0]:.1f},{a[1]:.1f} {b2[0]:.1f},{b2[1]:.1f} {c[0]:.1f},{c[1]:.1f}" fill="{fg(C,k,[1,0,1][i%3])}" opacity="{.95 if i%2 else 1}"/>'
-    g+=f'<polygon points="{" ".join(f"{u:.1f},{v:.1f}" for u,v in U)}" fill="none" stroke="#fff" stroke-width="1.3" opacity=".45" stroke-linejoin="round"/>'
+        g+=f'<polygon points="{V[i][0]:.1f},{V[i][1]:.1f} {V[j][0]:.1f},{V[j][1]:.1f} {U[j][0]:.1f},{U[j][1]:.1f} {U[i][0]:.1f},{U[i][1]:.1f}" fill="{fgrad(C,pair,b*.38,rng.choice([60,100,140]))}"/>'
+    # table, split into 3 facets
+    k=len(U)
+    for i in range(1,k-1):
+        g+=f'<polygon points="{U[0][0]:.1f},{U[0][1]:.1f} {U[i][0]:.1f},{U[i][1]:.1f} {U[i+1][0]:.1f},{U[i+1][1]:.1f}" fill="{fgrad(C,pair,[.45,.2,.0,.3][i%4],rng.choice([45,90,150]))}"/>'
     return g+'</g>'
+def D_spray(C,x,y,ang,sc,pair,rng,count=5):
+    g=''
+    items=[]
+    for q in range(count):
+        a=ang+(q-(count-1)/2)*rng.uniform(20,30)+rng.uniform(-6,6)
+        L=rng.uniform(50,84)*sc*(1-.12*abs(q-(count-1)/2));items.append((L,a))
+    for L,a in sorted(items,reverse=True):
+        pr=pair if rng.random()<.6 else rng.choice(PAIRS)
+        g+=D_prism(C,x+rng.uniform(-5,5),y+rng.uniform(-5,5),L,L*rng.uniform(.34,.46),a,pr)
+    return g
 def diamond():
-    C=Ctx('diamond');rng=random.Random(21)
-    kinds=['bl','vi','pk','cy','bl','vi']
-    pts,_=branch_pts(9,rng,wob=1.5)
-    C.add(ribbon(C,pts,lambda t:34,['#4a2fc8','#6a52e8','#9a86ff','#c8bcff'],ol='#3a24a8',grain=False))
-    d=perim_dense(18);T=len(d)
-    n=28;order=list(range(n))
+    C=Ctx('diamond');rng=random.Random(33)
+    d=perim_dense(34);T=len(d);n=35
     slots=[]
     for i in range(n):
-        x,y,nx,ny=d[int((i+.5)*T/n)%T];slots.append((x,y,nx,ny,i))
-    # bigger clusters at corners
-    corner_pts=[(0,0),(W,0),(0,H),(W,H)]
-    for cx,cy in corner_pts:
-        x,y,nx,ny=min(d,key=lambda q:(q[0]-cx)**2+(q[1]-cy)**2);slots.append((x,y,nx,ny,99))
-    layers=[]
-    for x,y,nx,ny,i in slots:
-        o=deg(nx,ny);big=i==99;kk=rng.choice(kinds);sc=1.45 if big else rng.uniform(.95,1.25)
-        mode=rng.choice(['spray','hero','duo']) if not big else 'hero'
-        parts=[]
-        n_p=rng.randint(3,5) if mode!='duo' else 3
-        for q in range(n_p):
-            a=o+(q-(n_p-1)/2)*rng.uniform(24,32)+rng.uniform(-6,6)
-            L=rng.uniform(58,86)*sc*(1-.14*abs(q-(n_p-1)/2));wd=L*rng.uniform(.42,.52)
-            parts.append(('p',x+rng.uniform(-6,6),y+rng.uniform(-6,6),L,wd,a,rng.choice([kk,kk,rng.choice(kinds)]),L))
-        if True:
-            parts.append(('h',x+nx*(-2)+(-ny)*rng.uniform(-14,14),y+ny*(-2)+nx*rng.uniform(-14,14),rng.uniform(20,28)*sc,rng.uniform(0,360),kk if rng.random()<.5 else rng.choice(kinds),99))
-        layers.append(parts)
-    # draw order: prisms first (taller first), heroes after
-    allp=[p for parts in layers for p in parts]
-    allp.sort(key=lambda p:(p[0]=='h',-(p[7] if p[0]=='p' else 0)))
-    for p in allp:
-        if p[0]=='p': C.add(prism5(C,p[1],p[2],p[3],p[4],p[5],p[6],rng))
-        else: C.add(hero(C,p[1],p[2],p[3],p[4],p[5],rng))
-    # ring of small gems tucked along the inner edge to close gaps
-    pass
-    for x,y in [(-72,150),(W+72,H-140),(150,-96),(W-140,H+96)]: C.add(star(x,y,rng.uniform(8,12),'#fff',.95))
+        slots.append(d[int((i+.5+rng.uniform(-.12,.12))*T/n)%T])
+    # corners get an extra big piece
+    corners=[min(d,key=lambda q:(q[0]-cx)**2+(q[1]-cy)**2) for cx,cy in ((0,0),(W,0),(0,H),(W,H))]
+    out=[]
+    for kind,(x,y,nx,ny) in [('s',s_) for s_ in slots]+[('c',c_) for c_ in corners]:
+        o=deg(nx,ny);tan=o+90
+        pair=rng.choice(PAIRS)
+        r=rng.random()
+        if kind=='c':
+            out.append((1,lambda x=x,y=y,o=o,pair=pair:D_spray(C,x,y,o,1.35,pair,rng,7)))
+            out.append((3,lambda x=x+nx*16,y=y+ny*16,pair=rng.choice(PAIRS):D_gem(C,x,y,48,rng.uniform(0,360),pair,rng)))
+        elif r<.34:   # lying prisms along the edge
+            a=tan+rng.choice([0,180])+rng.uniform(-14,14)
+            out.append((1,lambda x=x,y=y,a=a,pair=pair:D_prism(C,x,y,rng.uniform(96,126),40,a,pair)))
+            out.append((2,lambda x=x+nx*18,y=y+ny*18,a=a+rng.uniform(-18,18),pair=rng.choice(PAIRS):D_prism(C,x,y,rng.uniform(70,96),32,a,pair)))
+        elif r<.68:   # hero gem + small spray
+            out.append((1,lambda x=x,y=y,o=o,pair=pair:D_spray(C,x+nx*10,y+ny*10,o+rng.uniform(-30,30),1.0,pair,rng,4)))
+            out.append((3,lambda x=x,y=y,pair=pair:D_gem(C,x,y,rng.uniform(34,48),rng.uniform(0,360),pair,rng)))
+        else:         # spray
+            out.append((2,lambda x=x,y=y,o=o,pair=pair:D_spray(C,x,y,o+rng.uniform(-35,35),1.15,pair,rng,rng.randint(4,6))))
+            out.append((3,lambda x=x-nx*4,y=y-ny*4,pair=rng.choice(PAIRS):D_gem(C,x,y,rng.uniform(24,32),rng.uniform(0,360),pair,rng,5)))
+    for z,f in sorted(out,key=lambda t:t[0]): C.add(f())
     return C.svg()
