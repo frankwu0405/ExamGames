@@ -1,0 +1,4 @@
+Props for the Prop Lab.
+- Kenney Nature Kit and Quaternius models: CC0, via the @netforge/asset-library-files npm package (see NOTICE-netforge.txt).
+- Kenney Pirate Kit models, creativetrio Ferris wheel: CC0, from the pmndrs market (github.com/pmndrs/market-assets).
+- tex/rock.jpg, tex/grass.jpg: ambientCG Rock020 / Grass001, CC0.
