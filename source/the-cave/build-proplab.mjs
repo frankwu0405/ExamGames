@@ -12,7 +12,7 @@ const css = fonts + `html,body{margin:0;height:100%;overflow:hidden;background:#
 #now{display:grid;grid-template-columns:1fr 1fr;gap:4px}#now img{width:100%;display:block;border:1px solid #ffffff22}
 .prop{padding:7px 8px;border-left:3px solid #ffffff22;margin-bottom:5px;font-size:13px;line-height:1.35}.prop.go{cursor:pointer;border-left-color:#FFE58A}.prop.go:hover{background:#ffffff0d}
 .prop b{display:block}.prop i{font-style:normal;font-size:11px;padding:1px 6px;border-radius:3px;display:inline-block;margin:2px 0}.prop i.code{background:#2D4A3A;color:#BFF2CF}.prop i.pack{background:#4A3A2D;color:#F7D9B5}.prop span{display:block;opacity:.7;font-size:12px}
-button{font:700 13px Andika,sans-serif;color:#EDEBE4;background:#26333DEE;border:1px solid #ffffff2a;border-radius:4px;padding:7px 11px;cursor:pointer}button.on{background:#FFE58A;color:#1A1A1A}
+button{font:700 13px Andika,sans-serif;color:#EDEBE4;background:#26333DEE;border:1px solid #ffffff2a;border-radius:4px;padding:7px 11px;cursor:pointer}button.on{background:#FFE58A;color:#1A1A1A}button.play{background:#E8575A;border-color:#FFB0B0}
 #views{position:fixed;left:210px;right:calc(min(300px,32vw) + 24px);bottom:10px;display:flex;gap:6px;z-index:3;flex-wrap:wrap;justify-content:center}
 #loading{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;background:#0B141BDD;padding:10px 18px;border-radius:6px;display:none}
 .clean #side,.clean #views{display:none}.clean #roster button:not(.hide){display:none}
