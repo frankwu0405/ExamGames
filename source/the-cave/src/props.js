@@ -235,15 +235,46 @@ const _rk = new Map(); rockHook.mat = c => { if (!_rk.has(c)) _rk.set(c, rockMat
 export const rockInside = (c, scale = 0.2) => { const m = rockMat(c, scale); m.side = THREE.BackSide; return m; };
 // a rough, natural cave mouth: a ring of jagged stones round the opening, rubble along the banks, craggy rock formations
 // beside it, bushes on top and vines hanging over the hole. p = centre of the opening at ground level, d = the way it faces.
-export function caveMouth(G, p, d, { r = 2.2, mat = null, hf = null, stream = true } = {}) {
+export function caveMouth(G, p, d, { r = 2.2, mat = null, hf = null, stream = true, sandTop = true } = {}) {
   const D = d.clone().setY(0).normalize(), S = new THREE.Vector3(D.z, 0, -D.x), m = mat || rockMat(0xC9A884, 0.35), y = (x, z) => hf ? hf(x, z) : p.y;
   for (let i = 0; i <= 10; i++) { const a = Math.PI * i / 10, q = p.clone().addScaledVector(S, Math.cos(a) * (r + 0.45)).addScaledVector(D, 0.3); q.y = p.y + Math.sin(a) * (r * 1.3 + 0.35) - 0.2;
     mesh(G, lumpy(rr(0.55, 0.95), 1, 0.32, rr(0.7, 1)), m, q.x, q.y, q.z, { rx: rnd() * 6, ry: rnd() * 6 }); }
   for (let i = 0; i < 16; i++) { const lat = (rnd() < 0.5 ? -1 : 1) * rr(stream ? 2.0 : 0.6, 4.5), fw = rr(0.3, 5), q = p.clone().addScaledVector(S, lat).addScaledVector(D, fw); const s = rr(0.18, 0.55);
     mesh(G, lumpy(s, 1, 0.3, 0.7), m, q.x, y(q.x, q.z) + s * 0.25, q.z, { ry: rnd() * 6 }); }
-  scatter(G, 'formation-rock', [-1, 1].map(sd => { const q = p.clone().addScaledVector(S, sd * (r + 2.6)).addScaledVector(D, 0.6); return { x: q.x, z: q.z, y: y(q.x, q.z) - 0.2, s: rr(0.8, 1.1), ry: rnd() * 6 }; }), { norm: 4.2, style: (n, mn) => [/sand/.test(mn) ? toon(0xE6CF96) : m] });
+  scatter(G, 'formation-rock', [-1, 1].map(sd => { const q = p.clone().addScaledVector(S, sd * (r + 2.6)).addScaledVector(D, 0.6); return { x: q.x, z: q.z, y: y(q.x, q.z) - 0.2, s: rr(0.8, 1.1), ry: rnd() * 6 }; }), { norm: 4.2, style: (n, mn) => [/sand/.test(mn) && sandTop ? toon(0xE6CF96) : m] });
   const top = p.clone().addScaledVector(D, -1.2); top.y = p.y + r * 1.3 + 1.1;
   scatter(G, 'bush', [-1, 0, 1].map(k => ({ x: top.x + S.x * k * 1.6, z: top.z + S.z * k * 1.6, y: top.y + (k ? -0.3 : 0), s: rr(0.7, 1.0) })), {});
   const vm = toon(0x3E8E41); for (let i = 0; i < 7; i++) { const lat = (i / 6 - 0.5) * r * 1.6, L = rr(0.8, 1.9), q = p.clone().addScaledVector(S, lat).addScaledVector(D, 0.55); q.y = p.y + Math.sqrt(Math.max(0, 1 - (lat / (r + 0.3)) ** 2)) * (r * 1.3) + 0.1 - L / 2;
     const v = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.05, L, 5), vm); v.position.copy(q); v.rotation.z = rr(-0.1, 0.1); G.add(v); const lf = new THREE.Mesh(new THREE.SphereGeometry(0.12, 6, 4), vm); lf.position.copy(q).y -= L / 2; lf.scale.set(1, 0.6, 1); G.add(lf); }
+}
+// light ripples dancing on a seabed (an additive sheet laid just above it)
+export function caustics(G, cx, cz, size, y, { fade = 0.45 } = {}) {
+  const g = new THREE.PlaneGeometry(size, size, 1, 1); g.rotateX(-Math.PI / 2); const cu = { uT: { value: 0 } };
+  const m = new THREE.ShaderMaterial({ uniforms: cu, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, vertexShader: 'varying vec2 vP; varying vec2 vL; void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vP = w.xz; vL = position.xz; gl_Position = projectionMatrix * viewMatrix * w; }',
+    fragmentShader: `uniform float uT; varying vec2 vP; varying vec2 vL; float c(vec2 p){ p *= 0.8; float v = 0.0; for (int i = 0; i < 3; i++) { p += vec2(sin(p.y * 1.3 + uT * 0.7), cos(p.x * 1.1 - uT * 0.6)) * 0.6; v += abs(sin(p.x + p.y)); } return v / 3.0; }
+      void main(){ float k = smoothstep(0.88, 0.99, 1.0 - c(vP)); gl_FragColor = vec4(vec3(0.75, 0.95, 1.0) * k * ${fade.toFixed(2)} * (1.0 - smoothstep(${(size * 0.3).toFixed(1)}, ${(size * 0.5).toFixed(1)}, length(vL))), 1.0); }` });
+  const me = new THREE.Mesh(g, m); me.position.set(cx, y, cz); G.add(me); onTick(t => { cu.uT.value = t; }); return me;
+}
+// a school of fish circling a spot under the water
+export async function fishSchool(G, cx, cz, { n = 14, r = [4, 6.5], y = [-2.8, -1.4], speed = 0.35, size = 0.7 } = {}) {
+  const fishes = await scatter(G, 'fish', Array.from({ length: n }, () => ({ x: 0, z: 0, y: 0, s: 1 })), { norm: size, shadow: false }); if (!fishes) return;
+  const ims = fishes.children, ph = Array.from({ length: n }, (_, i) => [i / n * 6.28 + rnd() * 0.3, rr(r[0], r[1]), rr(y[0], y[1])]), M = new THREE.Matrix4(), Q = new THREE.Quaternion(), S = new THREE.Vector3(1, 1, 1), P = new THREE.Vector3(), E = new THREE.Euler();
+  onTick(t => { ph.forEach(([a0, rad, yy], i) => { const a = a0 + t * speed; Q.setFromEuler(E.set(0, -a, 0)); M.compose(P.set(cx + Math.cos(a) * rad, yy + Math.sin(t * 2 + i) * 0.15, cz + Math.sin(a) * rad), Q, S); ims.forEach(im => im.setMatrixAt(i, M)); }); ims.forEach(im => { im.instanceMatrix.needsUpdate = true; }); });
+  return fishes;
+}
+
+// a channel (U-shaped stone trough) along a path, with water running in it
+export function trough(w, path, { width = 1.1, depth = 0.55, seg = 140, stone = 0x6E6A85, water: waterC = 0x5BB8E8 } = {}) {
+  const ring = 11, pos = [], wpos = [], idx = [], widx = [], up = new THREE.Vector3(0, 1, 0);
+  for (let i = 0; i <= seg; i++) { const s = i / seg, p = path.getPointAt(s), t = path.getTangentAt(s), side = new THREE.Vector3().crossVectors(t, up).normalize(), u = new THREE.Vector3().crossVectors(side, t).normalize();
+    for (let j = 0; j <= ring; j++) { const a = Math.PI * j / ring; const q = p.clone().addScaledVector(side, -Math.cos(a) * width).addScaledVector(u, -Math.sin(a) * depth + depth * 0.35); pos.push(q.x, q.y, q.z); }
+    [-1, 1].forEach(k => { const q = p.clone().addScaledVector(side, k * width * 0.86).addScaledVector(u, -depth * 0.15); wpos.push(q.x, q.y, q.z); });
+    if (i < seg) { for (let j = 0; j < ring; j++) { const a0 = i * (ring + 1) + j, b0 = a0 + ring + 1; idx.push(a0, b0, a0 + 1, b0, b0 + 1, a0 + 1); } const k = i * 2; widx.push(k, k + 2, k + 1, k + 1, k + 2, k + 3); } }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+  const stoneM = new THREE.Mesh(g, (m => { m.side = THREE.DoubleSide; return m; })(rockMat(stone, 0.35))); w.add(stoneM); outline(stoneM, 0.04);
+  const wg = new THREE.BufferGeometry(); wg.setAttribute('position', new THREE.Float32BufferAttribute(wpos, 3)); wg.setIndex(widx); wg.computeVertexNormals();
+  water(w, wg, { deep: waterC, shallow: 0x8FE6F2, opacity: 0.95, sparkle: 1 });
+  // white foam streaks racing down the water
+  const fm = new THREE.MeshBasicMaterial({ color: 0xE6F6FF }); const foam = Array.from({ length: 40 }, (_, i) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.03, 0.55), fm); w.add(m); m.userData = { s: i / 40, o: (rnd() - 0.5) * width * 1.3 }; return m; });
+  onTick((t, dt) => foam.forEach(m => { const u = m.userData; u.s = (u.s + dt * 0.12) % 1; const p = path.getPointAt(u.s), tg = path.getTangentAt(u.s), sd = new THREE.Vector3().crossVectors(tg, up).normalize(); m.position.copy(p).addScaledVector(sd, u.o).add(new THREE.Vector3(0, 0.02, 0)); m.lookAt(m.position.clone().add(tg)); }));
 }

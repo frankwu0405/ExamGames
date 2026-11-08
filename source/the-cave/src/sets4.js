@@ -4,7 +4,7 @@ import { makeCast } from './chars.js';
 import { buildIsland } from './island.js';
 import { buildBeach } from './sets2.js';
 import { cart, rnd, tree } from './sets.js';
-import { ferris, ground, water, water as water_, scatter, nz, rr, pick, shell as seaShell, starfish, rockMat, crystalCluster } from './props.js';
+import { ferris, ground, water, water as water_, scatter, nz, rr, pick, shell as seaShell, starfish, rockMat, crystalCluster, sign as woodSign, caustics, fishSchool, bubbles as bubbleField, lumpy, mesh } from './props.js';
 
 export function pirateFlagTexture() {
   const c = document.createElement('canvas'); c.width = 256; c.height = 168; const x = c.getContext('2d');
@@ -41,7 +41,7 @@ function hometown(w, b, x, z, s = 1) {   // the far-away coast with the red Ferr
 
 // ================================================================ stop 10: the top of the lost island
 export async function buildIslandTop() {
-  const w = newWorld({ sky: 0x8ED2F2, fog: [0xCDEBF7, 70, 210], ambientI: 1.5, sunI: 1.8, sunPos: [-18, 26, 14] });
+  const w = newWorld({ sky: 0x8ED2F2, fog: [0xCDEBF7, 90, 420], ambientI: 1.5, sunI: 1.8, sunPos: [-18, 26, 14] });
   const I = await buildIsland(w);
   const cast = makeCast(w);
   return { w, cast, ...I };
@@ -105,4 +105,33 @@ export function buildClearSea() {
   const eyeMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF }); [-1.3, 1.3].forEach(x => { const e = new THREE.Mesh(new THREE.SphereGeometry(0.35, 10, 8), eyeMat); e.position.set(x, 1.2, 3.2); shadow.add(e); });
   const glow = new THREE.PointLight(0x5AE8E8, 0, 30, 1.2); shadow.add(glow);
   return { w, boat, ship, shipHit, signG, board, ice, fogs, fogMat, bubbles, shadow, sMat, glow, water };
+}
+
+// ================================================================ stop 12: the voyage — one continuous sea, starting from the island's beach
+// They launch from the beach on the island's sea side, sail round its south coast (over the reef: the sunken pirate ship, then the
+// KEEP OUT sign among the rocks), and once clear of the island head west across open water towards home — where the fog and ice come.
+export async function buildSeaVoyage() {
+  const S = await buildIslandTop(), w = S.w; [S.cast.leo, S.cast.mia, S.cast.toby].forEach(c => c.g.visible = false);
+  const bedY = (x, z) => -4 + nz(x, z, 0.08) * 0.5, C0 = S.CAVE;
+  const pts = [[C0[0] + 19.5, C0[1] + 2.5], [48, -17], [49, -36], [35, -54], [13, -62], [-12, -62], [-34, -53], [-52, -37], [-70, -23], [-92, -16], [-122, -13]];
+  const route = new THREE.CatmullRomCurve3(pts.map(([x, z]) => new THREE.Vector3(x, 0.15, z)), false, 'centripetal'), RL = route.getLength();
+  const dAt = (x, z) => { let best = 0, bd = 1e9; for (let i = 0; i <= 600; i++) { const q = route.getPointAt(i / 600), d = Math.hypot(q.x - x, q.z - z); if (d < bd) { bd = d; best = i / 600; } } return best * RL; };
+  // the reef south of the island: the sunken pirate ship lying in the sand, seaweed, rocks, fish circling, light rippling on the bottom
+  const WRECK = [15, -69], SIGN = [-39, -59];
+  const ship = new THREE.Group(); ship.position.set(WRECK[0], bedY(...WRECK) - 0.2, WRECK[1]); ship.rotation.set(0.12, 0.7, 0.18); w.add(ship);
+  scatter(ship, 'ship-wreck', [{ x: 0, z: 0, y: -0.9, ry: 0 }], { norm: 12 });
+  const shipHit = new THREE.Mesh(new THREE.BoxGeometry(12, 6, 6), new THREE.MeshBasicMaterial({ visible: false })); shipHit.position.y = 1.5; ship.add(shipHit);
+  scatter(w, 'formation-large-stone', [[WRECK[0] - 8, WRECK[1] + 3], [WRECK[0] + 9, WRECK[1] - 2], [SIGN[0] - 3, SIGN[1] + 1], [SIGN[0] + 3.2, SIGN[1] - 0.6], [SIGN[0] - 1, SIGN[1] - 3.5], [-10, -70], [30, -64]].map(([x, z]) => ({ x, z, y: bedY(x, z) - 0.3, ry: rr(0, 6), s: rr(0.8, 1.2) })), { norm: 4.2, style: (n, mn) => [/sand/.test(mn) ? toon(0xE6CF96) : rockMat(0x8FA7B5, 0.4)] });
+  const weeds = []; [[WRECK, 26, 12], [SIGN, 16, 8], [[-12, -66], 10, 9], [[34, -58], 8, 8], [[48, -28], 5, 6]].forEach(([c, n, r]) => { for (let i = 0; i < n; i++) { const x = c[0] + rr(-r, r), z = c[1] + rr(-r, r); weeds.push({ x, z, y: bedY(x, z), s: rr(0.8, 1.7) }); } });
+  scatter(w, 'plant-pirate-kit', weeds, { norm: 0.9, style: () => [toon(pick([0x3FAE7A, 0x56C08A, 0x2E9C8A]))] });
+  scatter(w, 'barrel', [{ x: WRECK[0] - 4, z: WRECK[1] + 3, y: bedY(WRECK[0] - 4, WRECK[1] + 3), rz: 1.5, ry: 0.4 }, { x: WRECK[0] + 5, z: WRECK[1] + 4, y: bedY(WRECK[0] + 5, WRECK[1] + 4) }], { norm: 1.2 });
+  scatter(w, 'chest', [{ x: WRECK[0] + 2.5, z: WRECK[1] + 5, y: bedY(WRECK[0] + 2.5, WRECK[1] + 5), ry: -0.5 }], { norm: 1.2 });
+  // the KEEP OUT sign: a tall post driven into the rocks, its board just under the surface
+  const signG = woodSign(w, 'KEEP OUT', SIGN[0], bedY(...SIGN) - 0.2, SIGN[1], 0.9); signG.scale.setScalar(1.9); signG.rotation.z = 0.12;
+  const board = signG.children.find(o => o.isMesh && o.geometry && o.geometry.parameters && o.geometry.parameters.width > 1) || signG;
+  fishSchool(w, WRECK[0], WRECK[1], { n: 16, r: [5, 8], y: [-3, -1.6] }); fishSchool(w, SIGN[0], SIGN[1], { n: 10, r: [3, 5], y: [-2.8, -1.4], speed: -0.45 });
+  fishSchool(w, -14, -64, { n: 8, r: [3, 4.5], speed: 0.5 }); fishSchool(w, 44, -34, { n: 8, r: [3, 4.5], speed: -0.4 });
+  caustics(w, 0, -40, 180, -3.62, { fade: 0.5 });
+  bubbleField(w, 40, [WRECK[0] - 3, -3.5, WRECK[1] - 3], [WRECK[0] + 3, -0.1, WRECK[1] + 3]);
+  return { ...S, w, route, RL, dAt, ship, shipHit, signG, board, WRECK, SIGN };
 }

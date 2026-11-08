@@ -28,7 +28,7 @@ export function buildIce() {
   // the sea under the ice is dark and a little see-through, so Varn's glow shows from below
   const wg = new THREE.PlaneGeometry(300, 300, 4, 4); wg.rotateX(-Math.PI / 2); const water = waterP(w, wg, { deep: 0x0E2236, shallow: 0x1F4A66, opacity: 0.85, sparkle: 0.5 }); water.position.y = -0.25;
   const iceMat = toon(0xFFFFFF, { map: frozenTex(), transparent: true, opacity: 0.84, depthWrite: false });
-  const ice = new THREE.Mesh(new THREE.CircleGeometry(70, 48), iceMat); ice.rotation.x = -Math.PI / 2; ice.position.y = 0.05; w.add(ice);
+  const ice = new THREE.Mesh(new THREE.CircleGeometry(70, 48), iceMat); ice.rotation.x = -Math.PI / 2; ice.position.y = 0.05; ice.renderOrder = 2; water.renderOrder = 1; w.add(ice);   // (both see-through: the ice must always draw over the water, or it flickers away)
   // the broken place where Varn bursts out: tilted slabs that jump up
   const slabs = []; for (let i = 0; i < 22; i++) { const a = (i / 22) * Math.PI * 2, r = 4.5 + rnd() * 3.5; const s = b.box(1.6 + rnd() * 2.2, 0.35, 1.2 + rnd() * 1.6, 0xD8EAF6, 1.3 + Math.cos(a) * r, 0.1, -15 + Math.sin(a) * r * 0.8, { ry: rnd() * 3, line: 0.03 });
     s.userData = { rx: (rnd() - 0.5) * 1.4, rz: (rnd() - 0.5) * 1.4, y: 0.2 + rnd() * 0.6 }; s.visible = false; slabs.push(s); }

@@ -253,7 +253,7 @@ export function makeVarn(parent) {
   const radial = (out, i, a) => out.copy(N[i]).multiplyScalar(Math.cos(a)).addScaledVector(B[i], Math.sin(a)).normalize();
   let time = 0;
   // ---- the sculpted model (Frank's Tripo shape, my own colours): bent along the same spine as the procedural body
-  const model = { ready: false }; const TAILCUT = true; const flukeM = toon(0x3E9CA6, { emissive: 0x2BB8C0, emissiveIntensity: 0.3 });   // flat whale fluke instead of unrolling the sculpt's curled tail (unrolling folds it)
+  const model = { ready: false };   // flat whale fluke instead of unrolling the sculpt's curled tail (unrolling folds it)
   const EYES = [[0.40, 0.347, 0.062], [0.40, 0.347, -0.062]];
   function loadModel(base) {
     new GLTFLoader().load(base + 'varn.glb', gl => {
@@ -271,13 +271,22 @@ export function makeVarn(parent) {
       for (let i = 0; i < cnt; i++) { const x = xs[i], z = P0.getZ(i), az = Math.abs(z); let w = 0;
         if (x > 0.08 && x < 0.33) w = (az - 0.13) / 0.16; else if (x < -0.12 && x > -0.33) w = (az - 0.09) / 0.12;
         w = Math.max(0, Math.min(1, w)); fw[i] = w * Math.sqrt(w); fg[i] = (x > 0 ? 0 : 2) + (z > 0 ? 0 : 1); }
-      // the model's tail curls up and over into the fluke; that curl is unrolled here into a straight tail (arc length -> along the spine, distance from the curl centre -> up/down)
-      const CF0 = cAt(cy, FX), RC = 0.08, CXc = FX - 0.01, CYc = CF0 + RC, NX = new Float32Array(cnt), NY = new Float32Array(cnt), smf = v => { v = Math.max(0, Math.min(1, v)); return v * v * (3 - 2 * v); };
+      // The sculpt's tail runs back, bends up through about 104 degrees, and ends in the fluke standing upright. It is straightened here
+      // by un-bending its OWN mesh along a measured centre line: a short straight piece, an arc of radius R round the inside of the bend,
+      // then the straight upright part. Every vertex is placed by its distance along that line and its offset from it, so the tail
+      // comes out straight and the fluke lies flat like a whale's (checked offline: 2 of 5,806 tail triangles flip, none fold).
+      const yA = cAt(cy, FX), RB = 0.075, TS = 104 * Math.PI / 180, BCx = -0.4157, BCy = yA + RB, thE = -Math.PI / 2 - TS;
+      const Ex = BCx + RB * Math.cos(thE), Ey = BCy + RB * Math.sin(thE), dBx = Math.sin(thE), dBy = -Math.cos(thE), nBl = Math.hypot(BCx - Ex, BCy - Ey), nBx = (BCx - Ex) / nBl, nBy = (BCy - Ey) / nBl, LA = FX - BCx;
+      const NX = new Float32Array(cnt), NY = new Float32Array(cnt), smf = v => { v = Math.max(0, Math.min(1, v)); return v * v * (3 - 2 * v); };
+      const unbend = (qx, qy) => { let best = null; const take = (dist, s, d, r) => { if (!best || dist < best[0]) best = [dist, s, d, r]; };
+        if (qx >= BCx) take(Math.abs(qy - yA), FX - qx, qy - yA, 0);
+        const th = Math.atan2(qy - BCy, qx - BCx), rho = Math.hypot(qx - BCx, qy - BCy); let sw = (-Math.PI / 2 - th) % (Math.PI * 2); if (sw < 0) sw += Math.PI * 2;
+        if (sw <= TS) take(Math.abs(RB - rho), LA + RB * sw, RB - rho, sw);
+        const t = (qx - Ex) * dBx + (qy - Ey) * dBy; if (t >= 0) { const dd = (qx - Ex) * nBx + (qy - Ey) * nBy; take(Math.abs(dd), LA + RB * TS + t, dd, TS); }
+        return best || [0, LA + RB * TS, RB - rho, TS]; };
       for (let i = 0; i < cnt; i++) { const y0 = P0.getY(i), tl0 = xs[i] < FX || (xs[i] < FX + 0.045 && y0 > 0.215), s = (x1 - Math.max(xs[i], FX)) / (x1 - x0); sv[i] = s; NX[i] = N0.getX(i); NY[i] = N0.getY(i);
-        if (tl0 && TAILCUT) { oy[i] = Math.max(-0.06, Math.min(0.06, (y0 - CF0) * 0.35)); oz[i] = P0.getZ(i) * 0.35; ot[i] = 0; isF[i] = 0; }   // the sculpt's curled tail is tucked away: the real fluke takes over here
-        else if (tl0) { const dx = xs[i] - CXc, dy = y0 - CYc, rho = Math.hypot(dx, dy), al = Math.atan2(dy, dx); let ph = -Math.PI / 2 - al; ph = ((ph % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2); if (ph > Math.PI * 1.6) ph -= Math.PI * 2;
-          const sArc = ph * RC; oy[i] = RC - rho + 0.4 * Math.max(0, Math.abs(P0.getZ(i)) - 0.04) * smf(sArc / 0.12); ot[i] = Math.max(0, sArc) / (x1 - x0); oz[i] = P0.getZ(i); isF[i] = smf(sArc / 0.05);
-          const be = -Math.PI / 2 - al, cb = Math.cos(be), sb = Math.sin(be), nx0 = NX[i], ny0 = NY[i]; NX[i] = nx0 * cb - ny0 * sb; NY[i] = nx0 * sb + ny0 * cb;
+        if (tl0) { const [, sArc, d, rot] = unbend(xs[i], y0); oy[i] = d; ot[i] = Math.max(0, sArc) / (x1 - x0); oz[i] = P0.getZ(i); isF[i] = smf(sArc / 0.05);
+          const cb = Math.cos(rot), sb = Math.sin(rot), nx0 = NX[i], ny0 = NY[i]; NX[i] = nx0 * cb - ny0 * sb; NY[i] = nx0 * sb + ny0 * cb;
           model.kF = Math.max(0, Math.min(M - 2, Math.floor(Math.pow(sF0, 1 / SPOW) * (M - 1)))); }
         else { let yy = y0; if (xs[i] > CUTX && yy > CUTY) yy = CUTY - 0.02 + (yy - CUTY) * 0.03; oy[i] = (yy - cAt(cy, xs[i])) * hAt(xs[i]); oz[i] = (P0.getZ(i) - cAt(cz, xs[i])) * wAt(xs[i]); ot[i] = 0; isF[i] = 0; }
         const fi = Math.pow(s, 1 / SPOW) * (M - 1), k = Math.max(0, Math.min(M - 2, Math.floor(fi))); i0[i] = k; fr[i] = Math.max(0, Math.min(1, fi - k)); }
@@ -293,7 +302,7 @@ export function makeVarn(parent) {
       const K = () => Math.max(LEN, 17), tmp = new THREE.Vector3();
       const mapPt = (s, a, b, out) => { const fi = Math.pow(s, 1 / SPOW) * (M - 1), k = Math.max(0, Math.min(M - 2, Math.floor(fi))), f = Math.max(0, Math.min(1, fi - k)), kk = K();
         return out.set(0, 0, 0).addScaledVector(pts[k], 1 - f).addScaledVector(pts[k + 1], f).addScaledVector(N[k], a * kk * (1 - f)).addScaledVector(N[k + 1], a * kk * f).addScaledVector(B[k], -b * kk * (1 - f)).addScaledVector(B[k + 1], -b * kk * f); };
-      model.update = t => { const kk = K(), pp = pos2, nn = nor2; { const A = SHOW.flap * 0.2; for (let g = 0; g < 4; g++) { const ph = t * 3.1 * Math.min(1.6, SHOW.rate) * 0.55 + (g >> 1) * 0.9 + (g & 1) * 0.0; fa[g] = Math.sin(ph) * A; fb[g] = Math.cos(ph) * A * 0.5; } } { const cp = st.clip ? iceCut : null; if (mat.clippingPlanes !== cp) { mat.clippingPlanes = cp; ink2.material.clippingPlanes = cp; mat.needsUpdate = ink2.material.needsUpdate = true; } rim2.visible = !st.clip; capGlow.visible = !st.clip; } const kF = model.kF || 0, wv = t * 3.1 * Math.min(1.6, SHOW.rate) - 8 * 0.85, th = Math.atan2(T[kF].y, N[kF].y) + SHOW.tail * 0.55 * Math.sin(wv + 2.4), yw = SHOW.tail * 0.22 * Math.sin(wv + 0.9), cF = Math.cos(th), sFn = Math.sin(th);
+      model.update = t => { const kk = K(), pp = pos2, nn = nor2; { const A = SHOW.flap * 0.2; for (let g = 0; g < 4; g++) { const ph = t * 3.1 * Math.min(1.6, SHOW.rate) * 0.55 + (g >> 1) * 0.9 + (g & 1) * 0.0; fa[g] = Math.sin(ph) * A; fb[g] = Math.cos(ph) * A * 0.5; } } { const cp = st.clip ? iceCut : null; if (mat.clippingPlanes !== cp) { mat.clippingPlanes = cp; ink2.material.clippingPlanes = cp; mat.needsUpdate = ink2.material.needsUpdate = true; } rim2.visible = !st.clip; capGlow.visible = !st.clip; } const kF = model.kF || 0, wv = t * 3.1 * Math.min(1.6, SHOW.rate) - 8 * 0.85, th = SHOW.tail * 0.55 * Math.sin(wv + 2.4), yw = SHOW.tail * 0.22 * Math.sin(wv + 0.9), cF = Math.cos(th), sFn = Math.sin(th);
         for (let i = 0; i < cnt; i++) { const k = i0[i], f = fr[i], g = 1 - f, wq = isF[i], ca = 1 + (cF - 1) * wq, sa = sFn * wq, a = (oy[i] * ca - ot[i] * sa + (fw[i] ? fw[i] * fa[fg[i]] : 0) + (wq ? SHOW.tail * Math.sin(wv + 3.2 - ot[i] * 3.5) * (Math.min(ot[i], 0.1) * 1.6 + Math.abs(oz[i]) * 0.55) * wq : 0)) * kk, b = -oz[i] * kk + (wq ? yw * (oy[i] * sFn + ot[i] * cF) * kk * wq : 0), c0 = (oy[i] * sa + ot[i] * ca + (fw[i] ? fw[i] * fb[fg[i]] : 0)) * kk, A = pts[k], A2 = pts[k + 1], NA = N[k], NB2 = N[k + 1], BA = B[k], BB = B[k + 1], TT = T[k], TT2 = T[k + 1];
           pp[i * 3] = A.x * g + A2.x * f + (NA.x * g + NB2.x * f) * a + (BA.x * g + BB.x * f) * b + (TT.x * g + TT2.x * f) * c0; pp[i * 3 + 1] = A.y * g + A2.y * f + (NA.y * g + NB2.y * f) * a + (BA.y * g + BB.y * f) * b + (TT.y * g + TT2.y * f) * c0; pp[i * 3 + 2] = A.z * g + A2.z * f + (NA.z * g + NB2.z * f) * a + (BA.z * g + BB.z * f) * b + (TT.z * g + TT2.z * f) * c0;
           const nx = NX[i], ny = NY[i], nz = N0.getZ(i), TA = T[k], TB = T[k + 1], qy0 = ny, qz = -nz / (isF[i] || xs[i] < FX ? 1 : wAt(xs[i])), qx0 = -nx, qy = qy0 * ca - qx0 * sa, qx = qy0 * sa + qx0 * ca;
@@ -306,7 +315,7 @@ export function makeVarn(parent) {
       model.root = (c, out) => { const s = (x1 - (0.40 - (c.s0 - 0.06) * 1.2)) / (x1 - x0); return mapPt(s, (0.39 - cAt(cy, 0.4)) * hAt(0.4), Math.sin(c.a0 * 3) * 0.05 * wAt(0.4), out); };
       const k0 = s => Math.max(0, Math.min(M - 1, Math.round(Math.pow(s, 1 / SPOW) * (M - 1))));
       // hide the hand-made body parts
-      [body, ink, rim].forEach(o => o.visible = false); fluke.visible = TAILCUT; if (TAILCUT) fluke.traverse(o => { if (o.isMesh && o.material && !o.userData.isOutline) o.material = flukeM; }); onSkin.forEach(o => { o.obj.visible = false; }); crest.forEach(c => c.strand.forEach(sp => sp.visible = true));
+      [body, ink, rim, fluke].forEach(o => o.visible = false); onSkin.forEach(o => { o.obj.visible = false; }); crest.forEach(c => c.strand.forEach(sp => sp.visible = true));
       model.ready = true;
     }, undefined, () => { /* no model file: the hand-made Varn stays */ });
   }

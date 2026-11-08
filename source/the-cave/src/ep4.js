@@ -3,7 +3,7 @@ import { S, save, sfx, wait, h, shuffle } from './core.js';
 import { THREE, setCam, flyCam, followCam, stopFollow, quake, tween, moveTo, onTick, sparkles, camera, scene, cut, dolly, lens } from './gfx.js';
 import { letterbox, frost, mist, fogThicken, iceSpread, snow } from './effects.js';
 import { makeVarn } from './varn.js';
-import { buildIslandTop, buildDigBeach, buildClearSea, cartBoat } from './sets4.js';
+import { buildIslandTop, buildDigBeach, buildSeaVoyage, cartBoat } from './sets4.js';
 import { tell, beat, aroundGap, tapOn, filled, hideStory, chooseWord, pick3D, spellOn, order, think, offerStretch, earnCard, toby, spyglass, MODE } from './ui.js';
 import { playMusic } from './music.js';
 
@@ -19,13 +19,17 @@ export async function stop10() {
   playMusic('meadow');
   const I = await buildIslandTop(); const { leo, mia, toby: dog } = I.cast; const K = [leo, mia, dog];
   // they come out of the cave at the foot of the lookout hill, then climb the path that spirals up to the top
-  K.forEach((c, i) => { const [x, z] = I.START[i]; c.g.position.set(x, I.hf(x, z), z); c.g.rotation.y = Math.PI / 2 + 0.3; });
-  setCam([I.START[0][0] + 11, 5, I.START[0][1] - 7], [I.START[0][0] - 1, 1.6, I.START[0][1]]);
-  const HC = I.HC, cam = new THREE.Vector3(), look = new THREE.Vector3(); let u0 = 0, climbing = true;
-  K.forEach(c => c.pose(c === dog ? 'run' : 'walk'));
-  const lag = [0.04, 0, -0.04];
-  const cOff = onTick((t, dt) => { if (!climbing) return; u0 = Math.min(1.06, u0 + dt / 20);
-    K.forEach((c, i) => { const u = Math.min(1, u0 + lag[i]), [x, z] = u <= 0 ? I.START[i] : I.along(u), [nx, nzz] = I.along(Math.min(1, u + 0.01)), end = u >= 1, side = [-0.55, 0.55, 0][i];
+  K.forEach((c, i) => { const [x, z] = I.START[i]; c.g.position.set(x, I.hf(x, z), z); c.g.rotation.y = -Math.PI / 2 - 0.25; });
+  const HC = I.HC, cam = new THREE.Vector3(), look = new THREE.Vector3(); let u0 = 0, climbing = false; const S0 = I.START[0];
+  // first a moment on the beach: they stand and look up at the tall hill behind them, before setting off
+  leo.pose('point'); mia.pose('wow'); dog.pose('sit');
+  setCam([S0[0] + 13, 2.8, S0[1] - 8], [S0[0] - 6, 5, S0[1] + 1]);
+  await wait(1400); await flyCam([S0[0] + 7, 4.2, S0[1] - 3.5], [S0[0] - 5, 4, S0[1]], 2800); await wait(700);
+  K.forEach(c => c.pose(c === dog ? 'run' : 'walk')); climbing = true;
+  const lag = [0.04, 0, -0.04], sm = v => { v = Math.max(0, Math.min(1, v)); return v * v * (3 - 2 * v); };
+  const cOff = onTick((t, dt) => { if (!climbing) return; u0 = Math.min(1.06, u0 + dt / 22);
+    K.forEach((c, i) => { const u = Math.max(0, Math.min(1, u0 + lag[i])), k = sm(u0 / 0.05), [ax, az] = I.along(u), [nx, nzz] = I.along(Math.min(1, u + 0.01)), end = u >= 1, side = [-0.55, 0.55, 0][i];
+      const x = I.START[i][0] * (1 - k) + ax * k, z = I.START[i][1] * (1 - k) + az * k;
       c.g.position.set(end ? HC[0] - 0.4 : x, I.hf(x, z) + 0.02, end ? HC[1] + side : z); if (!end) c.g.rotation.y = Math.atan2(nx - x, nzz - z); }); });
   followCam(() => { const lead = I.along(Math.min(1, u0)), back = I.along(Math.max(0, u0 - 0.12)); cam.set(back[0] + (back[0] - HC[0]) * 0.35, I.hf(back[0], back[1]) + 8, back[1] + (back[1] - HC[1]) * 0.35); look.set(lead[0], I.hf(lead[0], lead[1]) + 1, lead[1]); return [cam, look]; });
   await beat('Mia and Leo climbed the high, rocky cliff.');
@@ -136,29 +140,31 @@ export async function stop11() {
 // ================================================================ stop 12 — the clear sea, the sunken ship, the sign… the ice
 export async function stop12() {
   playMusic('map');
-  // they push off from their beach on the far side of the island, and the wind carries them round it until home is ahead
-  { const IS = await buildIslandTop(); [IS.cast.leo, IS.cast.mia, IS.cast.toby].forEach(c => c.g.visible = false);
-    const bt = cartBoat(IS.w), k = bt.cast; k.leo.g.position.set(-0.3, 0.45, 0.2); k.mia.g.position.set(0.3, 0.45, -0.1); k.toby.g.position.set(0, 0.85, 0.6); k.toby.g.scale.setScalar(0.9);
-    [k.leo, k.mia].forEach(c => { c.L.rotation.x = c.R.rotation.x = -1.4; }); k.mia.pose('cheer'); k.leo.pose('point'); bt.wind.k = 1;
-    const C0 = IS.CAVE, route = new THREE.CatmullRomCurve3([[C0[0] + 19, 0.15, C0[1] + 2], [C0[0] + 25, 0.15, C0[1] - 6], [C0[0] + 18, 0.15, C0[1] - 30], [0, 0.15, -52], [-32, 0.15, -46], [-54, 0.15, -27], [-72, 0.15, -14]].map(a => new THREE.Vector3(...a)), false, 'centripetal');
-    let u = 0; const pp = new THREE.Vector3(), tg = new THREE.Vector3(), c0 = new THREE.Vector3(), l0 = new THREE.Vector3();
-    onTick(t => { route.getPointAt(Math.min(1, u), pp); route.getTangentAt(Math.min(1, u), tg); bt.g.position.set(pp.x, 0.15 + Math.sin(t * 1.6) * 0.06, pp.z); bt.g.rotation.set(Math.sin(t * 1.3) * 0.04, Math.atan2(tg.x, tg.z), Math.sin(t * 1.7) * 0.05); });
-    followCam(() => { c0.copy(pp).addScaledVector(tg, -9).add(new THREE.Vector3(-tg.z * 5, 4, tg.x * 5)); l0.copy(pp).addScaledVector(tg, 8).setY(1.5); return [c0, l0]; });
-    tell('They pushed their wooden cart into the sea, and the wind filled the giant flag.', { wait: false });
-    await tween(11000, e => { u = e; });
-    const v = h('div', { class: 'veil', style: { background: '#BFE6F7' } }); document.body.append(v); await wait(700); stopFollow();
-    setTimeout(() => { v.classList.add('out'); setTimeout(() => v.remove(), 900); }, 300); }
-  const C = buildClearSea(); const B = C.boat; const { leo, mia, toby: dog } = B.cast;
-  let z = 6, sp = 0, zMin = -14.05; const off = onTick((t, dt) => { z = Math.max(zMin, z - sp * dt); B.g.position.set(Math.sin(z * 0.05) * 1.5, 0.15 + Math.sin(t * 1.6) * 0.06, z); B.g.rotation.set(Math.sin(t * 1.3) * 0.04, Math.PI, Math.sin(t * 1.7) * 0.05); });
+  // ONE continuous voyage: from the beach on the island's sea side, round its south coast over the reef (the sunken ship, then the
+  // KEEP OUT sign), then west across open water towards home. The boat only ever sails as far as the story has got to (dMax).
+  const C = await buildSeaVoyage(), W = C.w, R = C.route;
+  const B = cartBoat(W), k = B.cast, { leo, mia, toby: dog } = k;
+  leo.g.position.set(-0.3, 0.45, 0.2); mia.g.position.set(0.3, 0.45, -0.1); dog.g.position.set(0, 0.85, 0.6); dog.g.scale.setScalar(0.9);
+  [leo, mia].forEach(c => { c.L.rotation.x = c.R.rotation.x = -1.4; });
+  let d = 0, sp = 0, dMax = 0; const pp = new THREE.Vector3(), tg = new THREE.Vector3();
+  const off = onTick((t, dt) => { d = Math.min(dMax, d + sp * dt); const u = Math.min(1, d / C.RL); R.getPointAt(u, pp); R.getTangentAt(u, tg);
+    B.g.position.set(pp.x, 0.15 + Math.sin(t * 1.6) * 0.06, pp.z); B.g.rotation.set(Math.sin(t * 1.3) * 0.04, Math.atan2(tg.x, tg.z), Math.sin(t * 1.7) * 0.05); });
+  const sailTo = async (to, speed = 2.6) => { dMax = to; sp = speed; while (d < to - 0.05) await wait(50); };
   const cam = new THREE.Vector3(), look = new THREE.Vector3();
-  followCam(() => { cam.set(B.g.position.x + 3.5, 3.4, z + 7.5); look.set(B.g.position.x, 0.6, z - 6); return [cam, look]; });
-  B.wind.k = 1; mia.pose('cheer'); leo.pose('point');
-  sp = 3; await wait(1500);
-  // ---- look down through the water: spot the sunken ship, then name the clue word
+  // the chase camera sits out on the sea side of the boat and looks forward and across it, so the island's coast slides by beside them
+  const chase = (back = 9, side = 6, up = 4.6, ahead = 7, across = 6) => followCam(() => { cam.copy(pp).addScaledVector(tg, -back).add(new THREE.Vector3(-tg.z * side, up, tg.x * side)); look.copy(pp).addScaledVector(tg, ahead).add(new THREE.Vector3(tg.z * across, 0, -tg.x * across)).setY(0.8); return [cam, look]; });
+  const dWreck = C.dAt(...C.WRECK), dSign = C.dAt(...C.SIGN), dClear = C.dAt(-70, -23), dStage = C.RL - 4;
+  // ---- the launch: they push the cart off the sand, then the wind fills the flag
+  B.wind.k = 0.15; leo.pose('reach'); mia.pose('reach'); dog.pose('wag');
+  { R.getPointAt(0, pp); R.getTangentAt(0, tg); setCam([pp.x - tg.z * 7 - tg.x * 3, 2.6, pp.z + tg.x * 7 - tg.z * 3], [pp.x + tg.x * 2, 0.8, pp.z + tg.z * 2]); }
+  tell('They pushed their wooden cart into the sea, and the wind filled the giant flag.', { wait: false });
+  await sailTo(4, 0.8); sfx('whoosh'); await tween(900, e => { B.wind.k = 0.15 + e * 0.85; }); mia.pose('cheer'); leo.pose('point');
+  chase(); await sailTo(14, 2.2); await tapOn();
+  // ---- round the island's south-east corner, over the reef: the sunken pirate ship
   tell('The ocean water was very {clear}.', { wait: false });
-  while (z > -14) await wait(40); sp = 0.4; zMin = -24;
-  stopFollow(); await flyCam([-1, 4.5, z - 6], [-5, -5, -28], 1400);
-  tell('As they sailed, they looked down and saw a sunken pirate ship in the deep sand.', { wait: false });
+  await sailTo(dWreck - 10, 3.4); sp = 0.6; dMax = dWreck + 3;   // slow down and drift over the wreck
+  stopFollow(); { R.getPointAt(Math.min(1, (dWreck - 2) / C.RL), pp); await flyCam([pp.x + 2, 5, pp.z + 6], [C.WRECK[0], -4, C.WRECK[1]], 1600); }
+  tell('As they sailed, they looked down and saw a sunken pirate ship in the deep sand.', { wait: false }); leo.pose('point');
   await pick3D({ prompt: 'Look into the water. Tap the sunken ship!', answer: 'ship', targets: [{ id: 'ship', obj: C.shipHit }], hints: ['Look down, under the water.', 'It is big and brown, on the sand.'] });
   const cv = pickV(12, [
     { prompt: 'They could SEE the ship on the sand. So the water was very…', tiles: ['clear', 'dirty', 'dark'], answer: 'clear', note: 'clear = you can see right through it', hints: ['Could you see the ship through dirty water?', 'You can see through clear water.'] },
@@ -168,16 +174,18 @@ export async function stop12() {
   tell('The ocean water was very {clear}.', { wait: false });
   await chooseWord({ prompt: cv.prompt, sentence: 'The ocean water was very {_}.', tiles: cv.tiles, answer: cv.answer, note: cv.note, hints: cv.hints });
   await filled('clear'); await earnCard('clear');
-  // Leo's puzzle
+  // Leo's puzzle, drifting on past the wreck
+  chase(8, 6, 3.8, 6, 4); dMax = dWreck + 12; sp = 0.9;
   tell('“If the ship is down there, how did the flag get up on the beach?” Leo asked.', { wait: false });
   await think(pickV(12, [
     { prompt: 'What do you think? How did the flag get onto the beach?', options: ['Someone carried it there', 'It flew there by itself', 'A fish brought it'], answer: 'Someone carried it there', hints: ['A flag cannot walk. Who could bring it?'] },
     { prompt: 'Who used to sail the sunken ship?', options: ['Pirates', 'Puppies', 'Penguins'], answer: 'Pirates', hints: ['Look at the black flag with the skull.'] },
     { prompt: 'Why is Leo puzzled?', options: ['The ship is under the sea, but its flag was on land', 'He lost his shoe', 'The water is too warm'], answer: 'The ship is under the sea, but its flag was on land', hints: ['Where was the ship? Where was the flag?'] },
   ]));
-  // ---- the sign
-  zMin = -32; tell('Just then, they saw a {sign} stuck between the underwater rocks.', { wait: false });
-  await flyCam([9.5, 1.6, -35.5], [6, -2.2, -44], 1600);
+  // ---- on along the south coast to the rocks: the sign
+  await sailTo(dSign - 9, 3.4); sp = 0.6; dMax = dSign + 2;
+  stopFollow(); { R.getPointAt(Math.min(1, (dSign - 3) / C.RL), pp); await flyCam([pp.x + 1.5, 4.2, pp.z + 4.5], [C.SIGN[0], -2.2, C.SIGN[1]], 1600); }
+  tell('Just then, they saw a {sign} stuck between the underwater rocks.', { wait: false });
   await chooseWord(pickV(12, [
     { prompt: 'Which word is spelled right?', sentence: 'they saw a {_} stuck between the rocks', tiles: ['sign', 'sine', 'sighn'], answer: 'sign', note: 'sign has a quiet g', hints: ['It has a quiet letter.', 's – i – g – n'] },
     { prompt: 'Which word fits?', sentence: 'they saw a {_} stuck between the rocks', tiles: ['sign', 'sing', 'sink'], answer: 'sign', note: 'sign = a board with words on it', hints: ['It is a board with words on it.', 's – i – g – n'] },
@@ -185,38 +193,41 @@ export async function stop12() {
   ]));
   await filled('sign'); mia.pose('point'); await beat('Mia read it slowly: “Keep... Out...?”', { hold: 600 }); await earnCard('sign');
   await think({ prompt: 'What does KEEP OUT mean?', options: ['Do not come in here', 'Please come in', 'Keep the boat'], answer: 'Do not come in here', hints: ['Out is the opposite of in.'] });
-  // ---- the cold, the fog, the ice… and the shadow
+  // ---- clear of the island: open water, and far ahead the Ferris wheel of home
+  chase(10, 3, 3.6, 30, 0); B.wind.k = 1; mia.pose('cheer');
+  await sailTo(dClear, 3.2); dMax = C.RL - 30; sp = 2.4;
+  // ---- the cold, the fog, the ice… and the shadow. A stage is set where the boat will stop, facing the way it sails (its local -z is ahead).
   playMusic('cave'); letterbox(true);
-  const bx = () => B.g.position.x;
-  // a wall of grey fog rolls over the sea and swallows the town
-  const wall = mist(C.w, { count: 46, center: new THREE.Vector3(bx(), 0, z - 75), spread: 42, y: [0.5, 10], size: [16, 28], color: 0xD3DAE4, opacity: 0.9, drift: 0.2 });
-  wall.show(1, 2500); wall.rollTo(new THREE.Vector3(bx(), 0, z - 10), 0.12);
-  followCam(() => { cam.set(B.g.position.x + 3, 2.2, z + 9); look.set(B.g.position.x - 1, 2.6, z - 40); return [cam, look]; });
-  sp = 2; zMin = Math.min(z, -32) - 30;   // the boat sails on a little way, then waits: it can never reach (or pass) the town
+  const uS = dStage / C.RL, S0 = R.getPointAt(uS), F = R.getTangentAt(uS); const stage = new THREE.Group(); stage.position.set(S0.x, 0, S0.z); stage.rotation.y = Math.atan2(-F.x, -F.z); W.add(stage); stage.updateMatrixWorld(true);
+  const Wp = (x, y, z) => stage.localToWorld(new THREE.Vector3(x, y, z)).toArray();
+  const wall = mist(stage, { count: 46, center: new THREE.Vector3(0, 0, -75), spread: 42, y: [0.5, 10], size: [16, 28], color: 0xD3DAE4, opacity: 0.9, drift: 0.2 });
+  wall.show(1, 2500); wall.rollTo(new THREE.Vector3(0, 0, -10), 0.12);
+  followCam(() => { cam.copy(pp).addScaledVector(tg, -9).add(new THREE.Vector3(-tg.z * 3, 2.2 - 0, tg.x * 3)); look.copy(pp).addScaledVector(tg, 40).setY(2.6); return [cam, look]; });
+  dMax = dStage - 8; sp = 2;   // they drift on a little way, then wait: the boat can never reach (or pass) the town
   fogThicken(scene, { near: 16, far: 75, color: 0xB4C0CE, ms: 6000 }); frost(0.4, 5000);
   await beat('They were drifting closer to the Ferris wheel when the water suddenly turned freezing cold.');
   [leo, mia].forEach(c => c.pose('scared')); await tell('A thick, grey fog rolled in, hiding the town from view.');
-  // ---- shades of cold: put the words in order
   await order({ prompt: 'Put the words in order. A little cold first, the coldest last.', items: ['cool', 'cold', 'freezing', 'frozen'], labels: ['a little cold', 'coldest 🧊'], hints: ['Cool is just a little cold.', 'Frozen means it turned to ice!'] });
   // the sea freezes ahead of them and races towards the boat
-  sp = 0.8; zMin = z - 8; letterbox(true); stopFollow();
+  dMax = dStage; sp = 0.8; letterbox(true); stopFollow();
   tell('Suddenly, the water ahead of them froze into solid ice, and their little wooden cart got stuck right in place!', { wait: false });
-  const iceAt = new THREE.Vector3(bx(), 0, z - 16); const sheet = iceSpread(C.w, iceAt, { radius: 46, y: 0.12 }); sheet.m.material.opacity = 0.62;
-  cut([bx() + 9, 2.4, z - 5], [bx() - 1, 0.2, z - 9], 50); dolly([bx() + 8, 2.8, z - 3.5], [bx() - 1, 0.2, z - 8], 4000);
+  const iceAt = new THREE.Vector3(0, 0, -16); const sheet = iceSpread(stage, iceAt, { radius: 46, y: 0.12 }); sheet.m.material.opacity = 0.62; sheet.m.renderOrder = 3;
+  cut(Wp(9, 2.4, 3), Wp(-1, 0.2, -1), 50); dolly(Wp(8, 2.8, 4.5), Wp(-1, 0.2, 0), 4000);
   sfx('crash'); frost(0.65, 2500); let stuck = false;
-  await sheet.grow(2800, r => { if (!stuck && r > 15.5) { stuck = true; sp = 0; quake(0.7, 0.15); sfx('clack'); B.wind.k = 0.1; } if (Math.random() < 0.12) { sfx('clack'); const a = Math.random() * Math.PI * 2; sheet.spike(new THREE.Vector3(iceAt.x + Math.cos(a) * r * 0.9, 0, iceAt.z + Math.sin(a) * r * 0.9), 0.6 + Math.random()); } });
-  sp = 0; snow(C.w, { center: new THREE.Vector3(bx(), 0, z), area: 40, size: 0.14, fall: 0.3 }).show(0.8, 1500);
-  await flyCam([bx() + 4, 3.2, z + 6], [bx(), 0.6, z - 2], 1800);
+  await sheet.grow(2800, r => { if (!stuck && r > 15.5) { stuck = true; sp = 0; dMax = d; quake(0.7, 0.15); sfx('clack'); B.wind.k = 0.1; } if (Math.random() < 0.12) { sfx('clack'); const a = Math.random() * Math.PI * 2; sheet.spike(new THREE.Vector3(iceAt.x + Math.cos(a) * r * 0.9, 0, iceAt.z + Math.sin(a) * r * 0.9), 0.6 + Math.random()); } });
+  sp = 0; dMax = d; snow(stage, { center: new THREE.Vector3(0, 0, 0), area: 40, size: 0.14, fall: 0.3 }).show(0.8, 1500);
+  await flyCam(Wp(4, 3.2, 6 + (dStage - d)), Wp(0, 0.6, -2 + (dStage - d)), 1800);
   await tapOn();
   // bubbles… a huge glowing shape rises under the ice
   playMusic('danger');
-  C.bubbles.position.set(bx(), 0, z); C.bubbles.visible = true; sfx('pop');
+  const bub = new THREE.Group(); stage.add(bub); bub.position.z = dStage - d; { const bm = new THREE.MeshBasicMaterial({ color: 0xE6F6FF, transparent: true, opacity: 0.8 }); for (let i = 0; i < 40; i++) { const m = new THREE.Mesh(new THREE.SphereGeometry(0.1 + Math.random() * 0.15, 8, 6), bm); m.position.set((Math.random() - 0.5) * 8, -Math.random() * 3, -8 - Math.random() * 5); m.userData.v = 0.5 + Math.random(); bub.add(m); } }
+  onTick((t, dt) => bub.children.forEach(m => { m.position.y += m.userData.v * dt; if (m.position.y > 0.2) m.position.y = -3; })); sfx('pop');
   await beat('Then, the dark water began to bubble.');
   tell('A massive, glowing shadow started to rise from the deep water in front of them...', { wait: false });
-  const V = makeVarn(C.w); V.g.position.set(bx(), -9.5, z - 40); V.set('swim'); V.state.glow = 2.4; V.state.sway = 0.6; V.state.clip = true; fogThicken(scene, { near: 3, far: 42, color: 0xB4C0CE, ms: 4500 });
-  letterbox(true); cut([bx() + 2.4, 3.6, z + 7], [bx(), -1, z - 22], 50); dolly([bx() + 1.6, 3.2, z + 4.5], [bx(), -1, z - 24], 7000);
+  const V = makeVarn(stage); V.g.position.set(0, -9.5, -40); V.set('swim'); V.state.glow = 2.4; V.state.sway = 0.6; V.state.clip = true; fogThicken(scene, { near: 3, far: 42, color: 0xB4C0CE, ms: 4500 });
+  letterbox(true); cut(Wp(2.4, 3.6, 7), Wp(0, -1, -22), 50); dolly(Wp(1.6, 3.2, 4.5), Wp(0, -1, -24), 7000);
   sfx('rumble'); quake(3, 0.12); dog.pose('bark'); sfx('bark');
-  await tween(6000, e => { V.g.position.y = -9.5 + e * 3.6; V.g.position.z = z - 40 + e * 24; V.state.glow = 1.6 + e * 1.4; V.state.anger = e; });
+  await tween(6000, e => { V.g.position.y = -9.5 + e * 3.6; V.g.position.z = -40 + e * 24; V.state.glow = 1.6 + e * 1.4; V.state.anger = e; });
   if (await offerStretch('A word that means the same.')) {
     await chooseWord(pickV(12, [
       { prompt: 'Bonus! massive means…', sentence: 'A {_} shadow rose from the water.', tiles: ['huge', 'tiny', 'thin'], answer: 'huge', note: 'massive = huge', hints: ['Massive is very, very big.', 'huge!'] },

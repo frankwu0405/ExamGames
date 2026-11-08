@@ -42,29 +42,29 @@ export const STOPS = [
   { n: 7, name: 'The Rock Shelf', ep: 3, p: [-12.6, -1.6, 6.4] },
   { n: 8, name: 'The Crack', ep: 3, p: [-2.5, -1.6, 4.8] },
   { n: 9, name: 'The Rainbow Cliff', ep: 3, p: [9.8, -1.6, 4.0] },
-  { n: 10, name: 'The Lost Island', ep: 4, p: [33.2, 3.4, 1.2] },
-  { n: 11, name: 'Toby’s Dig', ep: 4, p: [39.6, 0.6, 2.6] },
-  { n: 12, name: 'The Clear Sea', ep: 4, p: [24, 0.3, -6.4] },
+  { n: 10, name: 'The Lost Island', ep: 4, p: [51.2, 3.4, 1.2] },
+  { n: 11, name: 'Toby’s Dig', ep: 4, p: [57.6, 0.6, 2.6] },
+  { n: 12, name: 'The Clear Sea', ep: 4, p: [34, 0.3, -8.4] },
   { n: 13, name: 'Varn Rises', ep: 5, p: [13, 0.4, -10.2] },
   { n: 14, name: 'Mia’s Choice', ep: 5, p: [7, 0.4, -11.6] },
   { n: 15, name: 'The Angry Wave', ep: 5, p: [1, 0.4, -12.6] },
-  { n: 16, name: 'The Gray Shore', ep: 6, p: [56, 0.6, -8] },
-  { n: 17, name: 'The Old Man’s Fire', ep: 6, p: [59, 0.6, -11] },
-  { n: 18, name: 'The Stolen Boat', ep: 6, p: [62, 0.6, -7.2] },
-  { n: 19, name: 'Out of the Fog', ep: 7, p: [64, 0.3, 4] },
-  { n: 20, name: 'The Chase', ep: 8, p: [56, 0.3, 12] },
-  { n: 21, name: "Varn's Story", ep: 9, p: [68, 0.6, 14] },
+  { n: 16, name: 'The Gray Shore', ep: 6, p: [77, 0.6, -9] },
+  { n: 17, name: 'The Old Man’s Fire', ep: 6, p: [80, 0.6, -12] },
+  { n: 18, name: 'The Stolen Boat', ep: 6, p: [83, 0.6, -8.2] },
+  { n: 19, name: 'Out of the Fog', ep: 7, p: [85, 0.3, 3] },
+  { n: 20, name: 'The Chase', ep: 8, p: [77, 0.3, 11] },
+  { n: 21, name: "Varn's Story", ep: 9, p: [89, 0.6, 13] },
 ];
 // the route, drawn episode by episode (Leo's side is told as a memory, so it runs alongside the main tunnel; the angry wave is a long throw)
 // legs that bend round something: from the island's sea-side beach they sail round the south of the island, then home
-const VIA = { '11-12': [[42, 0.5, -2.5], [38, 0.5, -6], [31, 0.5, -7.2]] };
+const VIA = { '11-12': [[60, 0.5, -2.5], [56, 0.5, -6.5], [48, 0.5, -8.6]] };
 export const ROUTE = [[1, 2, 3], [3, 4, 5, 6], [2, 7, 8, 9, 6], [6, 10, 11, 12], [12, 13, 14, 15], [15, 'wave', 16, 17, 18], [18, 19, 20, 21]];
 export const EPISODES = { 1: { title: 'The Cave', stops: [1, 2, 3] }, 2: { title: 'The Cave 2', stops: [4, 5, 6] }, 3: { title: 'The Cave 3: Leo’s Side', stops: [7, 8, 9] }, 4: { title: 'The Cave 4: The Lost Island', stops: [10, 11, 12] }, 5: { title: 'The Cave 5: Guard of the Stones', stops: [13, 14, 15] }, 6: { title: 'The Cave 6: The Old Man', stops: [16, 17, 18] } };
 export const MAX_EP = 5;   // episode 6 is built but held back until the visuals are redone
 export function buildMap(S, onPick) {
   const w = newWorld({ sky: 0xBFE6F7, ambientI: 1.5, sunI: 1.55, sunPos: [-14, 30, 18], fog: [0xCFEAF5, 80, 170] }); const b = builder(w); setSeed(11);
   const coastX = z => -16.5 + 5.6 * Math.exp(-(((z - 10) / 5.5) ** 2)) + 0.7 * Math.sin(z * 0.37) + 0.35 * Math.sin(z * 1.1 + 1);
-  const ISL = [34, 2], GRAY = [59, -9];
+  const ISL = [52, 2], GRAY = [80, -10];
   const landD = (x, z) => Math.min(x - coastX(z), Math.hypot(x - ISL[0], z - ISL[1]) - 6.5, Math.hypot((x - GRAY[0]) * 0.8, (z - GRAY[1]) * 1.15) - 4.2);
   // sea floor (shallow near land, deep further out) and the clear sea over it, with foam along the shores
   const bed = new THREE.PlaneGeometry(220, 120, 110, 60); bed.rotateX(-Math.PI / 2); bed.translate(18, 0, 0);
@@ -104,7 +104,7 @@ export function buildMap(S, onPick) {
   // the secret tunnel under the sea floor, all the way from the meadow cave to the island, with Leo's side passage beside it
   const tP = n => { const s = STOPS[n - 1]; return [s.p[0], s.p[2]]; };
   const onBed = ([x, z], up = 0.15) => new THREE.Vector3(x, bedY(x, z) + up, z);
-  const tc = new THREE.CatmullRomCurve3([new THREE.Vector3(CH[0] - 1.6, 0.2, CH[1] - 1.9), onBed([-15, 9.8]), ...[3, 4, 5, 6].map(n => onBed(tP(n))), onBed([25, 5.2]), new THREE.Vector3(ISL[0] - 5.4, 0.2, ISL[1] + 2.6)], false, 'centripetal');
+  const tc = new THREE.CatmullRomCurve3([new THREE.Vector3(CH[0] - 1.6, 0.2, CH[1] - 1.9), onBed([-15, 9.8]), ...[3, 4, 5, 6].map(n => onBed(tP(n))), onBed([25, 5.2]), onBed([40, 3.8]), new THREE.Vector3(ISL[0] - 5.4, 0.2, ISL[1] + 2.6)], false, 'centripetal');
   const tube = new THREE.Mesh(new THREE.TubeGeometry(tc, 200, 0.42, 10), toon(0x24304A, { emissive: 0x1E5A80, emissiveIntensity: 0.55 })); w.add(tube); tube.add(new THREE.Mesh(tube.geometry, INK));
   const lc = new THREE.CatmullRomCurve3([onBed(tP(2)), onBed(tP(7)), onBed(tP(8)), onBed(tP(9)), onBed([15, 5.4]), onBed(tP(6))], false, 'centripetal');
   w.add(new THREE.Mesh(new THREE.TubeGeometry(lc, 140, 0.3, 8), toon(0x2E3348, { emissive: 0x1A2A4A, emissiveIntensity: 0.5 })));
@@ -130,11 +130,11 @@ export function buildMap(S, onPick) {
   // the route, episode by episode: gold where she has been, white ahead; the wave's throw is a red sweep north of the island
   const done = n => S.stops[n] && S.stops[n].done, P = n => { const s = STOPS[n - 1]; return new THREE.Vector3(s.p[0], s.p[1] < 0 ? s.p[1] + 0.2 : 0.35, s.p[2]); };
   const dash = (curve, lit, col = null, N = 80) => { for (let i = 0; i < N; i += 2) { const a = curve.getPoint(i / N), c = curve.getPoint((i + 1) / N); const m = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, a.distanceTo(c), 6), new THREE.MeshBasicMaterial({ color: col || (lit ? 0xFFC94A : 0xFFFFFF), transparent: !lit && !col, opacity: lit || col ? 1 : 0.55 })); m.position.copy(a).lerp(c, 0.5); m.lookAt(c); m.rotateX(Math.PI / 2); w.add(m); } };
-  ROUTE.forEach(seq => { for (let i = 0; i < seq.length - 1; i++) { const a = seq[i], bb = seq[i + 1]; if (bb === 'wave') { const to = seq[i + 2], lit = done(to); dash(new THREE.CatmullRomCurve3([P(a), new THREE.Vector3(3, 0.5, -18), new THREE.Vector3(20, 0.5, -17), new THREE.Vector3(40, 0.5, -14), P(to)], false, 'centripetal'), lit, lit ? 0xFFC94A : 0xE8575A, 220); i++; continue; }
+  ROUTE.forEach(seq => { for (let i = 0; i < seq.length - 1; i++) { const a = seq[i], bb = seq[i + 1]; if (bb === 'wave') { const to = seq[i + 2], lit = done(to); dash(new THREE.CatmullRomCurve3([P(a), new THREE.Vector3(4, 0.5, -20), new THREE.Vector3(32, 0.5, -21), new THREE.Vector3(62, 0.5, -16), P(to)], false, 'centripetal'), lit, lit ? 0xFFC94A : 0xE8575A, 220); i++; continue; }
     if (VIA[a + '-' + bb]) { const cv = new THREE.CatmullRomCurve3([P(a), ...VIA[a + '-' + bb].map(v => new THREE.Vector3(...v)), P(bb)], false, 'centripetal'); dash(cv, done(bb), null, Math.round(cv.getLength() * 2.4)); continue; }
     const pa = P(a), pb = P(bb), len = pa.distanceTo(pb); dash(new THREE.LineCurve3(pa, pb), done(bb), null, Math.max(8, Math.round(len * 2.4))); } });
   // fog over places not yet open
-  const fogMat = toon(0xF4F7FB, { transparent: true, opacity: 0.82 }); const lockedX = MAX_EP >= 5 ? 48 : MAX_EP >= 4 ? 20 : 26;
+  const fogMat = toon(0xF4F7FB, { transparent: true, opacity: 0.82 }); const lockedX = MAX_EP >= 5 ? 68 : MAX_EP >= 4 ? 20 : 26;
   for (let i = 0; i < 46; i++) { const x = lockedX + rnd() * 30, z = -18 + rnd() * 36; const m = new THREE.Mesh(new THREE.SphereGeometry(1.0 + rnd() * 1.3, 10, 8), fogMat); m.position.set(x, 1.2 + rnd() * 1.2, z); m.scale.y = 0.55; w.add(m); const ph = rnd() * 6; onTick(t => { m.position.y = 1.4 + Math.sin(t * 0.4 + ph) * 0.25; }); }
   // markers
   const reached = Math.max(1, ...Object.keys(S.stops).filter(k => S.stops[k].done).map(k => +k + 1)); const markers = [];

@@ -2,7 +2,8 @@
 import { THREE, builder, toon, outline, newWorld, onTick, textTexture } from './gfx.js';
 import { makeCast } from './chars.js';
 import { rnd, cart } from './sets.js';
-import { rockMat, rockInside, lumpy as lumpyP, mesh, crystalCluster as crys, motes, water as waterP, nz, rockTube, timber } from './props.js';
+import { crystalRoom, CAVERN } from './sets2.js';
+import { trough, rockMat, rockInside, lumpy as lumpyP, mesh, crystalCluster as crys, motes, water as waterP, nz, rockTube, timber } from './props.js';
 
 function dropper(w, b, floorY = 0) {   // falling rocks with gravity, bounce and a hit callback
   return (x, z, size = 0.35, y = 6.8, onHit) => {
@@ -77,109 +78,20 @@ function crystalCluster(b, x, y, z, s, c, n = 4, down = false) {
   const m0 = toon(c, { emissive: c, emissiveIntensity: 0.5 });
   for (let k = 0; k < n; k++) { const m = b.add(new THREE.OctahedronGeometry(0.42 * s * (0.6 + rnd() * 0.6)), m0, x + (rnd() - 0.5) * s * 0.9, y + (down ? -0.6 : 0.6) * s, z + (rnd() - 0.5) * s * 0.9, { line: 0.03, rx: (down ? Math.PI : 0) + (rnd() - 0.5) * 0.7, rz: (rnd() - 0.5) * 0.7 }); m.scale.y = 2 + rnd() * 1.4; }
 }
-// a channel (U-shaped stone trough) along a path, with water running in it
-function trough(w, path, { width = 1.1, depth = 0.55, seg = 140, stone = 0x6E6A85, water = 0x5BB8E8 } = {}) {
-  const ring = 11, pos = [], wpos = [], idx = [], widx = [], up = new THREE.Vector3(0, 1, 0);
-  for (let i = 0; i <= seg; i++) { const s = i / seg, p = path.getPointAt(s), t = path.getTangentAt(s), side = new THREE.Vector3().crossVectors(t, up).normalize(), u = new THREE.Vector3().crossVectors(side, t).normalize();
-    for (let j = 0; j <= ring; j++) { const a = Math.PI * j / ring; const q = p.clone().addScaledVector(side, -Math.cos(a) * width).addScaledVector(u, -Math.sin(a) * depth + depth * 0.35); pos.push(q.x, q.y, q.z); }
-    [-1, 1].forEach(k => { const q = p.clone().addScaledVector(side, k * width * 0.86).addScaledVector(u, -depth * 0.15); wpos.push(q.x, q.y, q.z); });
-    if (i < seg) { for (let j = 0; j < ring; j++) { const a0 = i * (ring + 1) + j, b0 = a0 + ring + 1; idx.push(a0, b0, a0 + 1, b0, b0 + 1, a0 + 1); } const k = i * 2; widx.push(k, k + 2, k + 1, k + 1, k + 2, k + 3); } }
-  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
-  const stoneM = new THREE.Mesh(g, (m => { m.side = THREE.DoubleSide; return m; })(rockMat(stone, 0.35))); w.add(stoneM); outline(stoneM, 0.04);
-  const wg = new THREE.BufferGeometry(); wg.setAttribute('position', new THREE.Float32BufferAttribute(wpos, 3)); wg.setIndex(widx); wg.computeVertexNormals();
-  waterP(w, wg, { deep: water, shallow: 0x8FE6F2, opacity: 0.95, sparkle: 1 });
-  // white foam streaks racing down the water
-  const fm = new THREE.MeshBasicMaterial({ color: 0xE6F6FF }); const foam = Array.from({ length: 40 }, (_, i) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.03, 0.55), fm); w.add(m); m.userData = { s: i / 40, o: (rnd() - 0.5) * width * 1.3 }; return m; });
-  onTick((t, dt) => foam.forEach(m => { const u = m.userData; u.s = (u.s + dt * 0.12) % 1; const p = path.getPointAt(u.s), tg = path.getTangentAt(u.s), sd = new THREE.Vector3().crossVectors(tg, up).normalize(); m.position.copy(p).addScaledVector(sd, u.o).add(new THREE.Vector3(0, 0.02, 0)); m.lookAt(m.position.clone().add(tg)); }));
-}
 export function buildCliff() {
-  const w = newWorld({ sky: 0x0B0A18, ambient: 0xD8D0FF, ambientI: 0.85, sunI: 0.4, fog: [0x0B0A18, 34, 95] }); const b = builder(w);
-  // a lumpy cavern (not a smooth bowl): bumpy walls, floor at two levels, stalactites
-  const roomGeo = new THREE.SphereGeometry(36, 40, 24); const rp = roomGeo.attributes.position;
-  for (let i = 0; i < rp.count; i++) { const v = new THREE.Vector3().fromBufferAttribute(rp, i); const n = 1 + Math.sin(v.x * 0.35) * Math.cos(v.z * 0.3) * 0.08 + Math.sin(v.y * 0.5 + v.x * 0.2) * 0.06 + (rnd() - 0.5) * 0.05; rp.setXYZ(i, v.x * n, v.y * n, v.z * n); }
-  roomGeo.computeVertexNormals(); const room = new THREE.Mesh(roomGeo, rockInside(0x4A4270, 0.1)); room.scale.set(1.25, 0.8, 1.15); room.position.set(0, 7, -6); w.add(room);
-  const floorGeo = new THREE.PlaneGeometry(110, 100, 50, 46); const fp = floorGeo.attributes.position;
-  for (let i = 0; i < fp.count; i++) { const x = fp.getX(i), y = fp.getY(i); fp.setZ(i, Math.sin(x * 0.18) * Math.cos(y * 0.15) * 1.6 + Math.max(0, -y - 14) * 0.18); }
-  floorGeo.computeVertexNormals(); const floor = new THREE.Mesh(floorGeo, rockMat(0x4E4878, 0.18)); floor.rotation.x = -Math.PI / 2; floor.position.set(0, -0.6, -6); w.add(floor);
-  for (let i = 0; i < 26; i++) { const x = (rnd() - 0.5) * 70, z = -40 + rnd() * 50; b.cone(0.8 + rnd() * 1.4, 3 + rnd() * 6, rockMat(0x544C7A, 0.4), x, 1.5, z, { line: 0.04, seg: 7 }); }
-  for (let i = 0; i < 34; i++) { const x = (rnd() - 0.5) * 70, z = -40 + rnd() * 52; const h = 2 + rnd() * 6; b.cone(0.5 + rnd() * 1.1, h, rockMat(0x544C7A, 0.4), x, 31 - h / 2 - rnd() * 3, z, { line: 0.04, seg: 7, rx: Math.PI }); }
-  // rainbow crystals everywhere: on the floor, on the walls, hanging from the roof
-  for (let i = 0; i < 46; i++) { const a = rnd() * Math.PI * 2, r = 14 + rnd() * 26; crystalCluster(b, Math.cos(a) * r, 0.2, -6 + Math.sin(a) * r, 1 + rnd() * 1.6, RAIN[i % RAIN.length]); }
-  for (let i = 0; i < 26; i++) { const a = rnd() * Math.PI * 2, r = 8 + rnd() * 28; crystalCluster(b, Math.cos(a) * r, 26 + rnd() * 3, -6 + Math.sin(a) * r, 1 + rnd(), RAIN[i % RAIN.length], 3, true); }
-  [[-22, 10, -8, 0xB197FC], [22, 9, -4, 0xFF6B6B], [0, 16, -16, 0x4DABF7], [12, 8, 10, 0xFFA94D], [-14, 6, -26, 0xF783AC]].forEach(([x, y, z, c]) => { const l = new THREE.PointLight(c, 45, 55, 1.1); l.position.set(x, y, z); w.add(l); });
-  // ---- the ledge, against the back wall, with the tunnel mouth Leo crawls out of
-  const LEDGE = new THREE.Vector3(-10, 12, 12);                         // the top of the ledge (Leo stands near its front edge)
-  const back = b.box(34, 30, 4, rockMat(0x544C7A, 0.15), -8, 10, 21, { line: 0.06 });
-  for (let i = 0; i < 22; i++) { const x = -24 + rnd() * 32, y = rnd() * 22; if (Math.abs(x - (-11.5)) < 4.5 && Math.abs(y - 13) < 4) continue; b.rock(1.2 + rnd() * 1.6, 0x3E385A, x, y, 19 + rnd() * 0.6, { line: 0.04 }); }
-  const ledge = b.box(10, 13, 10, rockMat(0x625A88, 0.2), LEDGE.x, LEDGE.y - 6.5, LEDGE.z + 2, { line: 0.06 });
-  for (let i = 0; i < 14; i++) b.rock(0.9 + rnd() * 1.2, 0x4A4466, LEDGE.x + (rnd() - 0.5) * 10, rnd() * 11, LEDGE.z - 3 + rnd() * 2, { line: 0.04 });
-  b.box(10.4, 0.5, 10.4, rockMat(0x7068A0, 0.3), LEDGE.x, LEDGE.y - 0.2, LEDGE.z + 2, { line: 0.05 });
-  for (let i = 0; i < 4; i++) crystalCluster(b, LEDGE.x - 4.6 + (i % 2) * 1.2, LEDGE.y, LEDGE.z + 5 - i * 1.6, 0.8 + rnd() * 0.5, RAIN[(i * 3) % 7], 3);
-  for (let i = 0; i < 18; i++) b.rock(0.18 + rnd() * 0.3, 0x5B5578, LEDGE.x + (rnd() - 0.5) * 9, LEDGE.y + 0.1, LEDGE.z + 2 + (rnd() - 0.5) * 9, { line: 0.02 });
-  // the tunnel mouth: a dark jagged hole low in the back wall, rocks around it
-  const MOUTH = new THREE.Vector3(LEDGE.x - 1.5, LEDGE.y, 18.9);
-  const hole = new THREE.Mesh(new THREE.CircleGeometry(1.2, 18, 0, Math.PI), new THREE.MeshBasicMaterial({ color: 0x050407 })); hole.position.copy(MOUTH); hole.rotation.y = Math.PI; hole.scale.set(1, 1.05, 1); w.add(hole);
-  [[-1.5, 0.3], [-1.3, 1.1], [-0.6, 1.5], [0.3, 1.55], [1.1, 1.2], [1.45, 0.4]].forEach(([x, y]) => { const r = b.rock(0.45, 0x4E4870, MOUTH.x - x, MOUTH.y + y, MOUTH.z - 0.2, { line: 0.03 }); r.scale.z = 0.6; });
-  // ---- the spring and the water slide: water pours out of the wall into a stone pool, then down the slide
-  const SPRING = new THREE.Vector3(LEDGE.x + 4.2, LEDGE.y + 1.8, 18.9);
-  const fallM = toon(0x7FD0F5, { transparent: true, opacity: 0.85, emissive: 0x2A7AB0, emissiveIntensity: 0.4 });
-  const fall = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.5, 2, 10, 1, true), fallM); fall.position.set(SPRING.x, SPRING.y - 1, SPRING.z - 0.5); w.add(fall);
-  const pool = b.cyl(1.6, 1.4, 0.6, rockMat(0x7068A0, 0.4), SPRING.x, LEDGE.y + 0.1, SPRING.z - 1.6, { line: 0.04, seg: 14 });
-  const poolW = new THREE.Mesh(new THREE.CircleGeometry(1.35, 18), toon(0x5BB8E8, { emissive: 0x1E5A80, emissiveIntensity: 0.35 })); poolW.rotation.x = -Math.PI / 2; poolW.position.set(SPRING.x, LEDGE.y + 0.42, SPRING.z - 1.6); w.add(poolW);
-  const slidePath = new THREE.CatmullRomCurve3([
-    [SPRING.x, LEDGE.y + 0.42, SPRING.z - 2.4], [SPRING.x + 0.2, LEDGE.y + 0.3, LEDGE.z + 3], [SPRING.x + 0.6, LEDGE.y - 0.2, LEDGE.z - 2.2],
-    [SPRING.x + 2.2, LEDGE.y - 2.6, LEDGE.z - 5.2], [SPRING.x + 5.2, LEDGE.y - 5.6, LEDGE.z - 6.4], [SPRING.x + 8.4, LEDGE.y - 8.2, LEDGE.z - 7.4],
-    [SPRING.x + 10.6, LEDGE.y - 10.4, LEDGE.z - 9.6], [SPRING.x + 11.6, LEDGE.y - 11.6, LEDGE.z - 12.6],
-  ].map(p => new THREE.Vector3(...p)), false, 'centripetal');
-  trough(w, slidePath);
-  // posts holding the slide up
-  for (let k = 0.38; k < 0.95; k += 0.11) { const p = slidePath.getPointAt(k); b.cyl(0.25, 0.35, p.y + 0.6, 0x4A4466, p.x, (p.y - 0.6) / 2, p.z, { line: 0.03, seg: 7 }); }
-  // ---- the river on the cavern floor: the slide pours into it, and it runs off into a dark tunnel
-  const end = slidePath.getPointAt(1);
-  const riverPath = new THREE.CatmullRomCurve3([[end.x - 3, -0.1, end.z + 4], [end.x, -0.1, end.z - 1], [end.x + 6, -0.1, end.z - 6], [end.x + 14, -0.1, end.z - 9], [end.x + 24, -0.1, end.z - 10]].map(p => new THREE.Vector3(...p)), false, 'centripetal');
-  trough(w, riverPath, { width: 3.2, depth: 0.5, stone: 0x3A3456, water: 0x2F86C9 });
-  // carve the floor down along the river so it is never hidden
-  { const rs = Array.from({ length: 80 }, (_, i) => riverPath.getPointAt(i / 79)); for (let i = 0; i < fp.count; i++) { const wx = fp.getX(i), wz = -fp.getY(i) - 6; let d = 1e9; rs.forEach(q => { d = Math.min(d, Math.hypot(q.x - wx, q.z - wz)); });
-    if (d < 6) fp.setZ(i, Math.min(fp.getZ(i), -0.9 + Math.max(0, d - 3.4) * 0.5)); } fp.needsUpdate = true; floorGeo.computeVertexNormals(); }
-  const rEnd = riverPath.getPointAt(1); const rTunnel = new THREE.Mesh(new THREE.CircleGeometry(4, 20, 0, Math.PI), new THREE.MeshBasicMaterial({ color: 0x050407 })); rTunnel.position.set(rEnd.x, -0.4, rEnd.z); rTunnel.rotation.y = -Math.PI / 2; w.add(rTunnel);
-  b.box(3, 9, 16, 0x3A3456, rEnd.x + 1.6, 3, rEnd.z, { line: 0.05 });
-  const splash = new THREE.Group(); splash.position.copy(end); w.add(splash);
-  for (let i = 0; i < 8; i++) { const m = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 6), new THREE.MeshBasicMaterial({ color: 0xE6F6FF })); splash.add(m); m.userData.ph = i; }
-  onTick(t => splash.children.forEach(m => { const k = (t * 1.6 + m.userData.ph / 8) % 1; m.position.set(Math.cos(m.userData.ph) * k * 1.4, Math.sin(k * Math.PI) * 1.1, Math.sin(m.userData.ph) * k * 1.4); }));
-  // ---- the green crystal room far across the cavern: ONE loop on a track that runs from tunnel to tunnel
-  const G = new THREE.Vector3(5, 3.2, -20), LR = 5.2, LAT = 2.6;
-  const ground = b.box(46, 3.6, 12, rockMat(0x4E6A60, 0.2), G.x, G.y - 1.9, G.z - 1, { line: 0.05 });
-  // the green crystal room seen from across the cavern: the same rock dome, glowing green crystals and wooden-tied track as on Mia's side
-  const alcove = new THREE.Mesh(new THREE.SphereGeometry(10, 40, 20, 0, Math.PI * 2, 0, Math.PI / 2), rockInside(0x4E6A60, 0.14)); alcove.rotation.x = Math.PI / 2; alcove.position.set(G.x, G.y + LR, G.z - 5); w.add(alcove);
-  const GREEN = 0x4BE38A, GREENS = [0x4BE38A, 0x6FF0A6, 0x9FFFC8, 0x3CCB7A];
-  for (let i = 0; i < 18; i++) { const a = i / 18 * Math.PI * 2, cc = crys(w, G.x + Math.cos(a) * 9.0, G.y + LR + Math.sin(a) * 8.0, G.z - 4.4, { n: 5, size: 0.9 + rnd() * 0.6, cols: GREENS, light: false }); cc.rotation.z = a - Math.PI / 2; cc.rotation.x = -0.4; }
-  for (let i = 0; i < 12; i++) { const x = G.x + (rnd() - 0.5) * 40, z = G.z + (rnd() < 0.5 ? 2.4 : -4.4) + (rnd() - 0.5) * 1.2; if (Math.abs(x - G.x) < 6.5 && z < G.z) continue; crys(w, x, G.y - 0.1, z, { n: 6, size: 0.7 + rnd() * 0.7, cols: GREENS, light: false }); }
-  [[G.x, G.y + LR, G.z + 2], [G.x - 8, G.y + 3, G.z - 2], [G.x + 8, G.y + 3, G.z - 2]].forEach(p => { const l = new THREE.PointLight(GREEN, 40, 26, 1.2); l.position.set(...p); w.add(l); });
-  const tl = [[-22, 0, 0], [-16, 0, 0.4], [-10, 0, 0.6], [-5, 0, 0.4], [-2, 0, 0]];
-  const pts = tl.map(([x, y, z]) => new THREE.Vector3(G.x + x, G.y + y, G.z + z));
-  for (let k = 0; k <= 20; k++) { const th = k / 20 * Math.PI * 2; pts.push(new THREE.Vector3(G.x + LR * Math.sin(th) * 0.98 - (k === 0 ? 0 : 0), G.y + LR - LR * Math.cos(th), G.z - LAT * k / 20)); }
-  [[4, 0, -LAT - 0.2], [9, 0, -LAT - 0.6], [15, 0, -LAT - 0.8], [22, 0, -LAT - 0.8]].forEach(([x, y, z]) => pts.push(new THREE.Vector3(G.x + x, G.y + y, G.z + z)));
-  const track = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
-  const nearS = q => { let best = 0, bd = 1e9; for (let i = 0; i <= 600; i++) { const d = track.getPointAt(i / 600).distanceTo(q); if (d < bd) { bd = d; best = i / 600; } } return best; };
-  const sA = nearS(pts[tl.length]), sB = nearS(pts[tl.length + 20]);
-  const frame = s => { const p = track.getPointAt(s), f = track.getTangentAt(s); let u = new THREE.Vector3(0, 1, 0);
-    if (s > sA + 0.004 && s < sB - 0.004) u = new THREE.Vector3(G.x, G.y + LR, p.z).sub(p).normalize();
-    const r = new THREE.Vector3().crossVectors(u, f).normalize(); u = new THREE.Vector3().crossVectors(f, r).normalize(); return { p, f, r, u }; };
-  const railM = toon(0x9DA3B3, { emissive: 0x15171C }), tieM = toon(0x8B5E3C), TL = track.getLength();
-  [-0.62, 0.62].forEach(o => { const rp2 = []; for (let i = 0; i <= 400; i++) { const { p, r, u } = frame(i / 400); rp2.push(p.clone().addScaledVector(r, o).addScaledVector(u, 0.08)); } w.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(rp2), 600, 0.06, 5), railM)); });
-  for (let d = 0; d < TL; d += 0.8) { const { p, f, u } = frame(d / TL); const t = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.08, 0.24), tieM); t.position.copy(p); t.up.copy(u); t.lookAt(p.clone().add(f)); w.add(t); }
-  // two tunnels: the track comes out of one and goes into the other
-  [[pts[0], Math.PI / 2], [pts[pts.length - 1], -Math.PI / 2]].forEach(([p, ry]) => { const m = new THREE.Mesh(new THREE.CircleGeometry(2.2, 18, 0, Math.PI), new THREE.MeshBasicMaterial({ color: 0x040807 })); m.position.set(p.x, G.y - 0.1, p.z); m.rotation.y = ry; m.position.x += (ry > 0 ? 0.15 : -0.15); w.add(m); const sd = ry > 0 ? -1 : 1; mesh(w, lumpyP(3.2, 2, 0.18, 0.9), rockMat(0x4E6A60, 0.3), p.x + sd * 2.9, G.y + 1.2, p.z, { sc: [0.8, 1, 1.3], shadow: false }); timber(w, new THREE.Vector3(p.x - sd * 0.3, G.y - 0.1, p.z), new THREE.Vector3(sd, 0, 0), { w: 3.4, h: 2.8 }); });
-  // the cart with Mia and Toby
-  const tiny = new THREE.Group(); w.add(tiny); const tc = cart(builder(tiny), 0, 0, 0); const cc = makeCast(tiny); cc.leo.g.visible = false;
+  // the very same cavern Mia rides through (sets2: crystalRoom), seen from Leo's ledge high on the wall
+  const w = newWorld(CAVERN), K = crystalRoom(w);
+  // the cart with Mia and Toby, riding the track round the loop (and pausing in the tunnels between laps)
+  const tiny = new THREE.Group(); w.add(tiny); cart(builder(tiny), 0, 0, 0); const cc = makeCast(tiny); cc.leo.g.visible = false;
   cc.mia.g.position.set(0, 0.45, 0.15); cc.mia.pose('cheer'); cc.mia.L.rotation.x = cc.mia.R.rotation.x = -1.4; cc.toby.g.position.set(0, 0.85, 0.6); cc.toby.g.scale.setScalar(0.9);
-  tiny.scale.setScalar(1.15);
-  const hitBox = new THREE.Mesh(new THREE.SphereGeometry(1.9, 10, 8), new THREE.MeshBasicMaterial({ visible: false })); tiny.add(hitBox);
-  const ride = { s: 0, on: true, speed: 0.11 };
-  onTick((t, dt) => { if (!ride.on) return; ride.s += dt * ride.speed * (ride.s > sA && ride.s < sB ? 1.25 : 1); if (ride.s > 1.18) ride.s = -0.05;   // a short pause in the tunnels, then round again
-    const s = Math.min(0.999, Math.max(0.001, ride.s)); tiny.visible = ride.s > 0.004 && ride.s < 0.996; const { p, f, r, u } = frame(s); tiny.position.copy(p).addScaledVector(u, 0.05); tiny.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(r, u, f)); });
-  // ---- Leo
+  const hitBox = new THREE.Mesh(new THREE.SphereGeometry(2.2, 10, 8), new THREE.MeshBasicMaterial({ visible: false })); tiny.add(hitBox);
+  const ride = { s: 0, on: true, speed: 0.05 }, s0 = K.sIn - 0.02, s1 = K.sOut + 0.01;
+  onTick((t, dt) => { if (!ride.on) return; ride.s += dt * ride.speed * (ride.s > K.sA && ride.s < K.sB ? 1.3 : 1); if (ride.s > 1.15) ride.s = -0.05;
+    const u = Math.min(1, Math.max(0, ride.s)), s = s0 + (s1 - s0) * u; tiny.visible = ride.s > 0 && ride.s < 1; const { p, f, r, u: up } = K.frame(s); tiny.position.copy(p).addScaledVector(up, 0.05); tiny.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(r, up, f)); });
+  // map the loop's own 0..1 onto this ride's 0..1, so the story can wait for "after the loop"
+  const toRide = s => (s - s0) / (s1 - s0);
+  // ---- Leo, on the ledge
   const cast = makeCast(w); cast.mia.g.visible = false; cast.toby.g.visible = false; const leo = cast.leo;
-  leo.g.position.set(LEDGE.x - 0.6, LEDGE.y + 0.05, LEDGE.z - 3.6); leo.g.rotation.y = Math.PI;
-  return { w, leo, LEDGE, MOUTH, SPRING, tiny, hitBox, ride, slidePath, riverPath, G, track, sA, sB };
+  leo.g.position.set(K.LEDGE.x - 0.6, K.LEDGE.y + 0.05, K.LEDGE.z - 1.2); leo.g.rotation.y = Math.PI;
+  return { w, leo, LEDGE: K.LEDGE, MOUTH: K.MOUTH, SPRING: K.SPRING, tiny, hitBox, ride, slidePath: K.slidePath, riverPath: K.riverPath, G: K.G, track: K.path, sA: toRide(K.sA), sB: toRide(K.sB) };
 }

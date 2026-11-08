@@ -1,6 +1,6 @@
 // Episode 5 — Guard of the Stones. Stops 13–15. Told in the present tense, like Frank's text.
 import { S, save, sfx, wait, h, shuffle } from './core.js';
-import { THREE, setCam, flyCam, followCam, stopFollow, quake, tween, moveTo, onTick, sparkles, textTexture, cut, dolly, lens, scene, toon } from './gfx.js';
+import { THREE, setCam, flyCam, followCam, stopFollow, quake, tween, moveTo, onTick, sparkles, textTexture, cut, dolly, lens, scene, toon, builder } from './gfx.js';
 import { buildIce } from './sets5.js';
 import { letterbox, frost, shardBurst, fogThicken, glowSprite } from './effects.js';
 import { tell, beat, seq, tapOn, filled, hideStory, chooseWord, spellOn, order, think, offerStretch, earnCard, toby, tapAll, MODE } from './ui.js';
@@ -34,6 +34,17 @@ function settled(I, pose) {     // later stops: he is already out of the ice
   I.varn.set(pose); I.varn.state.glow = 1.1; I.varn.lookAt(new THREE.Vector3(0, 3, 2), 0.8, 10);
 }
 const near = (I, off) => { const h = I.varn.headPos(); return [[h.x + off[0], h.y + off[1], h.z + off[2]], [h.x, h.y + 0.2, h.z]]; };
+// the frozen sea breaks up: the ice sheet fades out and becomes floes that keep floating (and bobbing) on the dark water
+function breakIce(I) {
+  tween(1400, e => { I.iceMat.opacity = 0.84 * (1 - e); }).then(() => { I.iceMat.visible = false; });
+  const g = new THREE.Group(); I.w.add(g); const b = builder(g), m = toon(0xE6F4FC, { emissive: 0x5E8FB0, emissiveIntensity: 0.15 }), list = [];
+  for (let i = 0; i < 90; i++) { const a = Math.random() * Math.PI * 2, r = 5 + Math.pow(Math.random(), 0.7) * 60, x = 1.3 + Math.cos(a) * r, z = -6 + Math.sin(a) * r;
+    if (Math.abs(x) < 3 && z > -6 && z < 90) continue;   // (leave the boat's way clear)
+    const f = b.box(1 + Math.random() * 3.4, 0.32, 0.8 + Math.random() * 2.6, m, x, -0.08, z, { ry: Math.random() * 3, line: 0.03 }); f.userData.ph = Math.random() * 6; list.push(f); }
+  I.slabs.forEach(sl => { sl.userData.ph = Math.random() * 6; list.push(sl); });
+  onTick(t => list.forEach(f => { f.position.y = (f.userData.y0 ??= f.position.y) + Math.sin(t * 0.9 + f.userData.ph) * 0.06; }));
+  return list;
+}
 // a big wave of water that rises and rolls the boat away
 function makeWave(w) {
   const g = new THREE.Group(); w.add(g);
@@ -200,6 +211,8 @@ export async function stop15() {
   letterbox(true); cut([10, 3, 7], [3, 1.8, -4], 56); await V.to('tailSmash', 420);
   sfx('crash'); sfx('rumble'); quake(2, 0.6); flash();
   shardBurst(I.w, new THREE.Vector3(5.2, 0.3, -2.4), { n: 40, power: 12 }); I.hole.scale.setScalar(3.4);
+  // the hit shatters the frozen sea: the sheet of ice breaks up into floes that stay floating all around (they never just vanish)
+  const floes = breakIce(I);
   I.chunks.forEach((m, i) => tween(900, e => { m.position.y = 0.2 + Math.sin(e * Math.PI) * (1 + i % 3); m.rotation.x += 0.05; }));
   sparkles(new THREE.Vector3(5, 1, -2.4), 0xE6F6FF, 80);
   const wave = makeWave(I.w); wave.visible = true; tween(1600, e => { wave.position.set(0, -7 + e * 5.6, -6 + e * 2.5); });
@@ -209,21 +222,36 @@ export async function stop15() {
     { prompt: 'Which word fits?', sentence: 'a huge, angry {_}', tiles: ['wave', 'cave', 'save'], answer: 'wave', note: 'wave = a big moving hill of water', hints: ['It is made of water and it moves.', 'wave'] },
     { prompt: 'Which word fits?', sentence: 'a huge, angry {_}', tiles: ['wave', 'wove', 'wife'], answer: 'wave', note: 'wave = water that rises and rolls', hints: ['It pushes the boat.', 'w – a – v – e'] },
   ]));
-  await filled('wave'); await beat('The water catches their small boat and pushes them away from the Ferris wheel.'); await earnCard('wave');
-  // the wave pushes the boat away; the gem flies to Varn
-  const B = I.boat.g; const z0 = B.position.z; letterbox(true);
-  tween(3400, e => { B.position.z = z0 + e * 9; B.position.y = 0.12 + Math.sin(e * Math.PI) * 1.4; B.rotation.z = Math.sin(e * 9) * 0.15; wave.position.z = -3.5 + e * 9; wave.position.y = -1.4 - e * 2.5; });
-  cut([5.5, 2.4, 15], [-0.5, 3, -2], 58); dolly([6, 3, 17], [-0.5, 4, -3], 7000);
+  await filled('wave');
+  // 1) the wave lifts the boat and shoves it back, away from the Ferris wheel
+  const B = I.boat.g, z0 = B.position.z; letterbox(true);
+  cut([8, 2.4, z0 + 5], [0, 1.4, z0 - 3], 56); dolly([10, 3.4, z0 + 17], [0, 1.4, z0 + 7], 3800);
+  const push1 = tween(3600, e => { B.position.z = z0 + e * 12; B.position.y = 0.12 + Math.sin(e * Math.PI) * 1.4; B.rotation.z = Math.sin(e * 9) * 0.15; wave.position.z = -3.5 + e * 12; wave.position.y = -1.4 - e * 2.5; });
+  await beat('The water catches their small boat and pushes them away from the Ferris wheel.'); await push1; await earnCard('wave');
+  // 2) the gem: close on Mia's hands — it glows, lifts out of them, and flies over the water to Varn (the camera flies with it)
+  const bz = B.position.z; stopFollow(); cut([1.5, 1.7, bz + 2.4], [0, 1.0, bz], 40);
   const q215 = seq(['Suddenly, Mia feels something moved in her hands.', 'The blue gem flies up into the air and floats away to Varn!']);
-  const gp = I.gem.getWorldPosition(new THREE.Vector3()); I.boat.cast.mia.g.remove(I.gem); I.w.add(I.gem); I.gem.position.copy(gp); mia.pose('reach'); sfx('glow');
-  V.to('rear', 1400); I.gemGlow.scale.setScalar(2.2);
-  await tween(2400, e => { const vh = V.headPos().add(new THREE.Vector3(0, 1.8, 1.2)); I.gem.position.lerpVectors(gp, vh, e); I.gem.position.y += Math.sin(e * Math.PI) * 4; I.gem.rotation.y += 0.1; });
-  // he takes the gem and dives back into the deep (like the picture in the book)
+  mia.pose('reach'); sfx('glow'); await tween(1200, e => { I.gemGlow.scale.setScalar(0.4 + e * 1.4); I.gemLight.intensity = 6 + e * 20; });
+  const gp = I.gem.getWorldPosition(new THREE.Vector3()); I.boat.cast.mia.g.remove(I.gem); I.w.add(I.gem); I.gem.position.copy(gp); I.gem.scale.setScalar(1.6);
+  V.to('rear', 1400); [leo, mia].forEach(c => c.pose('wow'));
+  const gc = new THREE.Vector3(), gl = new THREE.Vector3();
+  followCam(() => { gc.copy(I.gem.position).add(new THREE.Vector3(3.2, 1.2, 4.2)); gl.copy(I.gem.position); return [gc, gl]; });
+  await tween(3400, e => { const vh = V.headPos().add(new THREE.Vector3(0, 1.8, 1.2)); I.gem.position.lerpVectors(gp, vh, e); I.gem.position.y += Math.sin(e * Math.PI) * 5; I.gem.rotation.y += 0.1; });
+  // he holds it above his head, glowing
   const hold = onTick(() => { I.gem.position.copy(V.headPos().add(new THREE.Vector3(0, 1.8, 0.8))); });
+  stopFollow(); { const hp = V.headPos(); await flyCam([hp.x + 6, hp.y + 1.5, hp.z + 8], [hp.x, hp.y + 1.4, hp.z], 1000); }
+  sparkles(I.gem.position.clone(), 0x9FE8FF, 40); sfx('glow'); await q215; await wait(800);
+  // 3) he dives back into the deep with it — its light fades away under the water
   [leo, mia].forEach(c => c.pose('scared'));
-  V.lookAt(null, 0, 800); V.to('dive', 2600); await wait(2200); hold(); tween(1600, e => { I.gem.position.y -= e * 0.4; I.gemGlow.material.opacity = 1 - e; I.gem.scale.setScalar(Math.max(0.01, 1 - e)); });
-  V.to('gone', 3000); sfx('crash'); fogThicken(scene, { near: 4, far: 22, ms: 4500 }); frost(0.3, 3000);
-  await q215; tell('Mia, Leo, and Toby watched as their boat drifts away...', { wait: false }); await tapOn();
+  V.lookAt(null, 0, 800); V.to('dive', 2600); await wait(2200); hold(); tween(1600, e => { I.gem.position.y -= e * 0.4; I.gemGlow.material.opacity = 1 - e; I.gem.scale.setScalar(Math.max(0.01, 1.6 * (1 - e))); });
+  V.to('gone', 3000); sfx('crash');
+  // 4) and the water carries the boat away — far, far away, out among the broken ice and into the fog
+  const b1 = B.position.z; letterbox(true);
+  cut([2, 5, b1 - 10], [0, 0.6, b1 + 4], 52); dolly([4, 14, b1 - 18], [0, 0, b1 + 40], 9000);
+  tell('Mia, Leo, and Toby watched as their boat drifts away...', { wait: false });
+  fogThicken(scene, { near: 8, far: 70, ms: 7000 }); frost(0.3, 3000);
+  const ride = tween(9000, e => { B.position.z = b1 + e * e * 70; B.position.x = Math.sin(e * 2.2) * 3; B.position.y = 0.12 + Math.sin(e * 14) * 0.12; B.rotation.y = Math.PI + Math.sin(e * 3) * 0.35; B.rotation.z = Math.sin(e * 11) * 0.08; });
+  await wait(2500); await tapOn(); await ride;
   // ---- the story is told in NOW words
   await chooseWord(pickV(15, [
     { prompt: 'This story uses NOW words. Pick the NOW word.', sentence: 'Varn {_} a big, heavy tail.', tiles: ['lifts', 'lifted'], answer: 'lifts', note: 'lifts = happening now · lifted = already happened', hints: ['NOW words often end in -s here.', 'lifts'] },

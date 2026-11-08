@@ -13,6 +13,7 @@ export async function buildIsland(G) {
     const shoreR = a => 40 + nz(Math.cos(a) * 9, Math.sin(a) * 9, 0.5) * 3 + Math.sin(a * 3 + 1) * 2.2;
     // the stream: out of the cave mouth, curling across the beach to the sea
     const SP = [[CAVE[0] - 3, CAVE[1]], [CAVE[0] + 1, CAVE[1]], [CAVE[0] + 6, CAVE[1] - 1.5], [CAVE[0] + 11, CAVE[1] + 1.5], [CAVE[0] + 20, CAVE[1] + 2.5]];
+    { const L = SP[SP.length - 1], a = Math.atan2(L[1], L[0]), r = shoreR(a) - 0.6; L[0] = Math.cos(a) * r; L[1] = Math.sin(a) * r; }   // the stream ends right at the waterline (no strip of stream showing out at sea)
     const sCurve = new THREE.CatmullRomCurve3(SP.map(([x, z]) => new THREE.Vector3(x, 0, z))), sPts = sCurve.getSpacedPoints(80);
     const sDist = (x, z) => { let d = 1e9; for (const q of sPts) d = Math.min(d, Math.hypot(q.x - x, q.z - z)); return d; };
     const hBase = (x, z) => { const a = Math.atan2(z, x), d = Math.hypot(x, z), sr = shoreR(a), land = 0.75 + nz(x, z, 0.3) * 0.12; return d < sr - 5 ? land : d < sr ? land - (d - sr + 5) / 5 * 1.2 : -0.45 - (d - sr) * 0.35; };
@@ -54,18 +55,18 @@ export async function buildIsland(G) {
     G.add(new THREE.Mesh(bed, toon(0xffffff, { vertexColors: true })));
     const sea = new THREE.PlaneGeometry(500, 500, 2, 2); sea.rotateX(-Math.PI / 2); water(G, sea, { deep: 0x2F9FD0, shallow: 0x8FE6EE, opacity: 0.55, foamFn: '1.0 - smoothstep(0.0, 0.8, abs(length(vW.xz) - 39.2 - sin(atan(vW.z, vW.x) * 3.0 + 1.0) * 2.2 - sin(uT) * 0.3))' }).position.y = -0.05;
     // the mainland far away: coast, hometown, Ferris wheel, lighthouse, and the hill with the meadow cave
-    const MX = -95, coastX = z => MX + 6 * Math.sin(z * 0.05) + 3 * Math.sin(z * 0.13 + 1);
+    const MX = -175, coastX = z => MX + 6 * Math.sin(z * 0.05) + 3 * Math.sin(z * 0.13 + 1);
     const ml = new THREE.PlaneGeometry(200, 300, 60, 80); ml.rotateX(-Math.PI / 2); { const p = ml.attributes.position, c = new Float32Array(p.count * 3), col = new THREE.Color(); for (let i = 0; i < p.count; i++) { const x = p.getX(i) + MX - 100, z = p.getZ(i), d = coastX(z) - x; p.setX(i, x); p.setY(i, d < 0 ? -2 : Math.min(1.2, d * 0.25) + nz(x, z, 0.05) * (d > 10 ? 1.2 : 0)); d < 4 ? col.setRGB(0.92, 0.82, 0.6) : col.setHSL(0.27, 0.45, 0.48 + nz(x, z, 0.1) * 0.05); c.set([col.r, col.g, col.b], i * 3); } ml.setAttribute('color', new THREE.BufferAttribute(c, 3)); ml.computeVertexNormals(); }
     const mlm = new THREE.Mesh(ml, toon(0xffffff, { vertexColors: true })); mlm.receiveShadow = true; G.add(mlm);
     const homeZ = -6, rc = [0xEF5B4C, 0x4AA3DF, 0xFFC94A, 0xB57EDC, 0xF28C38]; for (let i = 0; i < 26; i++) { const z = homeZ + rr(-22, 22), x = coastX(z) - rr(5, 22); const b = builder(G), hh = rr(1.2, 2.4); b.rbox(2, hh, 2, 0xFFF4D6, x, 1.2 + hh / 2, z, { line: 0.04, ry: rr(-0.3, 0.3) }); b.cone(1.75, 1.3, pick(rc), x, 1.2 + hh + 0.6, z, { seg: 4, ry: Math.PI / 4, line: 0.04 }); }
-    const wheel = ferris(G, coastX(homeZ - 10) - 14, 1.2, homeZ - 10, 0.9, Math.PI / 2);   // facing out to sea
+    const wheel = ferris(G, coastX(homeZ - 10) - 16, 1.2, homeZ - 10, 1.25, Math.PI / 2);   // facing out to sea
     { const lz = homeZ + 14, lx = coastX(lz) - 1.5, b = builder(G); b.cyl(1, 1.4, 7, 0xFFFDF4, lx, 4.5, lz); [3, 5.6].forEach(y => b.cyl(1.12, 1.18, 0.8, 0xD93A35, lx, y, lz, { line: 0.03 })); b.cyl(0.9, 0.9, 1, 0xFFE58A, lx, 8.5, lz, { line: 0.03 }); b.cone(1.2, 1.2, 0xD93A35, lx, 9.6, lz); }
     const CH = [coastX(24) - 4, 24]; mesh(G, lumpy(7, 3, 0.18, 0.6), rockMat(0x9AA39A, 0.12), CH[0] - 4, 0.5, CH[1], { sc: [1.4, 1, 1] });
     { const h = new THREE.Mesh(new THREE.CircleGeometry(2, 20, 0, Math.PI), new THREE.MeshBasicMaterial({ color: 0x07080F })); h.position.set(CH[0] + 4.5, 1.1, CH[1]); h.rotation.y = Math.PI / 2; G.add(h); }
     await scatter(G, 'tree_oak', Array.from({ length: 30 }, () => { const z = rr(-60, 60), x = coastX(z) - rr(8, 50); return { x, z, s: rr(3, 5) }; }), { gy: () => 1.2 });
     // the secret tunnel: a dark stone tube buried just under the seabed, running from the island's cave to the meadow cave on the mainland.
     // Seen from the hill through the clear water: a dark line with pale stone edges and a faint light travelling along it.
-    const TP = [[HC[0] - 15, 0.2, HC[1] + 3], [HC[0] - 24, -2.4, HC[1] + 4], [-44, -3.9, 6], [-60, -3.9, 15], [-78, -3.9, 21], [CH[0] - 2, -2.5, CH[1]], [CH[0] + 4.5, 1.0, CH[1]]].map(a => new THREE.Vector3(...a));
+    const TP = [[HC[0] - 15, 0.2, HC[1] + 3], [HC[0] - 24, -2.4, HC[1] + 4], [-44, -3.9, 6], [-70, -3.9, 13], [-100, -3.9, 18], [-130, -3.9, 21], [-158, -3.9, 23], [CH[0] - 2, -2.5, CH[1]], [CH[0] + 4.5, 1.0, CH[1]]].map(a => new THREE.Vector3(...a));
     const tc = new THREE.CatmullRomCurve3(TP, false, 'centripetal');
     const band = (w, col, dy, op = 1) => { const pts = tc.getSpacedPoints(240), pos = [], idx = []; pts.forEach((p, i) => { const t = tc.getTangentAt(Math.min(1, i / 240)), nx = -t.z, nzz = t.x, l = Math.hypot(nx, nzz) || 1; [-1, 1].forEach(sd => pos.push(p.x + nx / l * w * sd, Math.max(p.y, -3.95) + dy, p.z + nzz / l * w * sd)); if (i < 240) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); } });
       const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: col, transparent: op < 1, opacity: op, side: THREE.DoubleSide, depthWrite: op >= 1 })); G.add(m); return m; };
