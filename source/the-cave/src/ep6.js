@@ -18,8 +18,8 @@ const stand = (G, c, x, z, ry = 0) => { c.g.rotation.order = 'YXZ'; c.g.rotation
 const faceTo = (c, p) => { c.g.rotation.y = Math.atan2(p.x - c.g.position.x, p.z - c.g.position.z); };
 const walk = async (G, c, x, z, ms, pose = 'walk') => { c.pose(pose); await moveTo(c.g, [x, G.hf(x, z), z], ms); c.pose('idle'); };
 const hitOn = (c, r = 0.8, y = 0.6) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), new THREE.MeshBasicMaterial({ visible: false })); m.position.y = y; c.g.add(m); return m; };
-// a steaming bowl of soup in someone's hands
-function bowlIn(c, { x = 0, y = -0.62, z = 0.18 } = {}) { const g = new THREE.Group(); g.position.set(x, y, z); c.AR.add(g);
+// a steaming bowl of soup held in both hands, in front of the chest (it hangs off the body, not one arm, so it sits between the hands)
+function bowlIn(c) { const adult = !!c.headY, g = new THREE.Group(); g.position.set(0, adult ? 1.13 : 0.78, adult ? 0.6 : 0.37); c.g.add(g); c.holding = true; if (c.staff) c.staff.visible = false;   // (the old man puts his crook down to hold his bowl)
   const b = new THREE.Mesh(new THREE.LatheGeometry([[0, 0], [0.1, 0.01], [0.15, 0.07], [0.16, 0.1]].map(([a, b2]) => new THREE.Vector2(a, b2)), 16), toon(0x8A5A36, { side: THREE.DoubleSide })); g.add(b);
   const s = new THREE.Mesh(new THREE.CircleGeometry(0.14, 14), toon(0xD9944E)); s.rotation.x = -Math.PI / 2; s.position.y = 0.085; g.add(s);
   const st = glowSprite(0xF4F6F8, 0.35, 0.3); g.add(st); onTick(t => { const k = (t * 0.6) % 1; st.position.y = 0.15 + k * 0.5; st.material.opacity = 0.3 * Math.sin(k * Math.PI); }); return g; }
@@ -101,7 +101,7 @@ export async function stop16() {
 // ================================================================ stop 17 — the old man's fire
 export async function stop17() {
   playMusic('cave');
-  const G = buildGrayShore(), { leo, mia, toby: dog, man, w } = G;
+  const G = buildGrayShore(), { leo, mia, toby: dog, man, w } = G; window.__ep6 = G;
   lie(G, leo, -1.6, 1.4, -0.35); leo.forceFace = 'blink'; stand(G, mia, 1.0, 1.4, 0.4); stand(G, dog, 0.2, 2.4, 0);
   const zOff = zzz(w, new THREE.Vector3(-1.6 + Math.sin(0.35) * 0.95, 0.4, 1.4 - Math.cos(0.35) * 0.95));
   // the old man by his fire, hood up, staff beside him
@@ -151,9 +151,9 @@ export async function stop17() {
   await chooseWord({ prompt: kv.prompt, sentence: 'He gives them a {_} smile.', tiles: kv.tiles, answer: 'kind', note: kv.note, hints: kv.hints });
   await filled('kind'); await earnCard('kind');
   // they sit on the log with their bowls; Toby lies down by the fire
-  stand(G, mia, SE.x + 0.5, SE.z - 0.3); stand(G, leo, SE.x - 0.4, SE.z + 0.35); [mia, leo].forEach(c => { c.g.position.y = C.y - 0.04; faceTo(c, C); c.pose('sit'); bowlIn(c); c.AR.rotation.x = -1.0; });
+  stand(G, mia, SE.x + 0.5, SE.z - 0.3); stand(G, leo, SE.x - 0.4, SE.z + 0.35); [mia, leo].forEach(c => { c.g.position.y = C.y - 0.04; faceTo(c, C); c.pose('sit'); bowlIn(c); });
   stand(G, dog, SE.x + 0.6, SE.z - 1.6); dog.g.position.y = C.y; faceTo(dog, C); dog.pose('sit');
-  const mb = bowlIn(man); man.AR.rotation.x = -1.0;
+  const mb = bowlIn(man);
   cut([F.x + 0.3, F.y + 1.9, F.z - 6.4], [F.x, F.y + 0.8, F.z + 0.3], 50); dolly([F.x + 0.2, F.y + 1.7, F.z - 5.8], [F.x, F.y + 0.8, F.z + 0.3], 9000);
   await beat('As they eat and warm their hands, he listens to their story.');
   const nod = onTick(t => { man.head.rotation.x = Math.max(0, Math.sin(t * 3)) * 0.25; });

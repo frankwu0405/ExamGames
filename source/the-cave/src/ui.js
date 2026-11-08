@@ -354,7 +354,7 @@ export function openBinder(onClose) {
   const ov = h('div', { class: 'binder', onclick: e => { if (e.target === ov) close(); } },
     h('div', { class: 'binder-page' }, h('button', { class: 'btn ghost close', onclick: () => close() }, '✕'),
       h('h2', {}, 'My Word Cards'), h('div', { class: 'binder-sub' }, due.length ? `✨ ${due.length} card${due.length > 1 ? 's' : ''} ready to polish. Polish cards to make them Silver, then Gold!` : 'Cards go Bronze → Silver → Gold when you polish them on later days.'),
-      ...[...new Set(Object.values(CARDS).map(c => c.ep))].filter(ep => ep <= (window.__maxEp || 99)).flatMap(ep => [h('h3', { class: 'binder-ep' }, ep === 1 ? 'Episode 1 · The Cave' : ep === 3 ? 'Episode 3 · Leo’s Side' : ep === 4 ? 'Episode 4 · The Lost Island' : ep === 5 ? 'Episode 5 · Guard of the Stones' : `Episode ${ep} · The Cave ${ep}`),
+      ...[...new Set(Object.values(CARDS).map(c => c.ep))].filter(ep => ep <= (window.__maxEp || 99)).flatMap(ep => [h('h3', { class: 'binder-ep' }, ep === 1 ? 'Episode 1 · The Cave' : ep === 3 ? 'Episode 3 · Leo’s Side' : ep === 4 ? 'Episode 4 · The Lost Island' : ep === 5 ? 'Episode 5 · Guard of the Stones' : ep === 6 ? 'Episode 6 · The Old Man' : `Episode ${ep} · The Cave ${ep}`),
         h('div', { class: 'binder-grid' }, ...Object.entries(CARDS).filter(([w, c]) => c.ep === ep).map(([w, c]) => { const el = cardEl(w, c, S.cards[w]);
         if (S.cards[w]) el.onclick = () => { if (isDue(S.cards[w])) { ov.remove(); polish(w, () => openBinder(onClose)); } else say(`${w}. ${c.line}`, { force: true }); }; return el; }))])));
   const close = () => { ov.remove(); onClose && onClose(); };

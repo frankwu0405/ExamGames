@@ -86,7 +86,8 @@ export function buildGrayShore() {
   onTick(t => steam.forEach(s => { const k = (t * 0.25 + s.userData.ph) % 1; s.position.set(Math.sin(t + s.userData.ph * 6) * 0.15 * k, 1.35 + k * 1.6, 0); s.scale.setScalar(0.4 + k * 0.9); s.material.opacity = 0.32 * Math.sin(k * Math.PI); }));
   // the log seat (for the kids) and the stump (for the old man)
   const SEAT = new THREE.Vector3(2.1, 0, -0.6), STUMP = new THREE.Vector3(-1.9, 0, -0.5);
-  { const lg = cb.cyl(0.32, 0.34, 2.6, 0x7A5638, SEAT.x, 0.32, SEAT.z, { rz: Math.PI / 2, ry: 1.25, line: 0.02, seg: 14 }); [-1, 1].forEach(sd => { const e = new THREE.Mesh(new THREE.CircleGeometry(0.31, 14), toon(0xD9B98A)); e.position.set(sd * 1.31, 0, 0); e.rotation.y = sd * Math.PI / 2; lg.add(e); }); }
+  // (the log seat's cut ends sit on the cylinder's own axis, y — the log is laid down by rz)
+  { const lg = cb.cyl(0.32, 0.34, 2.6, 0x7A5638, SEAT.x, 0.32, SEAT.z, { rz: Math.PI / 2, ry: 1.25, line: 0.02, seg: 14 }); [-1, 1].forEach(sd => { const e = new THREE.Mesh(new THREE.CircleGeometry(0.31, 14), toon(0xD9B98A)); e.position.set(0, sd * 1.305, 0); e.rotation.x = -sd * Math.PI / 2; lg.add(e); }); }
   cb.cyl(0.42, 0.48, 0.5, 0x6E4E33, STUMP.x, 0.25, STUMP.z, { line: 0.02, seg: 14 }); { const top = new THREE.Mesh(new THREE.CircleGeometry(0.41, 16), toon(0xD2B07E)); top.rotation.x = -Math.PI / 2; top.position.set(STUMP.x, 0.505, STUMP.z); camp.add(top); }
   // firewood stacks and a blanket
   [[1.4, 1.9, 0.4], [-2.6, -2.2, 1.1]].forEach(([x, z, ry]) => { for (let i = 0; i < 6; i++) cb.cyl(0.09, 0.09, 1.1, 0x7A5432, x + (i % 3) * 0.2 - 0.2, 0.09 + (i > 2 ? 0.17 : 0), z, { rz: Math.PI / 2, ry, line: 0.01 }); });

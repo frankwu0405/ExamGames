@@ -218,6 +218,7 @@ function animate(c, kind) {
     if (s === 'hug') { c.AL.rotation.x = c.AR.rotation.x = -1.5; c.AL.rotation.z = 0.35; c.AR.rotation.z = -0.35; c.L.rotation.x = 0.4 + Math.sin(t * 7) * 0.35; c.R.rotation.x = 0.4 - Math.sin(t * 7) * 0.35; }
     if (s === 'hide') { c.AR.rotation.x = c.AL.rotation.x = 0.75; c.AR.rotation.z = -0.35; c.AL.rotation.z = 0.35; }
     if (s === 'sit') { c.L.rotation.x = c.R.rotation.x = -1.4; }
+    if (c.holding) { c.AR.rotation.x = c.AL.rotation.x = -1.15; c.AR.rotation.z = -0.22; c.AL.rotation.z = 0.22; }   // both hands forward round something held in front (a bowl)
     c.head.rotation.z = s === 'idle' ? Math.sin(t * 1.5 + c.t0) * 0.05 : 0;
     c.head.position.y = (c.headY || 1.32) + (run ? Math.abs(Math.sin(k)) * 0.04 : 0);
     { const bl = Math.sin(t * 0.9 + c.t0 * 2) > 0.985 && !c.forceFace; const e = c.forceFace || (bl ? 'blink' : (s === 'scared' || s === 'hide' ? 'scared' : s === 'wow' ? 'surprised' : s === 'cheer' || s === 'hug' || s === 'slide' ? 'happy' : s === 'reach' || s === 'hold' || s === 'run' ? 'determined' : (c.face && c.face.adult ? (s === 'talk' ? (Math.sin(t * 9) > 0 ? 'talk' : 'neutral') : 'neutral') : 'happy'))); if (e !== c.curFace) { c.curFace = e; c.fp.set(e); } }
