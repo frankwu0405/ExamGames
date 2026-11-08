@@ -155,3 +155,56 @@ export function makeCast(world) {
   [leo, mia, toby].forEach(c => world.add(c.g)); toby.g.scale.setScalar(1.1);
   return { leo, mia, toby, rearm: () => [leo, mia, toby].forEach(c => onTick(c.tick)) };
 }
+
+// ---------------------------------------------------------------- the old man of the gray shore
+// A hooded, ragged cloak, a grey beard and a walking stick. Poses: idle, talk, kind, soup, point, grab, cold.
+export function makeOldMan(world) {
+  const g = new THREE.Group(); const b = builder(g);
+  const CL = 0x5E6540, CL2 = 0x464B30, SK = 0xD9AC84, BE = 0xDCDED8, WOOD = 0x6B4A2E;
+  b.paint([[0.001, 0.05, CL2], [0.5, 0.08, CL2], [0.47, 0.3, CL], [0.38, 0.72, CL], [0.31, 1.05, CL], [0.27, 1.3, CL], [0.001, 1.36, CL]], 0, 0, 0, { line: 0.03, seg: 28 });
+  for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; b.cone(0.1, 0.26, i % 2 ? CL : CL2, Math.cos(a) * 0.49, 0.12, Math.sin(a) * 0.49, { rx: Math.PI, line: 0.012, seg: 5 }); }
+  b.box(0.7, 0.07, 0.06, 0x3A3022, 0, 0.88, 0.34, { rx: 0.25, line: 0.015 });                      // a rope belt
+  const legs = [-0.13, 0.13].map(x => { const p = new THREE.Group(); p.position.set(x, 0.2, 0.05); g.add(p); builder(p).box(0.16, 0.22, 0.26, 0x2E2418, 0, -0.1, 0.04, { line: 0.02 }); return p; });
+  // head with a deep hood
+  const head = new THREE.Group(); head.position.y = 1.52; g.add(head); const hb = builder(head);
+  const hood = hb.ball(0.37, CL, 0, 0.02, -0.04, { line: 0.03, seg: 26 }); hood.scale.set(1, 1.08, 1.1);
+  hb.cone(0.22, 0.55, CL, 0, 0.18, -0.4, { rx: -1.25, line: 0.025, seg: 14 });                      // the hood's soft point behind
+  const cave = hb.ball(0.27, 0x20261A, 0, -0.01, 0.17, { line: 0, seg: 20 }); cave.scale.set(1, 1.05, 0.85);
+  hb.ball(0.19, SK, 0, -0.04, 0.2, { line: 0.012, seg: 20 }).scale.set(1, 1.05, 0.9);
+  [-1, 1].forEach(s => { hb.ball(0.036, 0xFFFDF0, s * 0.075, 0.03, 0.355, { line: 0, seg: 10 }); hb.ball(0.02, 0x10202A, s * 0.075, 0.03, 0.385, { line: 0, seg: 8 }); });
+  const brows = [-1, 1].map(s => hb.box(0.11, 0.03, 0.03, 0xC9CBC4, s * 0.08, 0.1, 0.37, { line: 0 }));
+  hb.ball(0.05, 0xC99A72, 0, -0.03, 0.4, { line: 0.01, seg: 10 });
+  const beard = hb.cone(0.2, 0.46, BE, 0, -0.3, 0.26, { rx: Math.PI + 0.12, line: 0.02, seg: 16 }); beard.scale.set(1, 1, 0.7);
+  [-1, 1].forEach(s => { const m = hb.ball(0.06, BE, s * 0.065, -0.1, 0.4, { line: 0.01, seg: 10 }); m.scale.set(1.3, 0.7, 0.8); });
+  const mouth = hb.torus(0.05, 0.013, 0x2A1B1B, 0, -0.17, 0.4, { arc: Math.PI, rz: Math.PI, line: 0, seg: 14 });
+  // arms: a sleeve and a hand, hanging from the shoulder
+  const arm = s => { const p = new THREE.Group(); p.position.set(s * 0.32, 1.22, 0); g.add(p); const a = builder(p);
+    a.cyl(0.1, 0.14, 0.58, CL, 0, -0.28, 0, { line: 0.02 }); a.ball(0.065, SK, 0, -0.6, 0.02, { line: 0.012, seg: 10 }); return p; };
+  const AL = arm(-1), AR = arm(1);
+  // the walking stick (right hand) and two soup bowls
+  const staff = new THREE.Group(); staff.position.set(0, -0.6, 0.05); AR.add(staff); const sb = builder(staff);
+  sb.cyl(0.032, 0.04, 1.9, WOOD, 0, 0.15, 0, { line: 0.015 }); sb.torus(0.12, 0.03, WOOD, 0.1, 1.12, 0, { arc: Math.PI * 1.3, rz: 0.4, line: 0.01 });
+  const bowl = new THREE.Group(); bowl.position.set(0, -0.62, 0.12); AL.add(bowl); const bb = builder(bowl);
+  bb.cyl(0.16, 0.09, 0.1, 0x7B5A3A, 0, 0, 0, { line: 0.015 }); bb.cyl(0.14, 0.14, 0.012, 0xE59A3E, 0, 0.05, 0, { line: 0 }); bowl.visible = false;
+  g.userData.old = true;
+  const o = { g, head, AL, AR, mouth, brows, bowl, staff, legs, state: 'idle', t0: Math.random() * 10 };
+  let ar = 0, al = 0, lean = 0, ml = 1, blz = 0;
+  o.pose = s => { o.state = s; bowl.visible = s === 'soup'; };
+  o.tick = (t, dt = 0.016) => {
+    const s = o.state, k = Math.min(1, dt * 8);
+    const tAR = s === 'point' ? -1.6 : s === 'grab' ? -1.75 : s === 'soup' ? -1.0 : s === 'kind' ? -0.35 : s === 'cold' ? -0.2 : 0;
+    const tAL = s === 'grab' ? -1.75 : s === 'soup' ? -1.2 : s === 'kind' ? -0.5 : s === 'talk' ? -0.5 + Math.sin(t * 3) * 0.2 : 0;
+    ar += (tAR - ar) * k; al += (tAL - al) * k; lean += ((s === 'grab' ? 0.35 : 0) - lean) * k;
+    AR.rotation.x = ar; AL.rotation.x = al; AL.rotation.z = -0.1; AR.rotation.z = 0.1; g.rotation.x = lean;
+    const happy = s === 'kind' || s === 'soup' || s === 'cold';
+    ml += ((s === 'cold' ? 1.2 : happy ? 1 : s === 'talk' ? 0.4 + Math.abs(Math.sin(t * 9)) * 0.9 : 0.2) - ml) * k;
+    mouth.scale.set(s === 'cold' ? 1.3 : 1, happy ? 1 : -ml * 0.6, 1); if (happy) mouth.scale.y = ml;
+    brows[0].rotation.z = s === 'cold' ? -0.4 : 0.1; brows[1].rotation.z = s === 'cold' ? 0.4 : -0.1;
+    head.rotation.x = s === 'talk' ? Math.sin(t * 4) * 0.06 : s === 'kind' ? 0.1 : s === 'cold' ? -0.08 : 0;
+    g.position.y += 0; head.position.y = 1.52 + Math.sin(t * 1.6 + o.t0) * 0.012;
+    staff.rotation.z = Math.sin(t * 1.1 + o.t0) * 0.01;
+  };
+  onTick((t, dt) => o.tick(t, dt));
+  g.traverse(m => { if (m.isMesh) m.userData.noRecv = true; });
+  world.add(g); return o;
+}

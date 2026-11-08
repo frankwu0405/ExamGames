@@ -41,12 +41,14 @@ export const STOPS = [
   { n: 14, name: 'Mia’s Choice', ep: 5, p: [12.4, 0.3, -6.6] },
   { n: 15, name: 'The Angry Wave', ep: 5, p: [14.6, 0.3, -9] },
   { n: 16, name: 'The Gray Shore', ep: 6, p: [18, 0.6, -11] },
-  { n: 17, name: 'Out of the Fog', ep: 7, p: [23, 0.3, -2] },
-  { n: 18, name: 'The Chase', ep: 8, p: [18, 0.3, 8] },
-  { n: 19, name: "Varn's Story", ep: 9, p: [27, 0.6, 12] },
+  { n: 17, name: 'The Old Man’s Fire', ep: 6, p: [20.6, 0.6, -13.4] },
+  { n: 18, name: 'The Stolen Boat', ep: 6, p: [23.2, 0.6, -15.2] },
+  { n: 19, name: 'Out of the Fog', ep: 7, p: [23, 0.3, -2] },
+  { n: 20, name: 'The Chase', ep: 8, p: [18, 0.3, 8] },
+  { n: 21, name: "Varn's Story", ep: 9, p: [27, 0.6, 12] },
 ];
-export const EPISODES = { 1: { title: 'The Cave', stops: [1, 2, 3] }, 2: { title: 'The Cave 2', stops: [4, 5, 6] }, 3: { title: 'The Cave 3: Leo’s Side', stops: [7, 8, 9] }, 4: { title: 'The Cave 4: The Lost Island', stops: [10, 11, 12] }, 5: { title: 'The Cave 5: Guard of the Stones', stops: [13, 14, 15] } };
-export const MAX_EP = 5;
+export const EPISODES = { 1: { title: 'The Cave', stops: [1, 2, 3] }, 2: { title: 'The Cave 2', stops: [4, 5, 6] }, 3: { title: 'The Cave 3: Leo’s Side', stops: [7, 8, 9] }, 4: { title: 'The Cave 4: The Lost Island', stops: [10, 11, 12] }, 5: { title: 'The Cave 5: Guard of the Stones', stops: [13, 14, 15] }, 6: { title: 'The Cave 6: The Old Man', stops: [16, 17, 18] } };
+export const MAX_EP = 6;
 export function buildMap(S, onPick) {
   const w = newWorld({ sky: 0xBFE6F7, ambientI: 1.5, sunI: 1.5, fog: [0xBFE6F7, 70, 140] }); const b = builder(w);
   // sea with a dark seabed under it, so the secret tunnel shows through the water

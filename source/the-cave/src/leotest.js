@@ -13,7 +13,8 @@ const gm = (() => { const t = new THREE.DataTexture(new Uint8Array([140, 195, 25
 const INK = new THREE.MeshBasicMaterial({ color: 0x2E2A4F, side: THREE.BackSide }); INK.onBeforeCompile = s => { s.vertexShader = s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n transformed += normalize(normal) * 0.0042;'); };
 let nl = null;
 const LEO = window.__LEO_B64; const onG = g => { nl = g.scene; const ms = []; nl.traverse(m => { if (m.isMesh) ms.push(m); });
-  ms.forEach(m => { const mat = new THREE.MeshToonMaterial({ map: m.material.map, gradientMap: gm }); if (mat.map) mat.map.anisotropy = 4; m.material = mat; m.castShadow = true; m.add(new THREE.Mesh(m.geometry, INK)); });
+  let tex = m0 => m0; if (window.__LEO_TEX) { const im = new Image(); const t = new THREE.Texture(im); t.flipY = false; t.colorSpace = THREE.SRGBColorSpace; im.onload = () => { t.needsUpdate = true; }; im.src = window.__LEO_TEX; tex = () => t; }
+  ms.forEach(m => { const mat = new THREE.MeshToonMaterial({ map: tex(m.material.map), gradientMap: gm }); if (mat.map) mat.map.anisotropy = 4; m.material = mat; m.castShadow = true; m.add(new THREE.Mesh(m.geometry, INK)); });
   const box = new THREE.Box3().setFromObject(nl); const h = box.max.y - box.min.y; nl.scale.setScalar(1.75 / h); nl.position.set(0.9, -box.min.y * 1.75 / h, 0); nl.rotation.y = -0.25; world.add(nl); };
 const fail = e => { const d = document.createElement('div'); d.style.cssText='position:fixed;top:8px;left:8px;color:#fff;background:#a00;padding:6px 10px;font:12px sans-serif;z-index:9'; d.textContent='Model failed: '+(e&&e.message||e); document.body.append(d); };
 if (LEO) { const bin = atob(LEO), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); new GLTFLoader().parse(u.buffer, '', onG, fail); } else new GLTFLoader().load('leo/leo.glb', onG, undefined, fail);

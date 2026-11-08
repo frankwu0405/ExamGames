@@ -274,9 +274,13 @@ export const CARDS = {
   smash: { ep: 5, line: 'Varn lifts a big, heavy tail to smash the ice.', tip: 'smash = hit hard and break', more: ['The waves {_} against the rocks.', 'Don’t {_} the eggs!'] },
   wave: { ep: 5, line: 'The hard hit makes a huge, angry wave.', tip: 'wave = a big moving hill of water', more: ['A big {_} rolled onto the beach.', 'The boat rode over the {_}.'] },
   voice: { ep: 5, line: 'A cold, deep voice speaks inside their heads.', tip: 'voice = the sound of talking', more: ['Mia has a soft {_}.', 'Speak in a quiet {_}, please.'] },
+  fog: { ep: 6, line: 'They are on a quiet, gray beach with thick white fog.', tip: 'fog = a low gray cloud that is hard to see through', more: ['We could not see the boat in the {_}.', 'The ship horn sounded through the thick {_}.'] },
+  kind: { ep: 6, line: 'He gives them a kind smile and hands them bowls of hot soup.', tip: 'kind = nice and caring to others', more: ['Be {_} to your little brother.', 'The {_} nurse gave Toby a pat.'] },
+  greedy: { ep: 6, line: 'He is a greedy beast!', tip: 'greedy = always wanting more for yourself', more: ['The {_} pirate wanted every gem.', 'Don’t be {_}. Share your snack!'] },
+  treasure: { ep: 6, line: 'I am sailing back to the cave to take all the treasure!', tip: 'treasure = gold, gems and other precious things', more: ['The pirates buried the {_} on the island.', 'Mia found a box of {_}.'] },
   flush: { ep: 2, line: 'The water helped them flush out of the dark cave.', tip: 'flush = wash out fast with water', more: ['The rain will {_} the mud off the rocks.', 'The waves {_} the sand away.'] },
 };
-const cardSrc = w => CARD_IMG[w] || `cave-cards/ep${CARDS[w].ep}/${w}.webp`;
+export const cardSrc = w => CARD_IMG[w] || `cave-cards/ep${CARDS[w].ep}/${w}.webp`;
 // Card levels: 1 bronze → 2 silver → 3 gold. A card is "due" for a quick polish a day (then three days) after it was last earned or polished.
 const DAY = 864e5, LV = ['', 'Bronze', 'Silver', 'Gold'];
 const lvl = c => (c && c.lvl) || 1;
