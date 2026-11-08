@@ -2,6 +2,7 @@
 import { THREE, init, newWorld, onTick, setCam, renderer, camera, toon } from './gfx.js';
 import { makeLabKids, makeJackBoy, makeJackMan, makeOldJack } from './chars.js';
 import { makeVarn, SHOW } from './varn.js';
+import { glowSprite } from './effects.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
@@ -21,22 +22,29 @@ const YU = { uT: { value: 0 }, uA: { value: 1 }, uS: { value: 1 }, uF: { value: 
 onTick((t, dt = 0.016) => { yT += (dt || 0.016) * YU.uS.value; YU.uT.value = yT; });
 const YDEF = `
   vec3 p = position; float hx = p.x, az = abs(p.z), sd = sign(p.z) + (p.z == 0.0 ? 1.0 : 0.0);
-  float ph = uT * 3.0 - hx * 5.5;
-  float body = smoothstep(0.42, -0.42, hx);
-  // flippers: front pair rooted near x 0.1, back pair near x -0.32; they paddle up and down and sweep a little fore and aft
+  float T = uT * 3.1;
+  // flippers: front pair rooted near x 0.1, back pair near x -0.32; a full paddle stroke (down-and-back, up-and-forward)
   float ff = smoothstep(0.125, 0.2, az) * smoothstep(-0.06, 0.0, hx) * smoothstep(0.26, 0.2, hx);
   float bf = smoothstep(0.1, 0.16, az) * smoothstep(-0.43, -0.38, hx) * smoothstep(-0.2, -0.25, hx) * step(p.y, 0.33);
-  float fa = (sin(uT * 2.4) * 0.45 * ff + sin(uT * 2.4 + 1.9) * 0.4 * bf) * uF;
+  float fa = (sin(T * 0.8) * 0.75 * ff + sin(T * 0.8 + 1.9) * 0.6 * bf) * uF;
   vec2 rt = vec2(ff > bf ? 0.12 : 0.1, ff > bf ? 0.2 : 0.25);
-  if (ff + bf > 0.0) { vec2 d = vec2(az - rt.x, p.y - rt.y); float c = cos(fa), s = sin(fa); d = vec2(c * d.x - s * d.y, s * d.x + c * d.y); p.y = rt.y + d.y; p.z = sd * (rt.x + d.x);
-    p.x += sin(uT * 2.4 - 1.2) * 0.03 * (ff + bf) * uF * smoothstep(0.1, 0.3, az); }
-  // tail: the upright stalk and its fluke rock fore and aft (a whale's beat), building towards the tip
-  float tw = smoothstep(-0.3, -0.42, hx) * smoothstep(0.26, 0.6, p.y);
-  float ta = sin(uT * 3.0 - 2.2) * 0.45 * tw * uK;
-  { vec2 pv = vec2(-0.37, 0.3), d = p.xy - pv; float c = cos(ta), s = sin(ta); p.xy = pv + vec2(c * d.x - s * d.y, s * d.x + c * d.y); }
-  // the body ripples gently up and down, more towards the tail, and the whole creature bobs and breathes
-  p.y += sin(ph) * 0.03 * body * uA + sin(uT * 0.9) * 0.02 * uB;
-  p.z += sin(ph * 0.5 + 1.0) * 0.008 * body * uA;
+  if (ff + bf > 0.0) { float reach = smoothstep(0.1, 0.32, az); vec2 d = vec2(az - rt.x, p.y - rt.y); float c = cos(fa), s = sin(fa); d = vec2(c * d.x - s * d.y, s * d.x + c * d.y); p.y = rt.y + d.y; p.z = sd * (rt.x + d.x);
+    p.x += sin(T * 0.8 - 1.4) * 0.07 * (ff + bf) * uF * reach; }
+  // tail: the upright stalk and fluke beat fore and aft, with a flick that lags towards the tip
+  float tw = smoothstep(-0.3, -0.42, hx) * smoothstep(0.24, 0.62, p.y);
+  float ta = (sin(T - 2.2) * 0.42 + sin(T - 2.9) * 0.25 * smoothstep(0.5, 0.7, p.y)) * tw * uK;
+  { vec2 pv = vec2(-0.37, 0.28), d = p.xy - pv; float c = cos(ta), s = sin(ta); p.xy = pv + vec2(c * d.x - s * d.y, s * d.x + c * d.y); }
+  // head: looks about and nods
+  float hw = smoothstep(0.18, 0.32, hx);
+  { float na = sin(uT * 1.3) * 0.12 * hw * uA; vec2 pv = vec2(0.22, 0.24), d = p.xy - pv; float c = cos(na), s = sin(na); p.xy = pv + vec2(c * d.x - s * d.y, s * d.x + c * d.y); }
+  { float ya = sin(uT * 0.8 + 0.6) * 0.18 * hw * uA; vec2 pv = vec2(0.22, 0.0), d = vec2(p.x, p.z) - pv; float c = cos(ya), s = sin(ya); d = vec2(c * d.x - s * d.y, s * d.x + c * d.y); p.x = pv.x + d.x; p.z = pv.y + d.y; }
+  // the whole spine: a travelling S-wave (sideways) and a whale-like up-down wave, both growing towards the tail
+  float body = pow(smoothstep(0.3, -0.48, hx), 1.15);
+  p.z += sin(T - hx * 4.5) * 0.065 * body * uA;
+  p.y += sin(T - hx * 5.0 + 1.2) * 0.05 * body * uA;
+  // roll, bob and breathing
+  { float r = sin(T * 0.5) * 0.07 * uA; vec2 d = vec2(p.y - 0.3, p.z); float c = cos(r), s = sin(r); p.y = 0.3 + c * d.x - s * d.y; p.z = s * d.x + c * d.y; }
+  p.y += sin(uT * 0.9) * 0.03 * uB;
 `;
 const deform = (m, extra = '') => { m.onBeforeCompile = sh => { Object.assign(sh.uniforms, YU); sh.vertexShader = 'uniform float uT, uA, uS, uF, uK, uB;\n' + sh.vertexShader.replace('#include <begin_vertex>', YDEF + 'vec3 transformed = p' + extra + ';'); }; return m; };
 
@@ -45,7 +53,18 @@ const YV = new THREE.Group(); world.add(YV); const V2 = { g: YV, pose: m => { co
   new GLTFLoader().load('varn/yvarn.glb', gl => { let src; gl.scene.traverse(o => { if (o.isMesh && !src) src = o; }); if (!src) return;
     const mat = deform(toon(0xFFFFFF, { map: tx('varn/yvarn-skin.jpg'), emissiveMap: tx('varn/yvarn-glow.jpg'), emissive: 0xFFFFFF, emissiveIntensity: 1.3 }));
     src.geometry.computeBoundingBox(); const bb = src.geometry.boundingBox; src.geometry.translate(-(bb.min.x + bb.max.x) / 2, 0, -(bb.min.z + bb.max.z) / 2); const m = new THREE.Mesh(src.geometry, mat); m.castShadow = true; m.rotation.y = -Math.PI / 2; const ink = new THREE.Mesh(src.geometry, new THREE.MeshBasicMaterial({ color: 0x1B2A55, side: THREE.BackSide })); ink.material.onBeforeCompile = s => { s.vertexShader = s.vertexShader.replace('#include <begin_vertex>', 'vec3 transformed = position + normal * 0.004;'); };
-    deform(ink.material, ' + normal * 0.004'); m.customDepthMaterial = deform(new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking })); m.add(ink); YV.add(m); YV.userData.mesh = m; }); }
+    deform(ink.material, ' + normal * 0.004'); m.customDepthMaterial = deform(new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking })); m.add(ink);
+    const rim = new THREE.ShaderMaterial({ uniforms: Object.assign({ uColor: { value: new THREE.Color(0x9FF6FF) }, uKr: { value: 0.4 } }, YU), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false,
+      vertexShader: 'uniform float uT, uA, uS, uF, uK, uB; varying float vRim;\nvoid main(){' + YDEF + ' vec4 mv = modelViewMatrix * vec4(p + normal * 0.006, 1.0); vec3 n = normalize(normalMatrix * normal); vRim = pow(1.0 - abs(dot(n, normalize(-mv.xyz))), 2.4); gl_Position = projectionMatrix * mv; }',
+      fragmentShader: 'uniform vec3 uColor; uniform float uKr; varying float vRim; void main(){ gl_FragColor = vec4(uColor * vRim * uKr, 1.0); }' });
+    m.add(new THREE.Mesh(src.geometry, rim));
+    // aura: a soft glow over the crown and back (like grown Varn's), crystal sparks along the spine and halos on the eyes
+    const aura = []; const add = (c, sz, op, x, y, z, ph) => { const g = glowSprite(c, sz, op); g.position.set(x, y, z); m.add(g); aura.push({ g, op, ph }); };
+    add(0xA8F4FF, 0.42, 0.45, 0.2, 0.44, 0, 0); add(0xB48CFF, 0.5, 0.3, -0.04, 0.56, 0, 1.5);
+    [[0.14, 0.47], [0.03, 0.55], [-0.08, 0.6], [-0.18, 0.55], [-0.28, 0.47]].forEach(([x, y], i) => add(i % 2 ? 0xB48CFF : 0x6FF0E6, 0.22, 0.6, x, y, 0, i * 1.3));
+    [-1, 1].forEach(sd => add(0x9FFFF0, 0.14, 0.55, 0.405, 0.216, sd * 0.07, sd));
+    onTick(t => aura.forEach(a => { a.g.material.opacity = a.op * (0.75 + 0.25 * Math.sin(t * 1.6 + a.ph)); }));
+    YV.add(m); YV.userData.mesh = m; }); }
 const KID_POSES = ['idle', 'walk', 'run', 'scared', 'cheer', 'point', 'wow', 'hold', 'sit'], KID_FACES = ['auto', 'happy', 'scared', 'surprised', 'determined', 'sad'];
 const R = n => 'lab/ref/' + n;
 const CAST = [
@@ -99,7 +118,7 @@ function lineup() {
 const bgs = [['Cave', 0x0E1A22, 0x37424B], ['Gray shore', 0x9AA4A8, 0x6F7770], ['Daylight', 0x9FD8F5, 0x8CC95E], ['Studio', 0xDDDDDD, 0xBDBDBD]];
 { const r = document.createElement('div'); r.id = 'bg'; ui.append(r); bgs.forEach(([n, sky, gr]) => btn(r, n, () => { world.background = new THREE.Color(sky); if (world.fog) world.fog.color.set(sky); ground.material.color.set(gr); })); }
 show(new URLSearchParams(location.search).get('c') || 'leo'); if (location.search.includes('lineup')) lineup();
-window.__lab = { show, lineup, CAST, ctl, cam, V, SHOW, YU };
+window.__lab = { show, lineup, CAST, ctl, cam, V, SHOW, YU, setYT: v => { yT = v; } };
 
 // ---- ?backdrop=1 : the 3D kids standing in front of the story illustration (style option B)
 if (location.search.includes('backdrop')) {

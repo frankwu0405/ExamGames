@@ -39,6 +39,10 @@ lab_m = match_histograms(lab_b, lab_r, channel_axis=-1).astype(np.float32)
 Lm = lab_m[..., 0]; lab_m[..., 0] = np.clip(Lm + (Lm - cv2.GaussianBlur(Lm, (0, 0), 18)) * 0.6, 0, 255)
 base = cv2.cvtColor(lab_m.astype(np.uint8), cv2.COLOR_LAB2RGB).astype(np.float32) / 255
 q = np.clip((base * 255 / 256 * B).astype(int), 0, B - 1); col = LUT[q[..., 0] * B * B + q[..., 1] * B + q[..., 2]] / 255
+# lift the whole tone a step lighter (the young one read as a darker blue than grown Varn on screen)
+lab_c = cv2.cvtColor((np.clip(col, 0, 1) * 255).astype(np.uint8), cv2.COLOR_RGB2LAB).astype(np.float32)
+lab_c[..., 0] = np.clip(lab_c[..., 0] * 1.04 + 9, 0, 255)
+col = cv2.cvtColor(lab_c.astype(np.uint8), cv2.COLOR_LAB2RGB).astype(np.float32) / 255
 h = lambda x: np.array([(x >> 16) & 255, (x >> 8) & 255, x & 255], np.float32) / 255
 def mix(a, b, t):
     a = a if a.ndim == 3 else a[None, None, :]; b = b if b.ndim == 3 else b[None, None, :]; return a * (1 - t[..., None]) + b * t[..., None]
