@@ -1,7 +1,7 @@
 // Episode 5 places: the frozen sea in the fog, and Varn, guard of the deep stones.
 import { THREE, builder, toon, newWorld, onTick } from './gfx.js';
 import { rnd } from './sets.js';
-import { ferris } from './props.js';
+import { ferris, water as waterP, rockMat } from './props.js';
 import { cartBoat } from './sets4.js';
 import { makeVarn } from './varn.js';
 import { mist, snow, glowSprite } from './effects.js';
@@ -26,7 +26,7 @@ export function buildIce() {
   const skyM = new THREE.MeshBasicMaterial({ color: 0x8B8FB8, side: THREE.BackSide, fog: false, transparent: true, opacity: 0.6 });
   const dome = new THREE.Mesh(new THREE.SphereGeometry(200, 24, 12, 0, Math.PI * 2, Math.PI * 0.42, Math.PI * 0.1), skyM); w.add(dome);
   // the sea under the ice is dark and a little see-through, so Varn's glow shows from below
-  const water = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), toon(0x152A3C, { transparent: true, opacity: 0.6 })); water.rotation.x = -Math.PI / 2; water.position.y = -0.25; w.add(water);
+  const wg = new THREE.PlaneGeometry(300, 300, 4, 4); wg.rotateX(-Math.PI / 2); const water = waterP(w, wg, { deep: 0x0E2236, shallow: 0x1F4A66, opacity: 0.85, sparkle: 0.5 }); water.position.y = -0.25;
   const iceMat = toon(0xFFFFFF, { map: frozenTex(), transparent: true, opacity: 0.84, depthWrite: false });
   const ice = new THREE.Mesh(new THREE.CircleGeometry(70, 48), iceMat); ice.rotation.x = -Math.PI / 2; ice.position.y = 0.05; w.add(ice);
   // the broken place where Varn bursts out: tilted slabs that jump up

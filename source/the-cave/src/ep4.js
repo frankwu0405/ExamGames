@@ -3,7 +3,7 @@ import { S, save, sfx, wait, h, shuffle } from './core.js';
 import { THREE, setCam, flyCam, followCam, stopFollow, quake, tween, moveTo, onTick, sparkles, camera, scene, cut, dolly, lens } from './gfx.js';
 import { letterbox, frost, mist, fogThicken, iceSpread, snow } from './effects.js';
 import { makeVarn } from './varn.js';
-import { buildIslandTop, buildDigBeach, buildClearSea } from './sets4.js';
+import { buildIslandTop, buildDigBeach, buildClearSea, cartBoat } from './sets4.js';
 import { tell, beat, aroundGap, tapOn, filled, hideStory, chooseWord, pick3D, spellOn, order, think, offerStretch, earnCard, toby, spyglass, MODE } from './ui.js';
 import { playMusic } from './music.js';
 
@@ -20,20 +20,20 @@ export async function stop10() {
   const I = await buildIslandTop(); const { leo, mia, toby: dog } = I.cast; const K = [leo, mia, dog];
   // they come out of the cave at the foot of the lookout hill, then climb the path that spirals up to the top
   K.forEach((c, i) => { const [x, z] = I.START[i]; c.g.position.set(x, I.hf(x, z), z); c.g.rotation.y = Math.PI / 2 + 0.3; });
-  setCam([-1, 7, 12], [-7.5, 1.4, 2]);
+  setCam([I.START[0][0] + 11, 5, I.START[0][1] - 7], [I.START[0][0] - 1, 1.6, I.START[0][1]]);
   const HC = I.HC, cam = new THREE.Vector3(), look = new THREE.Vector3(); let u0 = 0, climbing = true;
   K.forEach(c => c.pose(c === dog ? 'run' : 'walk'));
   const lag = [0.04, 0, -0.04];
-  const cOff = onTick((t, dt) => { if (!climbing) return; u0 = Math.min(1.06, u0 + dt / 14);
+  const cOff = onTick((t, dt) => { if (!climbing) return; u0 = Math.min(1.06, u0 + dt / 20);
     K.forEach((c, i) => { const u = Math.min(1, u0 + lag[i]), [x, z] = u <= 0 ? I.START[i] : I.along(u), [nx, nzz] = I.along(Math.min(1, u + 0.01)), end = u >= 1, side = [-0.55, 0.55, 0][i];
       c.g.position.set(end ? HC[0] - 0.4 : x, I.hf(x, z) + 0.02, end ? HC[1] + side : z); if (!end) c.g.rotation.y = Math.atan2(nx - x, nzz - z); }); });
-  followCam(() => { const lead = I.along(Math.min(1, u0)), back = I.along(Math.max(0, u0 - 0.12)); cam.set(back[0] + (back[0] - HC[0]) * 1.4, I.hf(back[0], back[1]) + 6.5, back[1] + (back[1] - HC[1]) * 1.4); look.set(lead[0], I.hf(lead[0], lead[1]) + 1, lead[1]); return [cam, look]; });
+  followCam(() => { const lead = I.along(Math.min(1, u0)), back = I.along(Math.max(0, u0 - 0.12)); cam.set(back[0] + (back[0] - HC[0]) * 0.35, I.hf(back[0], back[1]) + 8, back[1] + (back[1] - HC[1]) * 0.35); look.set(lead[0], I.hf(lead[0], lead[1]) + 1, lead[1]); return [cam, look]; });
   await beat('Mia and Leo climbed the high, rocky cliff.');
   while (u0 < 1.05) await wait(60);
   climbing = false; cOff(); stopFollow();
   // at the top they turn to face the open sea
   K.forEach(c => { c.g.rotation.y = -Math.PI / 2 + 0.25; c.pose(c === dog ? 'sit' : 'wow'); });
-  await flyCam([HC[0] + 4.5, 11.6, HC[1] + 1.2], [-40, -2, 8], 1800);
+  await flyCam([HC[0] + 5, I.TOP + 3, HC[1] + 1.5], [-60, -2, 0], 1800);
   [leo, mia].forEach(c => c.pose('scared'));
   // ---- the gap word: island (rotates on replays)
   const iv = pickV(10, [
@@ -46,15 +46,15 @@ export async function stop10() {
   await filled(iv.answer); for (const x of ip.after) await beat(x); if (iv.answer === 'island') await earnCard('island');
   // ---- the spyglass: find the hometown's Ferris wheel far across the sea
   tell('Far across the blue water, they spotted the tiny, spinning Ferris wheel of their hometown.', { wait: false });
-  setCam([HC[0] + 2.4, 11.2, HC[1] + 0.6], [-60, 4, -6]);
-  await spyglass({ prompt: 'Drag to look around. Find the Ferris wheel of home!', target: I.wheel, hints: ['Look far away, across the water.', 'It is red and it spins.'] });
+  setCam([HC[0] + 2.4, I.TOP + 2.6, HC[1] + 0.6], [-100, 4, -16]);
+  await spyglass({ prompt: 'Drag to look around. Find the Ferris wheel of home!', target: I.wheel.userData.hub || I.wheel, hints: ['Look far away, across the water.', 'It is red and it spins.'] });
   sfx('great'); [leo, mia].forEach(c => c.pose('cheer')); dog.pose('wag');
   // the secret path under the sea
   // Leo looks back down at the cave they came out of… and through the clear water, a dark line runs from it all the way home
   leo.g.rotation.y = Math.PI * 0.75; leo.pose('point');
-  await flyCam([HC[0] + 2, 11, HC[1] + 4], [I.CAVE[0], 1, I.CAVE[1]], 1400);
+  await flyCam([HC[0] + 3, I.TOP + 3, HC[1] + 4], [I.CAVE[0], 0.5, I.CAVE[1]], 1400);
   await beat('Leo looked back at the cave.');
-  I.showTunnel(true); sfx('glow'); await flyCam([HC[0] + 3.2, 13.5, HC[1] + 0.5], [-24, -4, 5], 1800);
+  I.showTunnel(true); sfx('glow'); await flyCam([HC[0] + 4, I.TOP + 5, HC[1] + 0.5], [-50, -4, -6], 1800);
   await tell('Someone had dug a huge, secret path all the way under the ocean.');
   await think(pickV(10, [
     { prompt: 'Who could have dug the secret path?', options: ['People with shovels and carts', 'Toby the puppy', 'The fish'], answer: 'People with shovels and carts', hints: ['Remember the metal tracks and the old cart in the cave.'] },
@@ -103,9 +103,9 @@ export async function stop11() {
   await spellOn({ prompt: sp.prompt, word: sp.word, decoys: sp.decoys, objs: D.shells, hints: sp.hints });
   await filled(sp.word); if (sp.word === 'flag') await earnCard('flag');
   // the flag can't get them home… but the cart is made of wood
-  await flyCam([3, 3, 9], [1.4, 0.8, 1.5], 1100);
+  await flyCam([1.2, 3, 11.5], [-3.2, 0.8, 5.4], 1100);
   await beat('It could catch the wind, but it could not get them home.');
-  await Promise.all([beat('Then, Leo tapped on the tipped over minecart.'), walk(leo, [1.6, 0, 2.2], 900)]); leo.g.rotation.y = 0.9; leo.pose('reach');
+  await Promise.all([beat('Then, Leo tapped on the tipped over minecart.'), walk(leo, [-2.6, 0, 5.2], 900)]); leo.g.rotation.y = -0.6; leo.pose('reach');
   sfx('clack'); await wait(300); sfx('clack'); await beat('Thump, thump.');
   await beat('It was made of thick wood and not metal!');
   tell('That is why they didn’t sink in the river.', { wait: false });
@@ -136,13 +136,24 @@ export async function stop11() {
 // ================================================================ stop 12 — the clear sea, the sunken ship, the sign… the ice
 export async function stop12() {
   playMusic('map');
+  // they push off from their beach on the far side of the island, and the wind carries them round it until home is ahead
+  { const IS = await buildIslandTop(); [IS.cast.leo, IS.cast.mia, IS.cast.toby].forEach(c => c.g.visible = false);
+    const bt = cartBoat(IS.w), k = bt.cast; k.leo.g.position.set(-0.3, 0.45, 0.2); k.mia.g.position.set(0.3, 0.45, -0.1); k.toby.g.position.set(0, 0.85, 0.6); k.toby.g.scale.setScalar(0.9);
+    [k.leo, k.mia].forEach(c => { c.L.rotation.x = c.R.rotation.x = -1.4; }); k.mia.pose('cheer'); k.leo.pose('point'); bt.wind.k = 1;
+    const C0 = IS.CAVE, route = new THREE.CatmullRomCurve3([[C0[0] + 19, 0.15, C0[1] + 2], [C0[0] + 25, 0.15, C0[1] - 6], [C0[0] + 18, 0.15, C0[1] - 30], [0, 0.15, -52], [-32, 0.15, -46], [-54, 0.15, -27], [-72, 0.15, -14]].map(a => new THREE.Vector3(...a)), false, 'centripetal');
+    let u = 0; const pp = new THREE.Vector3(), tg = new THREE.Vector3(), c0 = new THREE.Vector3(), l0 = new THREE.Vector3();
+    onTick(t => { route.getPointAt(Math.min(1, u), pp); route.getTangentAt(Math.min(1, u), tg); bt.g.position.set(pp.x, 0.15 + Math.sin(t * 1.6) * 0.06, pp.z); bt.g.rotation.set(Math.sin(t * 1.3) * 0.04, Math.atan2(tg.x, tg.z), Math.sin(t * 1.7) * 0.05); });
+    followCam(() => { c0.copy(pp).addScaledVector(tg, -9).add(new THREE.Vector3(-tg.z * 5, 4, tg.x * 5));   // (on the sea side, the island to one side) l0.copy(pp).addScaledVector(tg, 8).setY(1.5); return [c0, l0]; });
+    tell('They pushed their wooden cart into the sea, and the wind filled the giant flag.', { wait: false });
+    await tween(11000, e => { u = e; });
+    const v = h('div', { class: 'veil', style: { background: '#BFE6F7' } }); document.body.append(v); await wait(700); stopFollow();
+    setTimeout(() => { v.classList.add('out'); setTimeout(() => v.remove(), 900); }, 300); }
   const C = buildClearSea(); const B = C.boat; const { leo, mia, toby: dog } = B.cast;
   let z = 6, sp = 0, zMin = -14.05; const off = onTick((t, dt) => { z = Math.max(zMin, z - sp * dt); B.g.position.set(Math.sin(z * 0.05) * 1.5, 0.15 + Math.sin(t * 1.6) * 0.06, z); B.g.rotation.set(Math.sin(t * 1.3) * 0.04, Math.PI, Math.sin(t * 1.7) * 0.05); });
   const cam = new THREE.Vector3(), look = new THREE.Vector3();
   followCam(() => { cam.set(B.g.position.x + 3.5, 3.4, z + 7.5); look.set(B.g.position.x, 0.6, z - 6); return [cam, look]; });
   B.wind.k = 1; mia.pose('cheer'); leo.pose('point');
-  sp = 3; tell('They pushed their wooden cart into the sea, and the wind filled the giant flag.', { wait: false });
-  await wait(2600); await tapOn();
+  sp = 3; await wait(1500);
   // ---- look down through the water: spot the sunken ship, then name the clue word
   tell('The ocean water was very {clear}.', { wait: false });
   while (z > -14) await wait(40); sp = 0.4; zMin = -24;

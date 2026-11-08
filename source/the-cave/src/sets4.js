@@ -2,6 +2,7 @@
 import { THREE, builder, toon, outline, newWorld, onTick, textTexture } from './gfx.js';
 import { makeCast } from './chars.js';
 import { buildIsland } from './island.js';
+import { buildBeach } from './sets2.js';
 import { cart, rnd, tree } from './sets.js';
 import { ferris, ground, water, water as water_, scatter, nz, rr, pick, shell as seaShell, starfish, rockMat, crystalCluster } from './props.js';
 
@@ -48,32 +49,23 @@ export async function buildIslandTop() {
 
 // ================================================================ stop 11: the beach where Toby digs
 export function buildDigBeach() {
-  const w = newWorld({ sky: 0xA8E0FF, ambientI: 1.7, sunI: 1.8, fog: [0xBFE6F7, 45, 140] }); const b = builder(w);
-  const hf = (x, z) => nz(x, z, 0.3) * 0.05 + Math.max(0, z - 6) * 0.06 - Math.max(0, -z - 12) * 0.12;
-  ground(w, 120, 150, hf, (x, z, c) => { const y = hf(x, z), wet = y < 0.04 && z < -9, rip = Math.sin(x * 2.4 + nz(x, z, 0.3) * 3) * 0.5 + 0.5; c.setHSL(0.11, wet ? 0.38 : 0.55, wet ? 0.62 : 0.76 + rip * 0.03); });
-  { const sg = new THREE.PlaneGeometry(260, 140, 60, 30); sg.rotateX(-Math.PI / 2); water(w, sg, { deep: 0x1E8FC2, shallow: 0x6FE0E8, foamFn: '1.0 - smoothstep(0.0, 1.1, abs(vW.z + 12.6 - sin(vW.x * 0.45 + uT * 1.2) * 0.7 - sin(uT * 0.9) * 0.6))' }).position.set(0, -0.05, -82); }
-  scatter(w, 'palm-detailed-long', [{ x: -11, z: 8, ry: 0.3, rz: -0.1 }, { x: 12, z: 6, ry: 2 }, { x: -15, z: 2, ry: 1 }], { gy: hf, norm: 7.5 });
-  scatter(w, 'palm-detailed-short', [{ x: 9, z: 12, ry: 0.6 }, { x: -7, z: 13 }], { gy: hf, norm: 5 });
-  scatter(w, 'bush_large', [{ x: -9, z: 11, s: 1.3 }, { x: 14, z: 10, s: 1.2 }, { x: 4, z: 14, s: 1 }], { gy: hf });
-  scatter(w, 'log', [{ x: -8, z: -6, ry: 0.5, rz: 0.1 }], { gy: hf, norm: 3, style: (n, mn) => [toon(/bark/i.test(mn) ? 0xB89C80 : 0xE6DCC8)] });
-  { const sc = [0xFFD8C8, 0xFFF1D6, 0xF6B8C8, 0xE9D4FF]; for (let i = 0; i < 12; i++) { const x = rr(-12, 12), z = rr(-11, 8); if (Math.hypot(x, z) < 4) continue; seaShell(w, x, hf(x, z), z, pick(sc)); } [[-6, -8], [8, -9]].forEach(([x, z]) => starfish(w, x, hf(x, z), z, 0xFF8A5C)); }
-  b.rock(9, 0x9A8C7A, 0, 3, 20, { line: 0.06 }).scale.set(1.8, 1, 0.75);
-  const palm = (x, z) => { const g = new THREE.Group(); g.position.set(x, 0, z); w.add(g); const pb = builder(g);
-    for (let k = 0; k < 6; k++) pb.cyl(0.24 - k * 0.02, 0.27 - k * 0.02, 0.85, 0x8A5A3B, Math.sin(k * 0.35) * 0.3, 0.45 + k * 0.8, 0, { line: 0.02 });
-    for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2; pb.box(2.6, 0.06, 0.7, 0x4FA35A, Math.cos(a) * 1.1 + 0.3, 4.9, Math.sin(a) * 1.1, { ry: -a, rz: -0.45, line: 0.02 }); } return g; };
+  // the same beach they washed up on: the cliff with the river cave, the stream curling round to the sea, the palms
+  const B = buildBeach(), w = B.w, b = builder(w), hf = B.hf;
+  B.tipped.visible = false;
+  const palm = (x, z) => { const g = new THREE.Group(); g.position.set(x, hf(x, z), z); w.add(g); scatter(g, 'palm-detailed-long', [{ x: 0, z: 0, y: 0, ry: 0.4, rz: -0.08 }], { norm: 7 }); return g; };
   // three sandy mounds to dig: next to a palm, next to a big rock, by the water
-  const thePalm = palm(-5.5, -1.5); const bigRock = b.rock(1.4, 0x8C7F6E, 5.6, 0.7, -1.2, { line: 0.04 });
-  const mounds = [{ id: 'palm', x: -4.3, z: -2.6 }, { id: 'rock', x: 4.2, z: -2.4 }, { id: 'water', x: 0.2, z: -10.5 }].map(o => { const m = b.add(new THREE.SphereGeometry(1.0, 14, 8), toon(0xE6C886), o.x, 0, o.z, { line: 0.03 }); m.scale.y = 0.35; m.userData.id = o.id; return m; });
+  const thePalm = palm(-5.5, -1.5); const bigRock = b.rock(1.2, 0xC9A884, 3.3, 0.5, -4.0, { line: 0.04 });
+  const mounds = [{ id: 'palm', x: -4.3, z: -2.6 }, { id: 'rock', x: 2.4, z: -2.6 }, { id: 'water', x: 0.2, z: -10.5 }].map(o => { const m = b.add(new THREE.SphereGeometry(1.0, 14, 8), toon(0xE6C886), o.x, hf(o.x, o.z), o.z, { line: 0.03 }); m.scale.y = 0.35; m.userData.id = o.id; return m; });
   // the flag pole buried under the palm mound
   const pole = new THREE.Group(); pole.position.set(-4.3, -3.4, -2.6); w.add(pole); builder(pole).cyl(0.07, 0.08, 3.2, 0x8A5A3B, 0, 1.6, 0, { line: 0.015 });
   const flag = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.0, 10, 1), new THREE.MeshBasicMaterial({ map: pirateFlagTexture(), side: THREE.DoubleSide })); flag.position.set(0.78, 2.7, 0); pole.add(flag);
   // shells on the sand (for spelling)
-  const shells = []; for (let i = 0; i < 7; i++) { const a = -0.9 + i * 0.3; const s = b.add(new THREE.SphereGeometry(0.34, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2), toon([0xFFFFFF, 0xF8C8D0, 0xFFE0B0][i % 3]), Math.sin(a) * 4.5, 0.02, -4.4 - Math.cos(a) * 1.4, { line: 0.02 }); s.scale.y = 0.5; shells.push(s); }
+  const shells = []; for (let i = 0; i < 7; i++) { const a = -0.9 + i * 0.3; const s = b.add(new THREE.SphereGeometry(0.34, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2), toon([0xFFFFFF, 0xF8C8D0, 0xFFE0B0][i % 3]), Math.sin(a) * 4.5, 0.02, -7.0 - Math.cos(a) * 1.4, { line: 0.02 }); s.scale.y = 0.5; shells.push(s); }
   // the tipped-over cart, and vines on the rocks
-  const theCart = new THREE.Group(); theCart.position.set(2.6, 0, 3); w.add(theCart); cart(builder(theCart), 0, 0, 0); theCart.rotation.set(0, 0.6, 1.25);
-  for (let i = 0; i < 5; i++) b.torus(0.5, 0.06, 0x3E8E41, 7.5 + i * 0.25, 1.4 - i * 0.2, 8, { rx: 1, ry: i, line: 0 });
-  const cast = makeCast(w); const { leo, mia, toby } = cast;
-  leo.g.position.set(-1.2, 0, 2.4); mia.g.position.set(0.4, 0, 2.6); toby.g.position.set(-0.4, 0, 0.6); [leo, mia, toby].forEach(c => c.g.rotation.y = Math.PI);
+  const theCart = new THREE.Group(); theCart.position.set(-3.6, hf(-3.6, 6.6), 6.6); w.add(theCart); cart(builder(theCart), 0, 0, 0); theCart.rotation.set(0, 0.6, 1.25);
+  for (let i = 0; i < 5; i++) b.torus(0.5, 0.06, 0x3E8E41, 3.9 + i * 0.2, 0.9 - i * 0.16, -3.6, { rx: 1, ry: i, line: 0 });
+  const cast = B.cast; const { leo, mia, toby } = cast;
+  leo.g.position.set(-2.4, hf(-2.4, 2.4), 2.4); mia.g.position.set(-1.0, hf(-1.0, 2.6), 2.6); toby.g.position.set(-1.6, hf(-1.6, 0.6), 0.6); [leo, mia, toby].forEach(c => c.g.rotation.y = Math.PI);
   return { w, cast, mounds, pole, flag, shells, theCart, thePalm, bigRock };
 }
 

@@ -43,11 +43,11 @@ export const STOPS = [
   { n: 8, name: 'The Crack', ep: 3, p: [-2.5, -1.6, 4.8] },
   { n: 9, name: 'The Rainbow Cliff', ep: 3, p: [9.8, -1.6, 4.0] },
   { n: 10, name: 'The Lost Island', ep: 4, p: [33.2, 3.4, 1.2] },
-  { n: 11, name: 'Toby’s Dig', ep: 4, p: [36.6, 0.6, 6.6] },
+  { n: 11, name: 'Toby’s Dig', ep: 4, p: [39.6, 0.6, 2.6] },
   { n: 12, name: 'The Clear Sea', ep: 4, p: [24, 0.3, -6.4] },
-  { n: 13, name: 'Varn Rises', ep: 5, p: [2.5, 0.4, -9.2] },
-  { n: 14, name: 'Mia’s Choice', ep: 5, p: [-3.5, 0.4, -10.4] },
-  { n: 15, name: 'The Angry Wave', ep: 5, p: [-9, 0.4, -11.4] },
+  { n: 13, name: 'Varn Rises', ep: 5, p: [13, 0.4, -10.2] },
+  { n: 14, name: 'Mia’s Choice', ep: 5, p: [7, 0.4, -11.6] },
+  { n: 15, name: 'The Angry Wave', ep: 5, p: [1, 0.4, -12.6] },
   { n: 16, name: 'The Gray Shore', ep: 6, p: [56, 0.6, -8] },
   { n: 17, name: 'The Old Man’s Fire', ep: 6, p: [59, 0.6, -11] },
   { n: 18, name: 'The Stolen Boat', ep: 6, p: [62, 0.6, -7.2] },
@@ -56,6 +56,8 @@ export const STOPS = [
   { n: 21, name: "Varn's Story", ep: 9, p: [68, 0.6, 14] },
 ];
 // the route, drawn episode by episode (Leo's side is told as a memory, so it runs alongside the main tunnel; the angry wave is a long throw)
+// legs that bend round something: from the island's sea-side beach they sail round the south of the island, then home
+const VIA = { '11-12': [[42, 0.5, -2.5], [38, 0.5, -6], [31, 0.5, -7.2]] };
 export const ROUTE = [[1, 2, 3], [3, 4, 5, 6], [2, 7, 8, 9, 6], [6, 10, 11, 12], [12, 13, 14, 15], [15, 'wave', 16, 17, 18], [18, 19, 20, 21]];
 export const EPISODES = { 1: { title: 'The Cave', stops: [1, 2, 3] }, 2: { title: 'The Cave 2', stops: [4, 5, 6] }, 3: { title: 'The Cave 3: Leo’s Side', stops: [7, 8, 9] }, 4: { title: 'The Cave 4: The Lost Island', stops: [10, 11, 12] }, 5: { title: 'The Cave 5: Guard of the Stones', stops: [13, 14, 15] }, 6: { title: 'The Cave 6: The Old Man', stops: [16, 17, 18] } };
 export const MAX_EP = 5;   // episode 6 is built but held back until the visuals are redone
@@ -110,7 +112,7 @@ export function buildMap(S, onPick) {
   scatter(w, 'ship-wreck', [{ x: 22, z: -4, y: -2.6, ry: 0.9, rz: 0.15 }], { norm: 3.2 });
   { const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'); x.fillStyle = '#DDF2FB'; x.fillRect(0, 0, 256, 256); x.strokeStyle = '#7FA9C2'; x.lineWidth = 2; for (let i = 0; i < 22; i++) { x.beginPath(); let px = rnd() * 256, py = rnd() * 256; x.moveTo(px, py); for (let k = 0; k < 4; k++) { px += rr(-40, 40); py += rr(-40, 40); x.lineTo(px, py); } x.stroke(); }
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; const im = toon(0xffffff, { map: t, emissive: 0x3E6E88, emissiveIntensity: 0.15 });
-    for (let i = 0; i < 30; i++) { const x0 = rr(-11, 5), z0 = -10.4 + rr(-2.6, 2.6); mesh(w, new THREE.CylinderGeometry(rr(0.7, 1.4), rr(0.8, 1.5), 0.18, 6), im, x0, 0.06, z0, { ry: rnd() * 6 }); } }
+    for (let i = 0; i < 30; i++) { const x0 = rr(-1.5, 16), z0 = -11.4 + rr(-2.6, 2.6); mesh(w, new THREE.CylinderGeometry(rr(0.7, 1.4), rr(0.8, 1.5), 0.18, 6), im, x0, 0.06, z0, { ry: rnd() * 6 }); } }
   // the gray shore far beyond the island (Episode 6 on), a dark little island under fog
   const gH = (x, z) => { const d = Math.hypot((x - GRAY[0]) * 0.8, (z - GRAY[1]) * 1.15); return Math.max(-6, Math.min(0.5, (4.1 - d) * 0.5)); };
   ground(w, 16, 60, (x, z) => gH(x + GRAY[0], z + GRAY[1]), (x, z, c) => c.setRGB(0.6, 0.63, 0.6)).position.set(GRAY[0], 0, GRAY[1]);
@@ -128,7 +130,8 @@ export function buildMap(S, onPick) {
   // the route, episode by episode: gold where she has been, white ahead; the wave's throw is a red sweep north of the island
   const done = n => S.stops[n] && S.stops[n].done, P = n => { const s = STOPS[n - 1]; return new THREE.Vector3(s.p[0], s.p[1] < 0 ? s.p[1] + 0.2 : 0.35, s.p[2]); };
   const dash = (curve, lit, col = null, N = 80) => { for (let i = 0; i < N; i += 2) { const a = curve.getPoint(i / N), c = curve.getPoint((i + 1) / N); const m = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, a.distanceTo(c), 6), new THREE.MeshBasicMaterial({ color: col || (lit ? 0xFFC94A : 0xFFFFFF), transparent: !lit && !col, opacity: lit || col ? 1 : 0.55 })); m.position.copy(a).lerp(c, 0.5); m.lookAt(c); m.rotateX(Math.PI / 2); w.add(m); } };
-  ROUTE.forEach(seq => { for (let i = 0; i < seq.length - 1; i++) { const a = seq[i], bb = seq[i + 1]; if (bb === 'wave') { const to = seq[i + 2], lit = done(to); dash(new THREE.CatmullRomCurve3([P(a), new THREE.Vector3(-2, 0.5, -17), new THREE.Vector3(18, 0.5, -16), new THREE.Vector3(40, 0.5, -14), P(to)], false, 'centripetal'), lit, lit ? 0xFFC94A : 0xE8575A, 220); i++; continue; }
+  ROUTE.forEach(seq => { for (let i = 0; i < seq.length - 1; i++) { const a = seq[i], bb = seq[i + 1]; if (bb === 'wave') { const to = seq[i + 2], lit = done(to); dash(new THREE.CatmullRomCurve3([P(a), new THREE.Vector3(3, 0.5, -18), new THREE.Vector3(20, 0.5, -17), new THREE.Vector3(40, 0.5, -14), P(to)], false, 'centripetal'), lit, lit ? 0xFFC94A : 0xE8575A, 220); i++; continue; }
+    if (VIA[a + '-' + bb]) { const cv = new THREE.CatmullRomCurve3([P(a), ...VIA[a + '-' + bb].map(v => new THREE.Vector3(...v)), P(bb)], false, 'centripetal'); dash(cv, done(bb), null, Math.round(cv.getLength() * 2.4)); continue; }
     const pa = P(a), pb = P(bb), len = pa.distanceTo(pb); dash(new THREE.LineCurve3(pa, pb), done(bb), null, Math.max(8, Math.round(len * 2.4))); } });
   // fog over places not yet open
   const fogMat = toon(0xF4F7FB, { transparent: true, opacity: 0.82 }); const lockedX = MAX_EP >= 5 ? 48 : MAX_EP >= 4 ? 20 : 26;

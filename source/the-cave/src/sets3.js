@@ -2,7 +2,7 @@
 import { THREE, builder, toon, outline, newWorld, onTick, textTexture } from './gfx.js';
 import { makeCast } from './chars.js';
 import { rnd, cart } from './sets.js';
-import { rockMat, rockInside, lumpy as lumpyP, mesh, crystalCluster as crys, motes, water as waterP, nz } from './props.js';
+import { rockMat, rockInside, lumpy as lumpyP, mesh, crystalCluster as crys, motes, water as waterP, nz, rockTube, timber } from './props.js';
 
 function dropper(w, b, floorY = 0) {   // falling rocks with gravity, bounce and a hit callback
   return (x, z, size = 0.35, y = 6.8, onHit) => {
@@ -87,7 +87,7 @@ function trough(w, path, { width = 1.1, depth = 0.55, seg = 140, stone = 0x6E6A8
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
   const stoneM = new THREE.Mesh(g, (m => { m.side = THREE.DoubleSide; return m; })(rockMat(stone, 0.35))); w.add(stoneM); outline(stoneM, 0.04);
   const wg = new THREE.BufferGeometry(); wg.setAttribute('position', new THREE.Float32BufferAttribute(wpos, 3)); wg.setIndex(widx); wg.computeVertexNormals();
-  w.add(new THREE.Mesh(wg, toon(water, { side: THREE.DoubleSide, emissive: 0x1E5A80, emissiveIntensity: 0.35 })));
+  waterP(w, wg, { deep: water, shallow: 0x8FE6F2, opacity: 0.95, sparkle: 1 });
   // white foam streaks racing down the water
   const fm = new THREE.MeshBasicMaterial({ color: 0xE6F6FF }); const foam = Array.from({ length: 40 }, (_, i) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.03, 0.55), fm); w.add(m); m.userData = { s: i / 40, o: (rnd() - 0.5) * width * 1.3 }; return m; });
   onTick((t, dt) => foam.forEach(m => { const u = m.userData; u.s = (u.s + dt * 0.12) % 1; const p = path.getPointAt(u.s), tg = path.getTangentAt(u.s), sd = new THREE.Vector3().crossVectors(tg, up).normalize(); m.position.copy(p).addScaledVector(sd, u.o).add(new THREE.Vector3(0, 0.02, 0)); m.lookAt(m.position.clone().add(tg)); }));
@@ -149,8 +149,11 @@ export function buildCliff() {
   // ---- the green crystal room far across the cavern: ONE loop on a track that runs from tunnel to tunnel
   const G = new THREE.Vector3(5, 3.2, -20), LR = 5.2, LAT = 2.6;
   const ground = b.box(46, 3.6, 12, rockMat(0x4E6A60, 0.2), G.x, G.y - 1.9, G.z - 1, { line: 0.05 });
-  const alcove = new THREE.Mesh(new THREE.SphereGeometry(10, 24, 14, 0, Math.PI * 2, 0, Math.PI / 2), toon(0x1C3A33, { side: THREE.BackSide, emissive: 0x0E3A24, emissiveIntensity: 0.6 })); alcove.rotation.x = Math.PI / 2; alcove.position.set(G.x, G.y + LR, G.z - 5); w.add(alcove);
-  const GREEN = 0x4BE38A; for (let i = 0; i < 22; i++) { const a = i / 22 * Math.PI * 2; crystalCluster(b, G.x + Math.cos(a) * 9.4, G.y + LR + Math.sin(a) * 8.2, G.z - 4.6, 1.1 + rnd() * 0.6, GREEN, 3); }
+  // the green crystal room seen from across the cavern: the same rock dome, glowing green crystals and wooden-tied track as on Mia's side
+  const alcove = new THREE.Mesh(new THREE.SphereGeometry(10, 40, 20, 0, Math.PI * 2, 0, Math.PI / 2), rockInside(0x4E6A60, 0.14)); alcove.rotation.x = Math.PI / 2; alcove.position.set(G.x, G.y + LR, G.z - 5); w.add(alcove);
+  const GREEN = 0x4BE38A, GREENS = [0x4BE38A, 0x6FF0A6, 0x9FFFC8, 0x3CCB7A];
+  for (let i = 0; i < 18; i++) { const a = i / 18 * Math.PI * 2, cc = crys(w, G.x + Math.cos(a) * 9.0, G.y + LR + Math.sin(a) * 8.0, G.z - 4.4, { n: 5, size: 0.9 + rnd() * 0.6, cols: GREENS, light: false }); cc.rotation.z = a - Math.PI / 2; cc.rotation.x = -0.4; }
+  for (let i = 0; i < 12; i++) { const x = G.x + (rnd() - 0.5) * 40, z = G.z + (rnd() < 0.5 ? 2.4 : -4.4) + (rnd() - 0.5) * 1.2; if (Math.abs(x - G.x) < 6.5 && z < G.z) continue; crys(w, x, G.y - 0.1, z, { n: 6, size: 0.7 + rnd() * 0.7, cols: GREENS, light: false }); }
   [[G.x, G.y + LR, G.z + 2], [G.x - 8, G.y + 3, G.z - 2], [G.x + 8, G.y + 3, G.z - 2]].forEach(p => { const l = new THREE.PointLight(GREEN, 40, 26, 1.2); l.position.set(...p); w.add(l); });
   const tl = [[-22, 0, 0], [-16, 0, 0.4], [-10, 0, 0.6], [-5, 0, 0.4], [-2, 0, 0]];
   const pts = tl.map(([x, y, z]) => new THREE.Vector3(G.x + x, G.y + y, G.z + z));
@@ -162,11 +165,11 @@ export function buildCliff() {
   const frame = s => { const p = track.getPointAt(s), f = track.getTangentAt(s); let u = new THREE.Vector3(0, 1, 0);
     if (s > sA + 0.004 && s < sB - 0.004) u = new THREE.Vector3(G.x, G.y + LR, p.z).sub(p).normalize();
     const r = new THREE.Vector3().crossVectors(u, f).normalize(); u = new THREE.Vector3().crossVectors(f, r).normalize(); return { p, f, r, u }; };
-  const railM = toon(0xB8C4BE), tieM = toon(0x5A3A24), TL = track.getLength();
-  [-0.38, 0.38].forEach(o => { const rp2 = []; for (let i = 0; i <= 400; i++) { const { p, r, u } = frame(i / 400); rp2.push(p.clone().addScaledVector(r, o).addScaledVector(u, 0.08)); } w.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(rp2), 600, 0.06, 5), railM)); });
-  for (let d = 0; d < TL; d += 0.8) { const { p, f, u } = frame(d / TL); const t = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.08, 0.22), tieM); t.position.copy(p); t.up.copy(u); t.lookAt(p.clone().add(f)); w.add(t); }
+  const railM = toon(0x9DA3B3, { emissive: 0x15171C }), tieM = toon(0x8B5E3C), TL = track.getLength();
+  [-0.62, 0.62].forEach(o => { const rp2 = []; for (let i = 0; i <= 400; i++) { const { p, r, u } = frame(i / 400); rp2.push(p.clone().addScaledVector(r, o).addScaledVector(u, 0.08)); } w.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(rp2), 600, 0.06, 5), railM)); });
+  for (let d = 0; d < TL; d += 0.8) { const { p, f, u } = frame(d / TL); const t = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.08, 0.24), tieM); t.position.copy(p); t.up.copy(u); t.lookAt(p.clone().add(f)); w.add(t); }
   // two tunnels: the track comes out of one and goes into the other
-  [[pts[0], Math.PI / 2], [pts[pts.length - 1], -Math.PI / 2]].forEach(([p, ry]) => { const m = new THREE.Mesh(new THREE.CircleGeometry(2.2, 18, 0, Math.PI), new THREE.MeshBasicMaterial({ color: 0x040807 })); m.position.set(p.x, G.y - 0.1, p.z); m.rotation.y = ry; w.add(m); b.box(2, 5, 7, 0x2E3F38, p.x + (ry > 0 ? -1.1 : 1.1), G.y + 1.2, p.z, { line: 0.04 }); });
+  [[pts[0], Math.PI / 2], [pts[pts.length - 1], -Math.PI / 2]].forEach(([p, ry]) => { const m = new THREE.Mesh(new THREE.CircleGeometry(2.2, 18, 0, Math.PI), new THREE.MeshBasicMaterial({ color: 0x040807 })); m.position.set(p.x, G.y - 0.1, p.z); m.rotation.y = ry; m.position.x += (ry > 0 ? 0.15 : -0.15); w.add(m); const sd = ry > 0 ? -1 : 1; mesh(w, lumpyP(3.2, 2, 0.18, 0.9), rockMat(0x4E6A60, 0.3), p.x + sd * 2.9, G.y + 1.2, p.z, { sc: [0.8, 1, 1.3], shadow: false }); timber(w, new THREE.Vector3(p.x - sd * 0.3, G.y - 0.1, p.z), new THREE.Vector3(sd, 0, 0), { w: 3.4, h: 2.8 }); });
   // the cart with Mia and Toby
   const tiny = new THREE.Group(); w.add(tiny); const tc = cart(builder(tiny), 0, 0, 0); const cc = makeCast(tiny); cc.leo.g.visible = false;
   cc.mia.g.position.set(0, 0.45, 0.15); cc.mia.pose('cheer'); cc.mia.L.rotation.x = cc.mia.R.rotation.x = -1.4; cc.toby.g.position.set(0, 0.85, 0.6); cc.toby.g.scale.setScalar(0.9);

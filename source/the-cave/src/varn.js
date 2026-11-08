@@ -253,7 +253,7 @@ export function makeVarn(parent) {
   const radial = (out, i, a) => out.copy(N[i]).multiplyScalar(Math.cos(a)).addScaledVector(B[i], Math.sin(a)).normalize();
   let time = 0;
   // ---- the sculpted model (Frank's Tripo shape, my own colours): bent along the same spine as the procedural body
-  const model = { ready: false };
+  const model = { ready: false }; const TAILCUT = true; const flukeM = toon(0x3E9CA6, { emissive: 0x2BB8C0, emissiveIntensity: 0.3 });   // flat whale fluke instead of unrolling the sculpt's curled tail (unrolling folds it)
   const EYES = [[0.40, 0.347, 0.062], [0.40, 0.347, -0.062]];
   function loadModel(base) {
     new GLTFLoader().load(base + 'varn.glb', gl => {
@@ -274,7 +274,8 @@ export function makeVarn(parent) {
       // the model's tail curls up and over into the fluke; that curl is unrolled here into a straight tail (arc length -> along the spine, distance from the curl centre -> up/down)
       const CF0 = cAt(cy, FX), RC = 0.08, CXc = FX - 0.01, CYc = CF0 + RC, NX = new Float32Array(cnt), NY = new Float32Array(cnt), smf = v => { v = Math.max(0, Math.min(1, v)); return v * v * (3 - 2 * v); };
       for (let i = 0; i < cnt; i++) { const y0 = P0.getY(i), tl0 = xs[i] < FX || (xs[i] < FX + 0.045 && y0 > 0.215), s = (x1 - Math.max(xs[i], FX)) / (x1 - x0); sv[i] = s; NX[i] = N0.getX(i); NY[i] = N0.getY(i);
-        if (tl0) { const dx = xs[i] - CXc, dy = y0 - CYc, rho = Math.hypot(dx, dy), al = Math.atan2(dy, dx); let ph = -Math.PI / 2 - al; ph = ((ph % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2); if (ph > Math.PI * 1.6) ph -= Math.PI * 2;
+        if (tl0 && TAILCUT) { oy[i] = Math.max(-0.06, Math.min(0.06, (y0 - CF0) * 0.35)); oz[i] = P0.getZ(i) * 0.35; ot[i] = 0; isF[i] = 0; }   // the sculpt's curled tail is tucked away: the real fluke takes over here
+        else if (tl0) { const dx = xs[i] - CXc, dy = y0 - CYc, rho = Math.hypot(dx, dy), al = Math.atan2(dy, dx); let ph = -Math.PI / 2 - al; ph = ((ph % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2); if (ph > Math.PI * 1.6) ph -= Math.PI * 2;
           const sArc = ph * RC; oy[i] = RC - rho + 0.4 * Math.max(0, Math.abs(P0.getZ(i)) - 0.04) * smf(sArc / 0.12); ot[i] = Math.max(0, sArc) / (x1 - x0); oz[i] = P0.getZ(i); isF[i] = smf(sArc / 0.05);
           const be = -Math.PI / 2 - al, cb = Math.cos(be), sb = Math.sin(be), nx0 = NX[i], ny0 = NY[i]; NX[i] = nx0 * cb - ny0 * sb; NY[i] = nx0 * sb + ny0 * cb;
           model.kF = Math.max(0, Math.min(M - 2, Math.floor(Math.pow(sF0, 1 / SPOW) * (M - 1)))); }
@@ -305,7 +306,7 @@ export function makeVarn(parent) {
       model.root = (c, out) => { const s = (x1 - (0.40 - (c.s0 - 0.06) * 1.2)) / (x1 - x0); return mapPt(s, (0.39 - cAt(cy, 0.4)) * hAt(0.4), Math.sin(c.a0 * 3) * 0.05 * wAt(0.4), out); };
       const k0 = s => Math.max(0, Math.min(M - 1, Math.round(Math.pow(s, 1 / SPOW) * (M - 1))));
       // hide the hand-made body parts
-      [body, ink, rim, fluke].forEach(o => o.visible = false); onSkin.forEach(o => { o.obj.visible = false; }); crest.forEach(c => c.strand.forEach(sp => sp.visible = true));
+      [body, ink, rim].forEach(o => o.visible = false); fluke.visible = TAILCUT; if (TAILCUT) fluke.traverse(o => { if (o.isMesh && o.material && !o.userData.isOutline) o.material = flukeM; }); onSkin.forEach(o => { o.obj.visible = false; }); crest.forEach(c => c.strand.forEach(sp => sp.visible = true));
       model.ready = true;
     }, undefined, () => { /* no model file: the hand-made Varn stays */ });
   }

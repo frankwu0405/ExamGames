@@ -3,7 +3,7 @@
 import { THREE, builder, toon, outline, newWorld, onTick, textPlane } from './gfx.js';
 import { makeCast } from './chars.js';
 import { cart } from './sets.js';
-import { setSeed, rnd, rr, pick, nz, PAL, scatter, ground, water, rockMat, lumpy, mesh, crystalCluster, lantern, motes, shell as seaShell, starfish, cutHoles, rockTube, timber, WOOD, WOOD2 } from './props.js';
+import { setSeed, rnd, rr, pick, nz, PAL, scatter, ground, water, rockMat, lumpy, mesh, crystalCluster, lantern, motes, shell as seaShell, starfish, cutHoles, rockTube, timber, caveMouth, WOOD, WOOD2 } from './props.js';
 import { glowSprite } from './effects.js';
 
 const GREEN = 0x4BE38A, GREENS = [0x4BE38A, 0x6FF0A6, 0x9FFFC8, 0x3CCB7A];
@@ -182,13 +182,13 @@ export function buildRiver({ exitZ = null } = {}) {
 export const streamX = z => z > 6 ? 0 : 6 * (t => t * t * (3 - 2 * t))(Math.min(1, (6 - z) / 10));
 export function buildBeach() {
   const w = newWorld({ sky: 0x86D4F5, ambientI: 1.5, sunI: 1.9, sunPos: [-14, 22, -10], fog: [0xD9F3FC, 45, 130] }); const b = builder(w); setSeed(67);
-  const hf = (x, z) => { let y = nz(x, z, 0.32) * 0.05 + Math.max(0, z - 5) * 0.07 - Math.max(0, -z - 11.5) * 0.12; const d = Math.abs(x - streamX(z)); if (z < 15) y = Math.min(y, -0.26 + Math.max(0, d - 1.5) * 0.4); return y; };
+  const hf = (x, z) => { let y = nz(x, z, 0.32) * 0.05 + Math.max(0, z - 5) * 0.07 - Math.max(0, -z - 11.5) * 0.12; const d = Math.abs(x - streamX(z)); if (z < 26) y = Math.min(y, -0.26 + Math.max(0, d - 1.5) * 0.4); return y; };   // the channel runs right back into the cave
   ground(w, 110, 170, hf, (x, z, c) => { const y = hf(x, z), wet = y < 0.04 && z < -9, rip = Math.sin(x * 2.4 + nz(x, z, 0.3) * 3) * 0.5 + 0.5; c.setHSL(0.11, wet ? 0.38 : 0.55, wet ? 0.62 : 0.76 + rip * 0.03); });
   // the sea, with surf rolling up the sand
   const sea = new THREE.PlaneGeometry(240, 110, 60, 30); sea.rotateX(-Math.PI / 2);
   water(w, sea, { deep: 0x1E8FC2, shallow: 0x6FE0E8, foamFn: '1.0 - smoothstep(0.0, 1.1, abs(vW.z + 12.4 - sin(vW.x * 0.45 + uT * 1.2) * 0.7 - sin(uT * 0.9) * 0.6))' }).position.set(0, -0.05, -66);
   // the stream from the cave across the sand to the sea
-  const sgeo = new THREE.PlaneGeometry(3.4, 36, 6, 72); sgeo.rotateX(-Math.PI / 2); { const p = sgeo.attributes.position; for (let i = 0; i < p.count; i++) { const z = p.getZ(i) - 1; p.setXYZ(i, p.getX(i) + streamX(z), 0, z); } }
+  const sgeo = new THREE.PlaneGeometry(3.4, 46, 6, 92); sgeo.rotateX(-Math.PI / 2); { const p = sgeo.attributes.position; for (let i = 0; i < p.count; i++) { const z = p.getZ(i) + 4; p.setXYZ(i, p.getX(i) + streamX(z), 0, z); } }
   water(w, sgeo, { deep: 0x3FA7D6, shallow: 0x8FE6F2, flow: [0, 1.6], foamFn: `smoothstep(1.25, 1.65, abs(vW.x - (vW.z > 6.0 ? 0.0 : 6.0 * (1.0 - smoothstep(-4.0, 6.0, vW.z)))))`, speed: 1.2, opacity: 0.92 }).position.y = -0.12;
   // the cliff with the cave they shot out of: a REAL opening in the rock, with the stream running out of it
   const holeP = new THREE.Vector3(0, -0.3, 15.5);
@@ -197,6 +197,7 @@ export function buildBeach() {
   [[0, 2.6, 22.5, 8, [1.5, 0.82, 0.8]], [-11, 2.2, 19, 6, [1.1, 0.9, 0.9]], [11, 2.4, 19.5, 6.5, [1.1, 0.85, 0.9]], [-20, 1.6, 15, 5, [1, 0.8, 1]], [20, 1.6, 15, 5, [1, 0.8, 1]]].forEach(([x, y, z, r, sc]) => mesh(w, lumpy(r, 3, 0.14, 1), cliffM, x, y, z, { sc, shadow: false }));
   rockTube(w, new THREE.LineCurve3(new THREE.Vector3(0, -0.2, 15.2), new THREE.Vector3(0, -0.2, 26)), { r: 2.6, lift: 1.0, tint: 0x5A4A3A, scale: 0.3, seg: 30 });
   { const back = new THREE.Mesh(new THREE.CircleGeometry(3, 20), new THREE.MeshBasicMaterial({ color: 0x0A0806 })); back.position.set(0, 0.6, 24); back.rotation.y = Math.PI; w.add(back); }
+  caveMouth(w, new THREE.Vector3(0, -0.25, 15.6), new THREE.Vector3(0, 0, -1), { r: 2.3, mat: rockMat(0xC9A884, 0.35), hf });
   // palms, bushes, sandstone rocks, driftwood, shells, starfish
   scatter(w, 'palm-detailed-long', [{ x: -7.5, z: 6, s: 1, ry: 0.3, rz: -0.12 }, { x: -11.5, z: 1.5, s: 1, ry: 2, rz: 0.1 }, { x: 11.5, z: 9, s: 1, ry: 1.2, rz: 0.12 }], { gy: hf, norm: 7.5 });
   scatter(w, 'palm-detailed-short', [{ x: -5, z: 11, s: 1, ry: 1 }, { x: 13.5, z: 3, s: 1 }, { x: 7.5, z: 12.5, s: 1, ry: 2.4 }], { gy: hf, norm: 5 });
@@ -213,7 +214,7 @@ export function buildBeach() {
   const cm = toon(0xFFFFFF); for (let i = 0; i < 7; i++) { const g = new THREE.Group(); g.position.set(-60 + i * 20 + rnd() * 8, 16 + rnd() * 6, -70 - rnd() * 20); w.add(g); for (let k = 0; k < 4; k++) { const m = new THREE.Mesh(new THREE.SphereGeometry(2 + rnd() * 1.5, 12, 10), cm); m.position.set(k * 2.6 - 4, rnd(), 0); m.scale.y = 0.75; g.add(m); outline(m, 0.05); }
     const v = 0.3 + rnd() * 0.4; onTick((t, dt) => { g.position.x += v * dt; if (g.position.x > 80) g.position.x = -80; }); }
   // the cart, washed up on the bank where the stream bends, tipped on its side
-  const tipped = cart(b, 3.2, hf(3.2, 1.5), 1.5); tipped.rotation.set(0, 0.8, 1.2);
+  const tipped = cart(b, -3.6, hf(-3.6, 6.6), 6.6); tipped.rotation.set(0, 0.8, 1.2);
   const cast = makeCast(w);
   cast.leo.g.position.set(-0.7, 0, 0); cast.mia.g.position.set(0.7, 0, 0); cast.toby.g.position.set(0, 0, -1.0);
   [cast.leo, cast.mia, cast.toby].forEach(c => c.g.rotation.y = Math.PI);   // facing the camera (and the sea)

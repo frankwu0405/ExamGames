@@ -202,7 +202,7 @@ export function ferris(G, x, y, z, sc = 1, ry = 0.35) { const FW = new THREE.Gro
   const cars = [], cc = [0xFF7B7B, 0xFFC857, 0x7ED6A8, 0x6FB4F2, 0xB79CFF, 0xFF9FD0];
   for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2, g = new THREE.Group(); g.position.set(Math.cos(a) * R, Math.sin(a) * R, 0); g.add(part(new THREE.BoxGeometry(3, 2.2, 3.2), toon(cc[i % 6]), 0, -2.2, 0)); wheel.add(g); cars.push(g); }
   const bulbs = []; for (let i = 0; i < 48; i++) { const a = i / 48 * Math.PI * 2, s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: [0xFFE08A, 0xFF9FB5, 0x9FE8FF][i % 3], transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })); s.position.set(Math.cos(a) * R, Math.sin(a) * R, 1.6); s.scale.setScalar(1.6); wheel.add(s); bulbs.push(s); }
-  onTick(t => { wheel.rotation.z = -t * 0.12; cars.forEach(c => c.rotation.z = t * 0.12); bulbs.forEach((b, i) => b.material.opacity = 0.55 + Math.sin(t * 3 + i * 0.7) * 0.35); }); return FW; }
+  onTick(t => { wheel.rotation.z = -t * 0.12; cars.forEach(c => c.rotation.z = t * 0.12); bulbs.forEach((b, i) => b.material.opacity = 0.55 + Math.sin(t * 3 + i * 0.7) * 0.35); }); FW.userData.hub = wheel; return FW; }
 
 // start loading every model early so places can build without waiting
 export const PRELOAD = ['tree_oak', 'tree_fat', 'tree_pine', 'tree_pine_tall', 'tree_autumn', 'tree_dark', 'bush', 'bush_large', 'flower_red', 'mushroom_red', 'log', 'stump', 'rock_small', 'rock_large', 'rock_tall', 'crystal', 'crab', 'fish', 'palm-detailed-long', 'palm-detailed-short', 'formation-rock', 'formation-large-stone', 'plant-pirate-kit', 'barrel', 'chest', 'shovel', 'ship-wreck', 'boat-small', 'ferris-wheel', 'tower'];
@@ -233,3 +233,17 @@ export function timber(parent, p, t, { w = 4.4, h = 3.2 } = {}) { const g = new 
 const _rk = new Map(); rockHook.mat = c => { if (!_rk.has(c)) _rk.set(c, rockMat(new THREE.Color(c).multiplyScalar(1.15).getHex(), 0.4)); return _rk.get(c); };
 // a rock-textured material for the inside of caves and tunnels
 export const rockInside = (c, scale = 0.2) => { const m = rockMat(c, scale); m.side = THREE.BackSide; return m; };
+// a rough, natural cave mouth: a ring of jagged stones round the opening, rubble along the banks, craggy rock formations
+// beside it, bushes on top and vines hanging over the hole. p = centre of the opening at ground level, d = the way it faces.
+export function caveMouth(G, p, d, { r = 2.2, mat = null, hf = null, stream = true } = {}) {
+  const D = d.clone().setY(0).normalize(), S = new THREE.Vector3(D.z, 0, -D.x), m = mat || rockMat(0xC9A884, 0.35), y = (x, z) => hf ? hf(x, z) : p.y;
+  for (let i = 0; i <= 10; i++) { const a = Math.PI * i / 10, q = p.clone().addScaledVector(S, Math.cos(a) * (r + 0.45)).addScaledVector(D, 0.3); q.y = p.y + Math.sin(a) * (r * 1.3 + 0.35) - 0.2;
+    mesh(G, lumpy(rr(0.55, 0.95), 1, 0.32, rr(0.7, 1)), m, q.x, q.y, q.z, { rx: rnd() * 6, ry: rnd() * 6 }); }
+  for (let i = 0; i < 16; i++) { const lat = (rnd() < 0.5 ? -1 : 1) * rr(stream ? 2.0 : 0.6, 4.5), fw = rr(0.3, 5), q = p.clone().addScaledVector(S, lat).addScaledVector(D, fw); const s = rr(0.18, 0.55);
+    mesh(G, lumpy(s, 1, 0.3, 0.7), m, q.x, y(q.x, q.z) + s * 0.25, q.z, { ry: rnd() * 6 }); }
+  scatter(G, 'formation-rock', [-1, 1].map(sd => { const q = p.clone().addScaledVector(S, sd * (r + 2.6)).addScaledVector(D, 0.6); return { x: q.x, z: q.z, y: y(q.x, q.z) - 0.2, s: rr(0.8, 1.1), ry: rnd() * 6 }; }), { norm: 4.2, style: (n, mn) => [/sand/.test(mn) ? toon(0xE6CF96) : m] });
+  const top = p.clone().addScaledVector(D, -1.2); top.y = p.y + r * 1.3 + 1.1;
+  scatter(G, 'bush', [-1, 0, 1].map(k => ({ x: top.x + S.x * k * 1.6, z: top.z + S.z * k * 1.6, y: top.y + (k ? -0.3 : 0), s: rr(0.7, 1.0) })), {});
+  const vm = toon(0x3E8E41); for (let i = 0; i < 7; i++) { const lat = (i / 6 - 0.5) * r * 1.6, L = rr(0.8, 1.9), q = p.clone().addScaledVector(S, lat).addScaledVector(D, 0.55); q.y = p.y + Math.sqrt(Math.max(0, 1 - (lat / (r + 0.3)) ** 2)) * (r * 1.3) + 0.1 - L / 2;
+    const v = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.05, L, 5), vm); v.position.copy(q); v.rotation.z = rr(-0.1, 0.1); G.add(v); const lf = new THREE.Mesh(new THREE.SphereGeometry(0.12, 6, 4), vm); lf.position.copy(q).y -= L / 2; lf.scale.set(1, 0.6, 1); G.add(lf); }
+}
