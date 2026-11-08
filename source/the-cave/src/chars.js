@@ -2,6 +2,72 @@
 import { THREE, builder, onTick, toon, outline } from './gfx.js';
 
 
+// ---- grown-up faces: smaller almond eyes with real lids, heavier brows, a modelled nose and a thinner mouth ----
+const ADULT = {        // lid: upper lid closing (0 open .. 1 shut); low: lower lid raised; bin/bout: brow inner/outer lift; mouth
+  neutral:    { lid: 0.18, low: 0.05, bin: 0, bout: 0, mouth: 'flat' },
+  kind:       { lid: 0.22, low: 0.32, bin: 4, bout: -2, mouth: 'smile', crinkle: 1 },
+  happy:      { lid: 0.25, low: 0.42, bin: 3, bout: -3, mouth: 'grin', crinkle: 1 },
+  talk:       { lid: 0.16, low: 0.08, bin: 2, bout: 0, mouth: 'talk' },
+  sad:        { lid: 0.38, low: 0.05, bin: 14, bout: -8, mouth: 'down' },
+  surprised:  { lid: 0.0, low: 0.0, bin: 16, bout: 12, wide: 1.25, mouth: 'o' },
+  scared:     { lid: 0.0, low: 0.0, bin: 14, bout: -2, wide: 1.2, mouth: 'grimace' },
+  determined: { lid: 0.3, low: 0.12, bin: -10, bout: 2, mouth: 'firm' },
+  angry:      { lid: 0.4, low: 0.22, bin: -26, bout: 8, mouth: 'snarl' },
+  sly:        { lid: 0.42, low: 0.22, bin: -6, bout: 4, mouth: 'smirk', lift: 1 },
+  blink:      { lid: 1, low: 0, bin: 0, bout: 0, mouth: 'flat' },
+};
+function adultFace(x, expr, o) {
+  const E = ADULT[expr] || ADULT.neutral, ink = '#2A1B14', EX = o.ex || 90, EY = 150, W = 37 * (o.ew || 1), H = 17 * (o.eh2 || 1) * (E.wide || 1), skin = o.skin;
+  const eye = s => {   // s = -1 left, 1 right; drawn in a local frame where +x points to the outer corner
+    x.save(); x.translate(256 + s * EX, EY); x.scale(s, 1);
+    const up = () => { x.moveTo(-W, 2); x.bezierCurveTo(-W * 0.45, -H * 1.55, W * 0.45, -H * 1.6, W, -2); }, lo = () => { x.bezierCurveTo(W * 0.45, H * 1.05, -W * 0.45, H * 1.1, -W, 2); };
+    x.save(); x.beginPath(); up(); lo(); x.closePath(); x.fillStyle = '#F1EBDF'; x.fill(); x.clip();
+    const ir = H * 1.08, lx = (o.look || 0) * s; x.beginPath(); x.arc(lx, H * 0.1, ir, 0, 7); x.fillStyle = o.iris; x.fill();
+    x.beginPath(); x.arc(lx, H * 0.1, ir, 0, 7); x.lineWidth = 2.5; x.strokeStyle = 'rgba(20,15,10,0.55)'; x.stroke();
+    x.beginPath(); x.arc(lx, H * 0.1, ir * 0.45, 0, 7); x.fillStyle = '#15100C'; x.fill();
+    x.beginPath(); x.arc(lx - ir * 0.35, -H * 0.25, 2.6, 0, 7); x.fillStyle = '#fff'; x.fill();
+    const lid = E.lid + (E.lift && s > 0 ? -0.12 : 0);
+    if (lid > 0) { x.fillStyle = skin; x.beginPath(); x.moveTo(-W - 4, -H * 2); x.lineTo(W + 4, -H * 2); x.lineTo(W + 4, -H * 1.6 + H * 3 * lid); x.quadraticCurveTo(0, -H * 1.3 + H * 3.1 * lid, -W - 4, -H * 1.6 + H * 3 * lid); x.fill(); }
+    if (E.low > 0) { x.fillStyle = skin; x.beginPath(); x.moveTo(-W - 4, H * 2); x.lineTo(W + 4, H * 2); x.lineTo(W + 4, H * 1.4 - H * 2.4 * E.low); x.quadraticCurveTo(0, H * 1.0 - H * 2.6 * E.low, -W - 4, H * 1.4 - H * 2.4 * E.low); x.fill(); }
+    x.restore();
+    // upper lid line (heavy, with a flick past the outer corner), lower lid (light), crease above
+    x.strokeStyle = ink; x.lineWidth = o.lidW || 6;
+    if (E.lid >= 1) { x.beginPath(); x.moveTo(-W, 2); x.quadraticCurveTo(0, H * 0.7, W, 0); x.stroke(); }
+    else { const k = Math.min(1, E.lid + (E.lift && s > 0 ? -0.12 : 0)); x.beginPath(); x.moveTo(-W, 2 + k * 6); x.bezierCurveTo(-W * 0.45, -H * 1.55 + H * 2.6 * k, W * 0.45, -H * 1.6 + H * 2.6 * k, W + 5, -4 + k * 8); x.stroke();
+      x.lineWidth = 2.5; x.globalAlpha = 0.55; x.beginPath(); x.moveTo(-W + 6, 4); x.bezierCurveTo(-W * 0.4, H * 1.15 - H * 2.5 * E.low, W * 0.4, H * 1.05 - H * 2.4 * E.low, W - 2, 2); x.stroke(); x.globalAlpha = 1; }
+    x.strokeStyle = o.crease || 'rgba(90,50,30,0.45)'; x.lineWidth = 3; x.beginPath(); x.moveTo(-W * 0.7, -H * 1.45); x.quadraticCurveTo(0, -H * 2.15, W * 0.85, -H * 1.2); x.stroke();
+    if (o.old) { x.beginPath(); x.moveTo(-W * 0.6, H * 1.55); x.quadraticCurveTo(0, H * 2.3, W * 0.7, H * 1.4); x.stroke(); }
+    if (E.crinkle || o.old) { x.lineWidth = 2.5; for (let k = 0; k < (o.old ? 3 : 2); k++) { x.beginPath(); x.moveTo(W + 8, -6 + k * 8); x.lineTo(W + 22, -12 + k * 12); x.stroke(); } }
+    // brow: a thick tapered stroke, inner end towards the nose
+    const bi = -H * 2.6 - E.bin - (E.lift && s > 0 ? 8 : 0), bo = -H * 2.4 - E.bout - (E.lift && s > 0 ? 6 : 0);
+    x.fillStyle = o.brow; x.beginPath(); x.moveTo(-W * 1.05, bi + 5); x.quadraticCurveTo(-W * 0.2, bi - 8 + (bo - bi) * 0.4, W * 1.1, bo); x.quadraticCurveTo(-W * 0.1, bi + 2 + (bo - bi) * 0.4, -W * 1.05, bi + 5 + (o.browH || 12)); x.closePath(); x.fill();
+    x.restore(); };
+  eye(-1); eye(1);
+  // nose: one shaded side of the bridge, a rounded tip and the nostril wings
+  x.strokeStyle = o.nose; x.lineCap = 'round'; x.lineWidth = 4.5; x.globalAlpha = 0.7; x.beginPath(); x.moveTo(242, 150); x.quadraticCurveTo(236, 180, 240, 198); x.stroke(); x.globalAlpha = 1;
+  x.lineWidth = 5; x.beginPath(); x.moveTo(232, 204); x.quadraticCurveTo(238, 214, 250, 212); x.moveTo(262, 212); x.quadraticCurveTo(274, 214, 280, 204); x.stroke();
+  x.lineWidth = 4; x.beginPath(); x.moveTo(248, 214); x.quadraticCurveTo(256, 218, 264, 214); x.stroke();
+  if (o.old || o.lines) { x.strokeStyle = o.wrinkles || o.nose; x.lineWidth = 3.5; x.globalAlpha = 0.75; [-1, 1].forEach(s => { x.beginPath(); x.moveTo(256 + s * 34, 206); x.quadraticCurveTo(256 + s * 52, 236, 256 + s * 44, 262); x.stroke(); }); x.globalAlpha = 1; }
+  if (o.old) { x.strokeStyle = o.wrinkles; x.lineWidth = 3; x.globalAlpha = 0.6; for (let k = 0; k < 3; k++) { x.beginPath(); x.moveTo(256 - 64 + k * 6, 66 + k * 11); x.quadraticCurveTo(256, 58 + k * 11 - (E.bin > 8 ? 6 : 0), 256 + 64 - k * 6, 66 + k * 11); x.stroke(); } x.globalAlpha = 1; }
+  // mouth (kept inside the gap the beard leaves)
+  const my = o.mouthY || 252, lip = o.lip || '#8A4A3E', dark = '#3A1614', teeth = '#F4EEE2';
+  x.lineCap = 'round'; x.strokeStyle = ink; x.lineWidth = 5;
+  const M = E.mouth;
+  if (M === 'flat') { x.beginPath(); x.moveTo(228, my); x.quadraticCurveTo(256, my + 3, 284, my - 1); x.stroke(); }
+  else if (M === 'smile') { x.beginPath(); x.moveTo(222, my - 6); x.quadraticCurveTo(256, my + 12, 290, my - 6); x.stroke(); }
+  else if (M === 'down') { x.beginPath(); x.moveTo(226, my + 6); x.quadraticCurveTo(256, my - 6, 286, my + 6); x.stroke(); }
+  else if (M === 'firm') { x.beginPath(); x.moveTo(226, my + 3); x.lineTo(286, my + 1); x.stroke(); }
+  else if (M === 'smirk') { x.beginPath(); x.moveTo(230, my + 2); x.quadraticCurveTo(262, my + 4, 292, my - 10); x.stroke(); }
+  else if (M === 'o') { x.fillStyle = dark; x.beginPath(); x.ellipse(256, my + 4, 13, 17, 0, 0, 7); x.fill(); x.stroke(); }
+  else if (M === 'talk') { x.fillStyle = dark; x.beginPath(); x.ellipse(256, my + 2, 22, 9, 0, 0, 7); x.fill(); x.lineWidth = 3.5; x.stroke(); }
+  else { // grin / grimace / snarl: an open mouth showing teeth
+    const w = M === 'snarl' ? 40 : M === 'grin' ? 34 : 30, top = M === 'grin' ? my - 8 : my - 4, bot = M === 'grimace' ? my + 16 : M === 'snarl' ? my + 12 : my + 16, curve = M === 'grin' ? 10 : M === 'snarl' ? -2 : -6;
+    x.beginPath(); x.moveTo(256 - w, top); x.quadraticCurveTo(256, top + curve * 0.4 - 2, 256 + w, top - (M === 'snarl' ? 6 : 0)); x.quadraticCurveTo(256, bot + curve, 256 - w, top); x.closePath(); x.fillStyle = dark; x.fill();
+    x.save(); x.clip(); x.fillStyle = teeth; x.fillRect(256 - w, top - 10, w * 2, (M === 'grin' ? 9 : 11) + 10); if (M !== 'grin') x.fillRect(256 - w, bot + curve - 9, w * 2, 12);
+    x.strokeStyle = 'rgba(80,60,50,0.6)'; x.lineWidth = 1.8; for (let k = -3; k <= 3; k++) { x.beginPath(); x.moveTo(256 + k * w / 3.6, top - 6); x.lineTo(256 + k * w / 3.6, top + 10); x.stroke(); } x.restore();
+    x.strokeStyle = ink; x.lineWidth = 4.5; x.stroke(); }
+}
+
 // ---- painted faces: one canvas per expression, swapped onto a curved patch of the head ----
 const FACE = { W: 512, H: 320 };
 function paintFace(expr, o) {
@@ -37,7 +103,7 @@ function paintFace(expr, o) {
       x.fillStyle = '#9fd8ff'; x.beginPath(); x.moveTo(160, 196); x.quadraticCurveTo(172, 222, 160, 236); x.quadraticCurveTo(148, 222, 160, 196); x.fill(); },
     blink: () => { [256 - EX, 256 + EX].forEach(cx => { x.strokeStyle = ink; x.lineWidth = 9; x.beginPath(); x.arc(cx, EY - 4, 28, 0.15, Math.PI - 0.15); x.stroke(); }); brow(256 - EX, 86, 30, 6, 0); brow(256 + EX, 86, 30, -6, 0); cheek(); nose();
       x.strokeStyle = ink; x.lineWidth = 8; x.beginPath(); x.moveTo(220, 250); x.quadraticCurveTo(256, 280, 292, 250); x.stroke(); } };
-  (E[expr] || E.happy)();
+  if (o.adult) adultFace(x, expr, o); else (E[expr] || E.happy)();
   if (o.freckles) { x.fillStyle = o.freckles; x.globalAlpha = 0.6; [[-70, 200], [-52, 212], [-88, 214], [-60, 192], [70, 200], [52, 212], [88, 214], [60, 192]].forEach(([dx, dy]) => { x.beginPath(); x.arc(256 + dx, dy, 4.5, 0, 7); x.fill(); }); x.globalAlpha = 1; }
   if (o.wrinkles) { x.strokeStyle = o.wrinkles; x.lineWidth = 4; [-1, 1].forEach(sd => { for (let k = 0; k < 3; k++) { x.beginPath(); x.moveTo(256 + sd * (EX + ER + 6), EY - 8 + k * 11); x.lineTo(256 + sd * (EX + ER + 26), EY - 16 + k * 15); x.stroke(); } });
     for (let k = 0; k < 2; k++) { x.beginPath(); x.moveTo(256 - 60, 64 + k * 12); x.quadraticCurveTo(256, 56 + k * 12, 256 + 60, 64 + k * 12); x.stroke(); } }
@@ -154,7 +220,7 @@ function animate(c, kind) {
     if (s === 'sit') { c.L.rotation.x = c.R.rotation.x = -1.4; }
     c.head.rotation.z = s === 'idle' ? Math.sin(t * 1.5 + c.t0) * 0.05 : 0;
     c.head.position.y = (c.headY || 1.32) + (run ? Math.abs(Math.sin(k)) * 0.04 : 0);
-    { const bl = Math.sin(t * 0.9 + c.t0 * 2) > 0.985 && !c.forceFace; const e = c.forceFace || (bl ? 'blink' : (s === 'scared' || s === 'hide' ? 'scared' : s === 'wow' ? 'surprised' : s === 'cheer' || s === 'hug' || s === 'slide' ? 'happy' : s === 'reach' || s === 'hold' || s === 'run' ? 'determined' : 'happy')); if (e !== c.curFace) { c.curFace = e; c.fp.set(e); } }
+    { const bl = Math.sin(t * 0.9 + c.t0 * 2) > 0.985 && !c.forceFace; const e = c.forceFace || (bl ? 'blink' : (s === 'scared' || s === 'hide' ? 'scared' : s === 'wow' ? 'surprised' : s === 'cheer' || s === 'hug' || s === 'slide' ? 'happy' : s === 'reach' || s === 'hold' || s === 'run' ? 'determined' : (c.face && c.face.adult ? (s === 'talk' ? (Math.sin(t * 9) > 0 ? 'talk' : 'neutral') : 'neutral') : 'happy'))); if (e !== c.curFace) { c.curFace = e; c.fp.set(e); } }
     c.mouth.scale.y = s === 'scared' || s === 'hide' ? -1 : s === 'wow' ? -2 : 1; c.mouth.scale.x = s === 'wow' ? 0.8 : 1;
   };
   onTick(c.tick);
@@ -235,14 +301,17 @@ function headShell(head, color, { th0 = () => 0, th1, ph0 = -Math.PI, ph1 = Math
   const m = new THREE.Mesh(g, toon(color, { side: THREE.DoubleSide })); if (line) outline(m, line); head.add(m); m.castShadow = true; return m;
 }
 // messy hair: a cap with uneven, slightly pointed tufts round the edge and a few soft peaks on the crown (no balls)
-function messyHair(head, color, { front = 0.98, back = 2.05, R = 0.288, tufts = 15, jag = 0.2, peaks = 9, seed = 7, sweep = 0.22 } = {}) {
+function messyHair(head, color, { front = 0.98, back = 2.05, R = 0.284, tufts = 17, jag = 0.2, spikes = 5, seed = 7, sweep = 0.18, crown = 0.025, flare = 0.07, recede = 0 } = {}) {
   const r = rnd(seed), T = Array.from({ length: tufts }, () => 0.55 + r() * 0.75), PH = r() * 6.28;
-  const pk = Array.from({ length: peaks }, () => ({ th: 0.25 + r() * 0.75, ph: (r() - 0.5) * 2 * Math.PI, a: 0.035 + r() * 0.045, w: 0.32 + r() * 0.2 }));
-  const tri = ph => { const u = ((ph + Math.PI) / (2 * Math.PI)) * tufts + PH, k = Math.floor(u), f = u - k; return { t: 1 - Math.abs(2 * f - 1), L: T[((k % tufts) + tufts) % tufts] }; };
-  const edge = ph => { const a = Math.abs(ph) / Math.PI, { t, L } = tri(ph); return front + (back - front) * Math.pow(a, 1.25) + jag * L * t * (1 - 0.35 * a); };
-  return headShell(head, color, { th1: edge, rFn: (th, ph, v) => { let rr = R * (1 + 0.018 * Math.sin(ph * 7 + th * 9) * Math.cos(ph * 3 - th * 5));
-      pk.forEach(p => { const d = Math.hypot((th - p.th), Math.sin((ph - p.ph) / 2) * 2 * Math.max(0.3, Math.sin(th))); rr += p.a * Math.pow(Math.max(0, 1 - d / p.w), 1.7); });
-      const { t, L } = tri(ph); return rr * (1 + 0.1 * v * v * v * t * L); },
+  // a few small, narrow spikes from the mess (not a peak): low and sharp
+  const pk = Array.from({ length: spikes }, () => ({ th: 0.35 + r() * 0.6, ph: (r() - 0.5) * 2.6, a: 0.014 + r() * 0.012, w: 0.09 + r() * 0.05 }));
+  const tri = ph => { const u = ((ph + Math.PI) / (2 * Math.PI)) * tufts + PH, k = Math.floor(u), f = u - k; return { t: Math.pow(1 - Math.abs(2 * f - 1), 1.6), L: T[((k % tufts) + tufts) % tufts] }; };
+  const edge = ph => { const a = Math.abs(ph) / Math.PI, { t, L } = tri(ph); return front + recede * sm01((Math.abs(ph) - 0.3) / 0.35) * (1 - sm01((Math.abs(ph) - 1.0) / 0.4)) + (back - front) * Math.pow(a, 1.25) + jag * L * t * (1 - 0.35 * a); };
+  return headShell(head, color, { th1: edge, rFn: (th, ph, v) => {
+      // follows the skull closely, a little fuller on the crown and at the back, with a gentle irregular surface
+      let rr = R * (1 + crown * Math.pow(Math.cos(Math.min(th, 1.5)), 2) + 0.01 * Math.sin(ph * 9 + th * 11) * Math.cos(ph * 4 - th * 6));
+      pk.forEach(p => { const d = Math.hypot(th - p.th, Math.sin((ph - p.ph) / 2) * 2 * Math.max(0.3, Math.sin(th))); rr += p.a * Math.pow(Math.max(0, 1 - d / p.w), 2.2); });
+      const { t, L } = tri(ph); return rr * (1 + flare * v * v * v * t * L); },
     phWarp: (ph, v) => ph + sweep * v * v * Math.cos(ph) });
 }
 // a beard as a raised block of colour that hugs the face; the mouth stays clear
@@ -287,16 +356,16 @@ export function makeJackBoy(world) {
   const c = animate(kid({ skin: SK, shirt: SH, legs: TR, shoes: 0x5A3A22, sock: SK, sleeve: 'long', cuff: 0xD8CCAE,
     face: { iris: '#2E9AA6', skin: '#F2CDA8', brow: '#6A4626', cheek: '#EC8B76', nose: '#CF957A', freckles: '#C07A55' },
     torso: (x, y, z) => { if (y < 0.66) return TR; if (y < 0.75) return SA; if (y > 1.06) return SH; if (z > 0 && Math.abs(x) < 0.045 + (y - 0.75) * 0.12) return SH; return VE; },
-    hair: (hb, head) => messyHair(head, 0x7A532C, { front: 1.0, back: 2.55, seed: 11 }) }), 'kid');
+    hair: (hb, head) => messyHair(head, 0x7A532C, { front: 1.02, back: 2.5, seed: 11, jag: 0.24, R: 0.286, crown: 0.03 }) }), 'kid');
   return finish(c, world);
 }
 // Jack, grown: the same face older, scruffy brown hair and a short beard; laced cream shirt, long open teal vest, sash, leather bracers, boots. No hat.
 export function makeJackMan(world) {
   const SK = 0xDFAE86, SH = 0xDCD1B4, VE = 0x34505C, SA = 0x7E3528, TR = 0x6A6544;
   const c = animate(adult({ skin: SK, shirt: SH, sleeve: SH, cuffC: 0xCFC3A4, bracer: 0x6B4A2E, legsC: TR, boots: 0x4A3220, bootCuff: 0x5C3E27,
-    face: { adult: true, er: 26, eh: 33, ex: 96, iris: '#4F7F8C', skin: '#DFAE86', brow: '#4A2F1A', cheek: '#D7967A', nose: '#B67E5C' },
+    face: { adult: true, ex: 90, iris: '#4F8A96', skin: '#DFAE86', brow: '#3A2414', browH: 15, nose: '#A86E4E', lines: true, wrinkles: '#B07A58', mouthY: 250 },
     torso: (x, y, z) => { const ax = Math.abs(x); if (y < 0.96) return TR; if (y < 1.07) return SA; if (z > 0 && y > 1.36 && ax < (y - 1.36) * 0.9) return SK; if (z > 0 && ax < 0.06 + (y - 1.07) * 0.1) return SH; return VE; },
-    hair: (hb, head) => { messyHair(head, 0x5E4024, { front: 0.95, back: 2.6, seed: 23, jag: 0.17 }); beard(head, 0x553A22, { top: 2.17, bottom: 2.78, seed: 5 }); } }), 'kid');
+    hair: (hb, head) => { messyHair(head, 0x5E4024, { front: 0.98, back: 2.5, seed: 23, jag: 0.2, R: 0.282, crown: 0.02 }); beard(head, 0x553A22, { top: 2.2, bottom: 2.78, cheek: 1.95, side: 1.62, seed: 5 }); } }), 'kid');
   c.headY = 1.86;
   // long open vest tails, torn at the hem
   const r = rnd(41), N = 22, pos = [], idx = []; const a0 = Math.PI * 0.16, a1 = Math.PI * 1.84;
@@ -310,14 +379,32 @@ export function makeJackMan(world) {
 // Jack, old: the hooded stranger. Olive cloak and hood, grey beard; the hood only shades his eyes.
 export function makeOldJack(world) {
   const SK = 0xE2BC98, CL = 0x5E6540, CL2 = 0x4A5033, TU = 0x463F30;
+  const FACE_O = { adult: true, old: true, ex: 92, eh2: 0.9, iris: '#6F8288', skin: '#E2BC98', brow: '#BDBBB2', browH: 14, nose: '#B07E5E', wrinkles: '#A57A5C', crease: 'rgba(120,80,55,0.55)', mouthY: 252 };
+  let hood = null;
   const c = animate(adult({ skin: SK, shirt: TU, sleeve: CL, cuffC: CL2, legsC: 0x3A3428, boots: 0x4A3220, bootCuff: 0x4A3220, headS: 0.92,
-    face: { adult: true, er: 25, eh: 30, ex: 96, iris: '#6F7F86', skin: '#E2BC98', brow: '#C9C7BE', cheek: '#E0A58A', nose: '#B98563', wrinkles: '#B08566', shade: true },
+    face: Object.assign({ shade: true }, FACE_O),
     hair: (hb, head) => {
-      beard(head, 0xD3D3CB, { top: 2.15, bottom: 2.95, point: 0.12, full: 0.045, seed: 9 });
-      // the hood: open at the face, falling to the shoulders
-      headShell(head, CL, { th0: ph => 0, th1: ph => { const a = Math.abs(ph); return 1.1 + 0.12 * sm01((a - 0.25) / 0.25) + 1.05 * sm01((a - 0.44) / 0.3) + 0.25 * sm01((a - 1.0) / 1.5); }, rFn: (th, ph, v) => 0.335 * (1 + 0.04 * Math.sin(ph * 5 + th * 3)) * (1 + 0.12 * sm01((th - 1.6) / 0.8)), nc: 140, nr: 26, line: 0.016 });
-      
+      // short, untidy grey hair swept back, a little thin at the temples (it shows when the hood comes off)
+      messyHair(head, 0xC4C3BC, { front: 0.82, back: 2.45, seed: 31, jag: 0.16, R: 0.281, crown: 0.02, sweep: 0.3, recede: 0.22, spikes: 6 });
+      beard(head, 0xD3D3CB, { top: 2.2, bottom: 2.8, cheek: 1.95, side: 1.62, full: 0.03, seed: 9 });
+      // the hood hangs from a pivot at the back of the neck so it can be pushed back off the head
+      hood = new THREE.Group(); hood.position.set(0, -0.2, -0.24); head.add(hood);
+      const hm = headShell(head, CL, { th0: ph => 0, th1: ph => { const a = Math.abs(ph); return 1.1 + 0.12 * sm01((a - 0.25) / 0.25) + 1.05 * sm01((a - 0.44) / 0.3) + 0.25 * sm01((a - 1.0) / 1.5); }, rFn: (th, ph, v) => 0.335 * (1 + 0.04 * Math.sin(ph * 5 + th * 3)) * (1 + 0.12 * sm01((th - 1.6) / 0.8)), nc: 140, nr: 26, line: 0.016 });
+      head.remove(hm); hm.position.set(0, 0.2, 0.24); hood.add(hm);
     } }), 'kid');
+  // a second face without the hood's shadow, cross-faded in as the hood comes off
+  const fpB = facePatch(c.head, FACE_O), fpA = c.fp; fpB.mesh.material.opacity = 0;
+  c.fp = { set: e => { fpA.set(e); fpB.set(e); } };
+  c.hoodK = 0; let hoodTo = 0, hoodT0 = -1, hoodFrom = 0;
+  // take the hood off (k: 1) or put it on (k: 0): hands up to the hood, push it back over the head, hands down
+  c.hood = off => { hoodFrom = c.hoodK; hoodTo = off ? 1 : 0; hoodT0 = performance.now(); };
+  const baseTick = c.tick;
+  c.tick = (t, dt) => { baseTick(t, dt);
+    if (hoodT0 >= 0) { const u = Math.min(1, (performance.now() - hoodT0) / 1700); c.hoodK = hoodFrom + (hoodTo - hoodFrom) * sm01((u - 0.25) / 0.55);
+      const arms = Math.sin(Math.PI * Math.min(1, u)) ; c.AL.rotation.x = c.AR.rotation.x = -2.5 * arms + (hoodTo ? 0.4 : -0.2) * arms * sm01((u - 0.35) / 0.4); c.AL.rotation.z = -0.35 * arms; c.AR.rotation.z = 0.35 * arms;
+      if (u >= 1) hoodT0 = -1; }
+    const k = c.hoodK; hood.rotation.x = -2.25 * k; hood.scale.set(1, 1 - 0.25 * k, 1 - 0.35 * k); hood.position.y = -0.2 - 0.06 * k;
+    fpB.mesh.material.opacity = sm01((k - 0.3) / 0.5); fpA.mesh.material.opacity = 1 - fpB.mesh.material.opacity; };
   c.headY = 1.86;
   // cloak: from the shoulders to the ground, open at the front, ragged hem
   const r = rnd(77), N = 30, pos = [], idx = []; const a0 = Math.PI * 0.14, a1 = Math.PI * 1.86;

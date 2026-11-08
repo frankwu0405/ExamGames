@@ -65,7 +65,7 @@ const YV = new THREE.Group(); world.add(YV); const V2 = { g: YV, pose: m => { co
     [-1, 1].forEach(sd => add(0x9FFFF0, 0.14, 0.55, 0.405, 0.216, sd * 0.07, sd));
     onTick(t => aura.forEach(a => { a.g.material.opacity = a.op * (0.75 + 0.25 * Math.sin(t * 1.6 + a.ph)); }));
     YV.add(m); YV.userData.mesh = m; }); }
-const KID_POSES = ['idle', 'walk', 'run', 'scared', 'cheer', 'point', 'wow', 'hold', 'sit'], KID_FACES = ['auto', 'happy', 'scared', 'surprised', 'determined', 'sad'];
+const KID_POSES = ['idle', 'walk', 'run', 'scared', 'cheer', 'point', 'wow', 'hold', 'sit'], KID_FACES = ['auto', 'happy', 'scared', 'surprised', 'determined', 'sad'], ADULT_FACES = ['auto', 'neutral', 'kind', 'happy', 'talk', 'sad', 'surprised', 'scared', 'determined', 'angry', 'sly'];
 const R = n => 'lab/ref/' + n;
 const CAST = [
   { id: 'leo', name: 'Leo', o: kids.leo, poses: KID_POSES, faces: true, h: 1.55, ref: [R('kids.jpg')], note: 'Sleeves/trousers in olive & green, curly dark hair. Story: the older boy, brave, a bit bossy.' },
@@ -75,7 +75,7 @@ const CAST = [
   { id: 'yvarn', name: 'Young Varn', v: V2, h: 1.4, scale: 3.2, yv: true, ref: [R('yvarn.jpg')], poses: ['swim', 'glide', 'still'], note: 'Its own sculpt (rounder, friendlier), painted with grown Varn\'s own colour palette, glowing rune lines and spine crystals (turquoise to blue to violet), eyes painted onto the eyeballs, and the tail fin turned flat like a whale fluke.' },
   { id: 'jack', name: 'Jack (boy)', o: jackB, poses: KID_POSES, faces: true, h: 1.5, ref: [R('jackboy.jpg')], note: 'The lost boy Varn befriends, built like Leo and Mia: messy brown hair, teal eyes, freckles, cream shirt with rolled sleeves, open teal waistcoat, red-brown sash, knee-length trousers.' },
   { id: 'jackm', name: 'Jack (grown)', o: jackM, poses: KID_POSES, faces: true, h: 2.2, ref: [R('jackman.jpg')], note: 'Same face, grown up: messy brown hair, short beard as a raised block of colour, open-necked cream shirt, long torn teal vest, red-brown sash, leather bracers, boots. No hat.' },
-  { id: 'old', name: 'Old Man Jack', o: oldM, poses: KID_POSES.concat(['talk']), faces: true, h: 2.2, ref: [R('oldman.jpg'), R('oldman2.jpg')], note: 'Jack, old: olive hood and long ragged cloak, grey beard, shepherd\'s crook. The hood only shades his brow and eyes; his face stays visible.' },
+  { id: 'old', name: 'Old Man Jack', o: oldM, poses: KID_POSES.concat(['talk']), faces: true, h: 2.2, ref: [R('oldman.jpg'), R('oldman2.jpg')], note: 'Jack, old: olive hood and long ragged cloak, short grey beard, shepherd\'s crook. The hood only shades his brow and eyes. Use the Hood buttons to see him push it back and show his untidy grey hair (from the last panel of Episode 6).' },
 ];
 const all = () => CAST.map(c => c.o ? c.o.g : c.v.g);
 let cur = null, mode = 'one';
@@ -101,7 +101,8 @@ function show(id) {
   $('#nm').textContent = cur.name; $('#note').textContent = cur.note;
   $('#refs').innerHTML = cur.ref.map(r => `<img src="${r}" alt="story art" onerror="this.style.display='none'">`).join('') + '<small>Story art (reference)</small>';
   const pr = $('#pr'); pr.innerHTML = '<b>Pose</b>'; cur.poses.forEach((p, i) => { const b = btn(pr, p, b => { sel(pr, b); (cur.o || cur.v).pose && (cur.o || cur.v).pose(p); }); if (i === 0) b.classList.add('on'); }); (cur.o || cur.v).pose && (cur.o || cur.v).pose(cur.poses[0]);
-  const fr = $('#fr'); fr.innerHTML = ''; if (cur.faces) { fr.innerHTML = '<b>Face</b>'; KID_FACES.forEach((f, i) => { const b = btn(fr, f, b => { sel(fr, b); cur.o.forceFace = f === 'auto' ? null : f; if (cur.o.fp) cur.o.fp.set(f === 'auto' ? 'happy' : f); }); if (i === 0) b.classList.add('on'); }); cur.o.forceFace = null; }
+  const fr = $('#fr'); fr.innerHTML = ''; if (cur.faces) { fr.innerHTML = '<b>Face</b>'; (cur.o.face && cur.o.face.adult ? ADULT_FACES : KID_FACES).forEach((f, i) => { const b = btn(fr, f, b => { sel(fr, b); cur.o.forceFace = f === 'auto' ? null : f; if (cur.o.fp) cur.o.fp.set(f === 'auto' ? (cur.o.face && cur.o.face.adult ? 'neutral' : 'happy') : f); }); if (i === 0) b.classList.add('on'); }); cur.o.forceFace = null; }
+  if (cur.o && cur.o.hood) { const hb = document.createElement('div'); hb.className = 'acts'; hb.innerHTML = '<b>Hood</b>'; fr.append(hb); btn(hb, 'Take hood off', () => cur.o.hood(true)); btn(hb, 'Put hood on', () => cur.o.hood(false)); }
   const mr = $('#mr'); mr.innerHTML = '<b>View</b>';
   [['Front', [0.2, h * 0.55, h * 2.4 + 1]], ['Face', [0, h * 0.95, h * 0.75 + 0.6]], ['Side', [h * 2.4 + 1, h * 0.55, 0]], ['Back', [-0.2, h * 0.55, -(h * 2.4 + 1)]]].forEach(([n, p]) => btn(mr, n, () => { const t = n === 'Face' ? [0, h * 0.92, 0] : tgt; cam(cur.yv ? [p[0] * 1.2, p[1], p[2] * 1.2] : cur.v ? [p[0], p[1] + 1.4, p[2]] : p, t); }));
   [...$('#roster').children].forEach(b => b.classList.toggle('on', b.dataset.id === id));
