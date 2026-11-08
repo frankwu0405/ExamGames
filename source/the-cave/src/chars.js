@@ -208,3 +208,40 @@ export function makeOldMan(world) {
   g.traverse(m => { if (m.isMesh) m.userData.noRecv = true; });
   world.add(g); return o;
 }
+
+// ---------------------------------------------------------------- Jack, three ages (lab designs)
+// Jack as the lost boy: messy brown hair, cream shirt, navy waistcoat.
+export function makeJackBoy(world) {
+  const SK = 0xF1CBA5, c = animate(kid({ skin: SK, shirt: 0xE9DDBF, legs: 0x4B3D31, shoes: 0x3A2A1E, face: { iris: '#3C86BE', skin: '#F1CBA5', brow: '#4A3220', cheek: '#EE8D79', nose: '#CE957C' }, hair: hb => {
+    const A = 0x6B4527, C = [0, 0.08, -0.06], R = 0.29;
+    hb.ball(R, A, ...C, { line: 0.02, seg: 24 }).scale.set(1.06, 0.98, 1.02);
+    [[-0.17, 0.2, 0.12], [0.1, 0.27, 0.1], [0.2, 0.17, 0.08], [-0.05, 0.3, 0.14], [0.0, 0.26, 0.2], [-0.24, 0.05, 0.02], [0.25, 0.04, 0.0]].forEach(([x, y, z]) => hb.ball(0.085, A, x, y, z, { line: 0, seg: 10 }));
+  } }), 'kid');
+  const b = builder(c.g); const v = b.ball(0.218, 0x2F4258, 0, 0.88, 0, { line: 0.02, seg: 22 }); v.scale.set(1, 0.62, 0.9);
+  b.ball(0.07, 0xE9DDBF, 0, 1.06, 0.12, { line: 0.012, seg: 12 }).scale.set(1.2, 0.5, 0.7);
+  c.g.traverse(o => { if (o.isMesh) o.userData.noRecv = true; }); world.add(c.g); onTick(c.tick); return c;
+}
+// Jack, grown: a captain with a long coat, tricorn hat and a rough brown beard.
+export function makeJackMan(world) {
+  const SK = 0xD9A67C, c = animate(kid({ skin: SK, shirt: 0x36546A, legs: 0x3A2E26, shoes: 0x2B2019, face: { iris: '#4A3320', skin: '#D9A67C', brow: '#33231A', cheek: '#C77A5E', nose: '#A9704F' }, hair: hb => {
+    const A = 0x5A3B20;
+    hb.ball(0.285, A, 0, 0.09, -0.06, { line: 0.02, seg: 22 }).scale.set(1.04, 0.95, 1.0);
+    // beard hugging the jaw, leaving the mouth clear
+    [[-0.2, -0.08, 0.1], [0.2, -0.08, 0.1], [-0.17, -0.19, 0.12], [0.17, -0.19, 0.12], [-0.09, -0.27, 0.14], [0.09, -0.27, 0.14], [0, -0.31, 0.13], [-0.22, 0.0, 0.05], [0.22, 0.0, 0.05]].forEach(([x, y, z]) => hb.ball(0.06, A, x * 0.95, y, z, { line: 0.01, seg: 10 }));
+    // tricorn
+    const hat = hb.cyl(0.36, 0.3, 0.07, 0x2A2420, 0, 0.27, -0.02, { line: 0.02, seg: 3 }); hat.rotation.y = Math.PI / 2;
+    hb.cyl(0.2, 0.22, 0.15, 0x2A2420, 0, 0.35, -0.02, { line: 0.02, seg: 16 });
+    hb.box(0.14, 0.02, 0.02, 0xD8CBA0, 0, 0.31, 0.2, { line: 0 });
+  } }), 'kid');
+  const b = builder(c.g);
+  b.paint([[0.001, 0.3, 0x36546A], [0.3, 0.32, 0x2C4557], [0.26, 0.6, 0x36546A], [0.235, 0.92, 0x36546A], [0.225, 1.06, 0x36546A], [0.08, 1.1, 0x36546A]], 0, 0, 0, { line: 0.025, seg: 24 });
+  b.box(0.5, 0.07, 0.4, 0x7B2E2A, 0, 0.82, 0, { line: 0.02 });
+  b.box(0.06, 0.07, 0.04, 0xD8B64A, 0, 0.82, 0.21, { line: 0.01 });
+  c.g.scale.set(1.12, 1.42, 1.12); c.head.scale.set(0.84, 0.72, 0.84);
+  c.g.traverse(o => { if (o.isMesh) o.userData.noRecv = true; }); world.add(c.g); onTick(c.tick); return c;
+}
+export function makeLabKids(world) {
+  const leo = animate(LEO(), 'kid'), mia = animate(MIA(), 'kid'), toby = animate(dog(), 'dog');
+  [leo, mia, toby].forEach(c => { c.g.traverse(o => { if (o.isMesh) o.userData.noRecv = true; }); world.add(c.g); onTick(c.tick); });
+  toby.g.scale.setScalar(1.1); return { leo, mia, toby };
+}
