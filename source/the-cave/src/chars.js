@@ -301,7 +301,7 @@ function headShell(head, color, { th0 = () => 0, th1, ph0 = -Math.PI, ph1 = Math
   const m = new THREE.Mesh(g, toon(color, { side: THREE.DoubleSide })); if (line) outline(m, line); head.add(m); m.castShadow = true; return m;
 }
 // messy hair: a cap with uneven, slightly pointed tufts round the edge and a few soft peaks on the crown (no balls)
-function messyHair(head, color, { front = 0.98, back = 2.05, R = 0.284, tufts = 17, jag = 0.2, spikes = 5, seed = 7, sweep = 0.18, crown = 0.025, flare = 0.07, recede = 0 } = {}) {
+function messyHair(head, color, { front = 0.98, back = 2.05, R = 0.284, tufts = 17, jag = 0.2, spikes = 5, seed = 7, sweep = 0.18, crown = 0.025, flare = 0.07, recede = 0, vol = 0.045 } = {}) {
   const r = rnd(seed), T = Array.from({ length: tufts }, () => 0.55 + r() * 0.75), PH = r() * 6.28;
   // a few small, narrow spikes from the mess (not a peak): low and sharp
   const pk = Array.from({ length: spikes }, () => ({ th: 0.35 + r() * 0.6, ph: (r() - 0.5) * 2.6, a: 0.014 + r() * 0.012, w: 0.09 + r() * 0.05 }));
@@ -309,7 +309,9 @@ function messyHair(head, color, { front = 0.98, back = 2.05, R = 0.284, tufts = 
   const edge = ph => { const a = Math.abs(ph) / Math.PI, { t, L } = tri(ph); return front + recede * sm01((Math.abs(ph) - 0.3) / 0.35) * (1 - sm01((Math.abs(ph) - 1.0) / 0.4)) + (back - front) * Math.pow(a, 1.25) + jag * L * t * (1 - 0.35 * a); };
   return headShell(head, color, { th1: edge, rFn: (th, ph, v) => {
       // follows the skull closely, a little fuller on the crown and at the back, with a gentle irregular surface
-      let rr = R * (1 + crown * Math.pow(Math.cos(Math.min(th, 1.5)), 2) + 0.01 * Math.sin(ph * 9 + th * 11) * Math.cos(ph * 4 - th * 6));
+      // volume: the hair stands off the skull on the crown and upper sides (like Leo's and Mia's), in soft clumps, and tucks back in towards the hairline
+      const tuck = sm01((v - 0.62) / 0.38), clump = 0.5 + 0.5 * Math.sin(ph * 5 + th * 7.1 + 1.3) * Math.cos(ph * 3 - th * 4.7 + 0.4);
+      let rr = R * (1 + crown * Math.pow(Math.cos(Math.min(th, 1.5)), 2)) + vol * (0.55 + 0.45 * Math.cos(Math.min(th, 2.2) * 0.85)) * (1 - 0.8 * tuck) * (0.75 + 0.5 * clump);
       pk.forEach(p => { const d = Math.hypot(th - p.th, Math.sin((ph - p.ph) / 2) * 2 * Math.max(0.3, Math.sin(th))); rr += p.a * Math.pow(Math.max(0, 1 - d / p.w), 2.2); });
       const { t, L } = tri(ph); return rr * (1 + flare * v * v * v * t * L); },
     phWarp: (ph, v) => ph + sweep * v * v * Math.cos(ph) });
@@ -342,11 +344,11 @@ function adult({ skin, shirt, sleeve, cuffC, legsC, boots, bootCuff, torso, face
     q.paint([[0.001, 0.07, sleeve], [0.07, 0.05, sleeve], [0.084, -0.02, sleeve], [0.08, -0.2, sleeve], [0.072, -0.34, sleeve], [0.078, -0.36, BR], [0.078, -0.52, BR], [0.07, -0.53, cuffC || sleeve], [0.068, -0.56, cuffC || sleeve], [0.054, -0.57, skin], [0.05, -0.6, skin], [0.06, -0.63, skin], [0.074, -0.68, skin], [0.072, -0.72, skin], [0.035, -0.75, skin], [0.001, -0.755, skin]].reverse(), 0, 0, 0, { line: 0.02, seg: 20, bend: (x, y, z) => { const t = Math.max(0, (-0.3 - y) / 0.45); return [0, 0.02 * t * t, 0.1 * t * t]; } });
     q.ball(0.03, skin, Math.sign(x) * -0.05, -0.67, 0.07, { line: 0.012, seg: 10 }); });
   const AL = arm(-0.33), AR = arm(0.33);
-  const head = new THREE.Group(); head.position.y = 1.86; head.scale.setScalar(headS); g.add(head); const hb = builder(head);
+  const head = new THREE.Group(); head.position.y = 1.9; head.scale.set(headS * 0.84, headS * 1.12, headS * 0.92); g.add(head); const hb = builder(head);
   hb.ball(0.27, skin, 0, 0, 0, { line: 0.025, seg: 28 });
   [-1, 1].forEach(sx => { const e = hb.ball(0.055, skin, sx * 0.262, -0.01, 0, { line: 0.015, seg: 14 }); e.scale.set(0.5, 1, 0.8); });
   const fp = facePatch(head, face); hair && hair(hb, head);
-  return { g, L, R, AL, AR, head, mouth: new THREE.Object3D(), fp, face, headY: 1.86 };
+  return { g, L, R, AL, AR, head, mouth: new THREE.Object3D(), fp, face, headY: 1.9 };
 }
 const finish = (c, world) => { c.g.traverse(o => { if (o.isMesh) o.userData.noRecv = true; }); world.add(c.g); onTick(c.tick); return c; };
 
@@ -356,7 +358,7 @@ export function makeJackBoy(world) {
   const c = animate(kid({ skin: SK, shirt: SH, legs: TR, shoes: 0x5A3A22, sock: SK, sleeve: 'long', cuff: 0xD8CCAE,
     face: { iris: '#2E9AA6', skin: '#F2CDA8', brow: '#6A4626', cheek: '#EC8B76', nose: '#CF957A', freckles: '#C07A55' },
     torso: (x, y, z) => { if (y < 0.66) return TR; if (y < 0.75) return SA; if (y > 1.06) return SH; if (z > 0 && Math.abs(x) < 0.045 + (y - 0.75) * 0.12) return SH; return VE; },
-    hair: (hb, head) => messyHair(head, 0x7A532C, { front: 1.02, back: 2.5, seed: 11, jag: 0.24, R: 0.286, crown: 0.03 }) }), 'kid');
+    hair: (hb, head) => messyHair(head, 0x7A532C, { front: 1.0, back: 2.5, seed: 11, jag: 0.26, R: 0.278, crown: 0.02, vol: 0.06, flare: 0.12 }) }), 'kid');
   return finish(c, world);
 }
 // Jack, grown: the same face older, scruffy brown hair and a short beard; laced cream shirt, long open teal vest, sash, leather bracers, boots. No hat.
@@ -365,8 +367,8 @@ export function makeJackMan(world) {
   const c = animate(adult({ skin: SK, shirt: SH, sleeve: SH, cuffC: 0xCFC3A4, bracer: 0x6B4A2E, legsC: TR, boots: 0x4A3220, bootCuff: 0x5C3E27,
     face: { adult: true, ex: 90, iris: '#4F8A96', skin: '#DFAE86', brow: '#3A2414', browH: 15, nose: '#A86E4E', lines: true, wrinkles: '#B07A58', mouthY: 250 },
     torso: (x, y, z) => { const ax = Math.abs(x); if (y < 0.96) return TR; if (y < 1.07) return SA; if (z > 0 && y > 1.36 && ax < (y - 1.36) * 0.9) return SK; if (z > 0 && ax < 0.06 + (y - 1.07) * 0.1) return SH; return VE; },
-    hair: (hb, head) => { messyHair(head, 0x5E4024, { front: 0.98, back: 2.5, seed: 23, jag: 0.2, R: 0.282, crown: 0.02 }); beard(head, 0x553A22, { top: 2.2, bottom: 2.78, cheek: 1.95, side: 1.62, seed: 5 }); } }), 'kid');
-  c.headY = 1.86;
+    hair: (hb, head) => { messyHair(head, 0x5E4024, { front: 0.96, back: 2.5, seed: 23, jag: 0.22, R: 0.278, crown: 0.015, vol: 0.05, flare: 0.1 }); beard(head, 0x553A22, { top: 2.2, bottom: 2.78, cheek: 1.95, side: 1.62, seed: 5 }); } }), 'kid');
+  c.headY = 1.9;
   // long open vest tails, torn at the hem
   const r = rnd(41), N = 22, pos = [], idx = []; const a0 = Math.PI * 0.16, a1 = Math.PI * 1.84;
   for (let i = 0; i <= N; i++) { const a = a0 + (a1 - a0) * i / N, hem = 0.5 + (i % 2 ? 0.05 : 0) + r() * 0.04;
@@ -380,12 +382,12 @@ export function makeJackMan(world) {
 export function makeOldJack(world) {
   const SK = 0xE2BC98, CL = 0x5E6540, CL2 = 0x4A5033, TU = 0x463F30;
   const FACE_O = { adult: true, old: true, ex: 92, eh2: 0.9, iris: '#6F8288', skin: '#E2BC98', brow: '#BDBBB2', browH: 14, nose: '#B07E5E', wrinkles: '#A57A5C', crease: 'rgba(120,80,55,0.55)', mouthY: 252 };
-  let hood = null;
+  let hood = null, hairM = null;
   const c = animate(adult({ skin: SK, shirt: TU, sleeve: CL, cuffC: CL2, legsC: 0x3A3428, boots: 0x4A3220, bootCuff: 0x4A3220, headS: 0.92,
     face: Object.assign({ shade: true }, FACE_O),
     hair: (hb, head) => {
       // short, untidy grey hair swept back, a little thin at the temples (it shows when the hood comes off)
-      messyHair(head, 0xC4C3BC, { front: 0.82, back: 2.45, seed: 31, jag: 0.16, R: 0.281, crown: 0.02, sweep: 0.3, recede: 0.22, spikes: 6 });
+      hairM = messyHair(head, 0xC4C3BC, { front: 0.82, back: 2.45, seed: 31, jag: 0.18, R: 0.278, crown: 0.01, sweep: 0.3, recede: 0.22, spikes: 6, vol: 0.035, flare: 0.1 });
       beard(head, 0xD3D3CB, { top: 2.2, bottom: 2.8, cheek: 1.95, side: 1.62, full: 0.03, seed: 9 });
       // the hood hangs from a pivot at the back of the neck so it can be pushed back off the head
       hood = new THREE.Group(); hood.position.set(0, -0.2, -0.24); head.add(hood);
@@ -403,9 +405,10 @@ export function makeOldJack(world) {
     if (hoodT0 >= 0) { const u = Math.min(1, (performance.now() - hoodT0) / 1700); c.hoodK = hoodFrom + (hoodTo - hoodFrom) * sm01((u - 0.25) / 0.55);
       const arms = Math.sin(Math.PI * Math.min(1, u)) ; c.AL.rotation.x = c.AR.rotation.x = -2.5 * arms + (hoodTo ? 0.4 : -0.2) * arms * sm01((u - 0.35) / 0.4); c.AL.rotation.z = -0.35 * arms; c.AR.rotation.z = 0.35 * arms;
       if (u >= 1) hoodT0 = -1; }
-    const k = c.hoodK; hood.rotation.x = -2.25 * k; hood.scale.set(1, 1 - 0.25 * k, 1 - 0.35 * k); hood.position.y = -0.2 - 0.06 * k;
+    const k = c.hoodK; hairM.scale.setScalar(0.9 + 0.1 * sm01((k - 0.35) / 0.4));   // the hood flattens his hair until it comes off
+    hood.rotation.x = -2.25 * k; hood.scale.set(1.14, 0.94 * (1 - 0.25 * k), 1.06 * (1 - 0.35 * k));   // a roomier hood than the narrow oval head under it hood.position.y = -0.2 - 0.06 * k;
     fpB.mesh.material.opacity = sm01((k - 0.3) / 0.5); fpA.mesh.material.opacity = 1 - fpB.mesh.material.opacity; };
-  c.headY = 1.86;
+  c.headY = 1.9;
   // cloak: from the shoulders to the ground, open at the front, ragged hem
   const r = rnd(77), N = 30, pos = [], idx = []; const a0 = Math.PI * 0.14, a1 = Math.PI * 1.86;
   for (let i = 0; i <= N; i++) { const a = a0 + (a1 - a0) * i / N, hem = 0.1 + (i % 2 ? 0.07 : 0) + r() * 0.06;
