@@ -5,6 +5,8 @@ import { buildMap, STOPS, setCamRef, EPISODES, MAX_EP } from './sets.js';
 import { mountUI, hideStory, hideTask, MODE, ownedCount, cardTotal, CARDS, cardSrc } from './ui.js';
 import { playMusic, setMusic } from './music.js';
 import { cloudsIn, cloudsCovered, cloudsOut } from './clouds.js';
+import { preload } from './props.js';
+preload();
 import { stop1, stop2, stop3, sumUp } from './ep1.js';
 import { stop4, stop5, stop6, sumUp2 } from './ep2.js';
 import { stop7, stop8, stop9, sumUp3 } from './ep3.js';

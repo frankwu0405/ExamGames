@@ -51,6 +51,19 @@ export async function tell(text, { wait: waitTap = true } = {}) {
   if (!waitTap) return reading;
   await tapOn();
 }
+// A short story beat that plays WITH the action: it is read (or left on screen long enough to read), then moves on by itself.
+// Tapping the panel moves on straight away. Long passages are cut into beats like this so the story never sits as one big block.
+export async function beat(text, { min = 0, hold = 0 } = {}) {
+  panel.classList.remove('hidden'); render(text); nextBtn.classList.add('hidden');
+  reading = MODE.captain ? Promise.resolve() : readCurrent(false);
+  const words = text.split(/\s+/).length, t0 = performance.now(), byWords = Math.max(2600, words * 520 + 1400) + hold;
+  let tapped = false; const go = () => { tapped = true; }; panel.addEventListener('click', go);
+  await Promise.race([Promise.all([reading, wait(Math.max(min, S.settings.read && !MODE.captain ? 1200 : byWords))]).then(() => wait(hold + 500)), new Promise(r => { const iv = setInterval(() => { if (tapped && performance.now() - t0 > 600) { clearInterval(iv); r(); } }, 80); })]);
+  panel.removeEventListener('click', go); if (tapped) hush();
+}
+// Cut a passage into sentences; the one holding the {gap} is kept apart so the activity shows only that sentence.
+export function sentences(text) { return text.match(/[^.!?…]+[.!?…]+["”’]?\s*|[^.!?…]+$/g).map(x => x.trim()).filter(Boolean); }
+export function aroundGap(text) { const ss = sentences(text), i = ss.findIndex(x => /\{/.test(x)); return { before: i < 0 ? ss : ss.slice(0, i), gap: i < 0 ? '' : ss[i], after: i < 0 ? [] : ss.slice(i + 1) }; }
 // Wait for her to tap ▶ on the line already showing (it is not read again).
 export async function tapOn() {
   panel.classList.remove('hidden');

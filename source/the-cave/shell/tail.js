@@ -609,13 +609,13 @@ async function showMap(focusNext = true) {
   const banner = h('div', { class: 'map-banner' }, h('div', { class: 'ep' }, 'Episode ' + ep), h('div', { class: 'ep-title' }, EPISODES[ep].title),
     h('div', { class: 'ep-hint' }, epDone && ep === MAX_EP ? `Episode ${ep} complete! More of the voyage is coming soon.` : 'Tap the glowing stop to begin.'));
   document.body.append(banner);
-  await flyCam([next.p[0] + 12, 25, next.p[2] + 24], [next.p[0] + 9, 0, next.p[2] - 3], 2600);
+  await flyCam([next.p[0] + 3, 30, next.p[2] + 30], [next.p[0], 0, next.p[2] + 3], 2600);
   if (version !== mapVersion || leaving) return;
   // drag to look around the map, tap a stop to play it
   let down = null, moved = 0, selecting = false; const cv = renderer.domElement;
   const pd = e => { if (selecting || leaving || (e.button != null && e.button !== 0)) return; down = { x: e.clientX, y: e.clientY, id: e.pointerId }; moved = 0; cv.setPointerCapture?.(e.pointerId); };
   const pm = e => { if (!down || e.pointerId !== down.id) return; const dx = e.clientX - down.x, dy = e.clientY - down.y; moved += Math.abs(dx) + Math.abs(dy); down = { x: e.clientX, y: e.clientY, id: e.pointerId };
-    const k = 0.035; camera.position.x -= dx * k; camera.position.z -= dy * k; camera.position.x = Math.max(-34, Math.min(32, camera.position.x)); camera.position.z = Math.max(-8, Math.min(34, camera.position.z));
+    const k = 0.035; camera.position.x -= dx * k; camera.position.z -= dy * k; camera.position.x = Math.max(-34, Math.min(70, camera.position.x)); camera.position.z = Math.max(-12, Math.min(40, camera.position.z));
     camera.lookAt(camera.position.x - 3, 0, camera.position.z - 27); };
   const pu = async e => { if (!down || selecting || leaving || e.pointerId !== down.id) return; const wasDrag = moved > 12; down = null; if (wasDrag) return;
     const hit = pickAt(e.clientX, e.clientY, markers); if (!hit) return; const s = hit.obj.userData.stop;

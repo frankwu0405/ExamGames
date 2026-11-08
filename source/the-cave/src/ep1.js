@@ -3,7 +3,8 @@
 import { S, save, sfx, wait, h, shuffle } from './core.js';
 import { THREE, setCam, flyCam, followCam, stopFollow, quake, tween, moveTo, onTick, sparkles, textTexture, builder, toon, world } from './gfx.js';
 import { buildMeadow, buildChamber, buildTunnel } from './sets.js';
-import { tell, tapOn, fillGap, filled, hideStory, chooseWord, pick3D, spellOn, flashlight, order, think, offerStretch, earnCard, toby, tobyHide, MODE } from './ui.js';
+import { frost } from './effects.js';
+import { tell, beat, aroundGap, tapOn, fillGap, filled, hideStory, chooseWord, pick3D, spellOn, flashlight, order, think, offerStretch, earnCard, toby, tobyHide, MODE } from './ui.js';
 import { playMusic } from './music.js';
 
 const star = n => { S.stars[n] = 1; save(); sfx('great'); };
@@ -27,7 +28,8 @@ export async function stop1() {
   playing = false; off(); [leo, mia].forEach(c => c.pose('idle'));
   dog.g.position.set(0, 0, 4); dog.g.rotation.y = 0; leo.g.position.set(-1.3, 0, 5); mia.g.position.set(1.3, 0, 5.2); leo.g.rotation.y = 0.3; mia.g.rotation.y = -0.3; dog.pose('wag');
   flyCam([1.2, 1.6, 7.2], [0, 0.6, 4], 1200);
-  await tell('He had soft brown fur. He was the smallest and fastest dog in town.');
+  await beat('He had soft brown fur.'); dog.pose('run'); await moveTo(dog.g, [1.6, 0, 4.4], 500); await moveTo(dog.g, [-1.4, 0, 4.2], 500); dog.pose('wag');
+  await tell('He was the smallest and fastest dog in town.');
   flyCam([0, 3.5, 12], [0, 1, -3], 1200); dog.g.rotation.y = Math.PI;
   sparkles(new THREE.Vector3(0, 1.2, -8.6), 0x9FEAFF, 30); sfx('chime');
   tell('Suddenly, Toby saw something bright. He barked and ran away!', { wait: false });
@@ -59,7 +61,7 @@ export async function stop1() {
   }
   await flyCam([0, 3, 10], [0, 1.2, -6], 1300);
   run(leo, [-0.8, 0, -5.8], 3000); run(mia, [0.8, 0, -5.6], 2800);
-  await tell('They followed his paw prints to a dark, scary cave.');
+  await beat('They followed his paw prints to a dark, scary cave.');
   await flyCam([0, 2.1, 1.2], [0, 1.9, -8.4], 1200); leo.g.rotation.y = mia.g.rotation.y = Math.PI;
   // ---- activity: spell a missing word on the stones around the cave mouth (rotates on replays)
   const sp = pickV(1, [
@@ -67,13 +69,17 @@ export async function stop1() {
     { text: 'The air inside was much {colder} than the warm air.', word: 'colder', decoys: 'ia', prompt: 'Tap the stones to spell: cold + er.', hints: ['Start with cold.', 'C – O – L – D – E – R'] },
     { text: 'They had to be the {bravest} kids to save their pet.', word: 'bravest', decoys: 'u', prompt: 'Tap the stones to spell: brave + est.', hints: ['brave has an e. Just add -st.', 'B – R – A – V – E – S – T'] },
   ]);
-  const para = ['They had to {explore} it to find their puppy.', 'The air inside was much {colder} than the warm air.', 'They had to be the {bravest} kids to save their pet.'].map(t => t === sp.text ? t : t.replace(/[{}]/g, '')).join(' ');
-  tell(para, { wait: false });
+  const LINES = ['They had to {explore} it to find their puppy.', 'The air inside was much {colder} than the warm air.', 'They had to be the {bravest} kids to save their pet.'], gi = LINES.indexOf(sp.text), plain = t => t.replace(/[{}]/g, '');
+  for (let i = 0; i < gi; i++) await beat(plain(LINES[i]));
+  tell(sp.text, { wait: false });
   await spellOn({ prompt: sp.prompt, word: sp.word, decoys: sp.decoys, objs: m.stones, hints: sp.hints });
   sfx('great'); await filled(sp.word);
   if (sp.word === 'explore') await earnCard('explore');
+  // they step into the cave mouth: the air turns cold, and they go on bravely
   walk(leo, [-0.6, 0, -8.6], 2600); walk(mia, [0.6, 0, -8.6], 2600);
-  await flyCam([0, 1.6, -5.5], [0, 1.2, -10], 2600);
+  const inside = flyCam([0, 1.6, -5.5], [0, 1.2, -10], 2600);
+  for (let i = gi + 1; i < LINES.length; i++) { if (i === 1) frost(0.25, 1500); await beat(plain(LINES[i])); }
+  await inside; frost(0, 800);
   [leo, mia].forEach(c => c.g.visible = false);
   hideStory(); finish(1);
 }
@@ -135,10 +141,11 @@ export async function stop2() {
   Promise.all(c.cracks.slice(4).map(sg => grow(sg, 900)));
   await filled('rumble'); await earnCard('rumble');
   // the floor tips toward the dark tunnel; small stones roll, rocks start to fall
-  tell('The sound was louder than a roaring lion. The flat rock floor tipped down. It became the steepest slide in the cave!', { wait: false });
-  await flyCam([-3, 3.2, 6], [2, 0.5, -3], 1100);
-  sfx('rumble'); quake(2.0, 0.2);
+  sfx('rumble'); quake(2.0, 0.2); await beat('The sound was louder than a roaring lion.');
+  flyCam([-3, 3.2, 6], [2, 0.5, -3], 1100);
+  tell('The flat rock floor tipped down.', { wait: false }); sfx('rumble'); quake(2.0, 0.2);
   await tween(1800, e => { c.floorG.rotation.x = -e * 0.09; c.floorG.rotation.z = -e * 0.12; });
+  tell('It became the steepest slide in the cave!', { wait: false });
   for (let i = 0; i < 5; i++) { c.drop(-3 + Math.random() * 8, -6 + Math.random() * 7, 0.25 + Math.random() * 0.2, 6.8, () => { sfx('crash'); quake(0.3, 0.08); }); await wait(260); }
   await tapOn();
   // ---- activity: loose rocks shake in the roof, carrying letters. Each right letter knocks one down — the kids dodge toward the cart.
@@ -147,7 +154,8 @@ export async function stop2() {
     { text: 'Small {rocks} fell from the roof. Mia and Toby jumped into a rusty old cart to stay safe.', word: 'rocks', decoys: 'a', prompt: 'Tap the letters to spell the word.', hints: ['It ends with c-k-s.', 'R – O – C – K – S'] },
     { text: 'Small rocks fell from the {roof}. Mia and Toby jumped into a rusty old cart to stay safe.', word: 'roof', decoys: 'ue', prompt: 'Tap the letters to spell the word. It is the top of the cave.', hints: ['It has o-o in the middle.', 'R – O – O – F'] },
   ]);
-  tell(sw.text, { wait: false });
+  const swp = aroundGap(sw.text); for (const x of swp.before) await beat(x);
+  tell(swp.gap, { wait: false });
   tween(800, e => { c.spot.intensity = 60 * (1 - e * 0.8); });
   await flyCam([0.6, 3.1, 7.6], [1.1, 2.6, -2.2], 1100);
   const shakeRocks = onTick(t => c.loose.forEach((r, i) => { if (!r.userData.fell) { r.rotation.z = Math.sin(t * 22 + i) * 0.08; r.rotation.x = Math.cos(t * 19 + i) * 0.06; } }));
@@ -164,6 +172,7 @@ export async function stop2() {
   run(dog, [cp.x, 0, cp.z], 600, { hop: 1.2 }); await run(mia, [cp.x, 0, cp.z], 700, { hop: 1.2 });
   c.cart.add(mia.g); mia.g.position.set(0, 0.45, 0.15); mia.g.rotation.set(0, 0, 0); mia.pose('hold'); mia.L.rotation.x = mia.R.rotation.x = -1.4;
   c.cart.add(dog.g); dog.g.position.set(0, 0.85, 0.6); dog.g.rotation.set(0, 0, 0); dog.pose('bark');
+  for (const x of swp.after) await beat(x);
   if (sw.word === 'cart') await earnCard('cart');
   // Leo runs for the cart — a big stalactite crashes down between them
   tell('But Leo was left behind on the stone floor as the cart began to roll!', { wait: false });
@@ -235,7 +244,8 @@ export async function stop3() {
     { text: 'In front of them was a giant black hole with no bottom. The cart was falling {right} into the empty air!', after: 'It was the deepest hole they had ever seen. Will they be okay?', sentence: 'The cart was falling {_} into the empty air!', tiles: ['right', 'write'], answer: 'right', note: 'write = use a pencil', hints: ['You write with a pencil. Not this one!', 'Pick right.'] },
     { text: 'In front of them was a giant black hole with {no} bottom.', after: AFTER, sentence: 'a giant black hole with {_} bottom', tiles: ['no', 'know'], answer: 'no', note: 'know = in your head', hints: ['This one means not any.', 'Pick no.'] },
   ]);
-  tell(hv.text, { wait: false });
+  const hvp = aroundGap(hv.text); for (const x of hvp.before) await beat(x);
+  tell(hvp.gap, { wait: false });
   await chooseWord({ prompt: hv.answer === 'pit' ? 'Which word fits?' : 'Which word fits? They sound the same!', sentence: hv.sentence, tiles: hv.tiles, answer: hv.answer, note: hv.note, hints: hv.hints });
   await filled(hv.answer); if (hv.answer === 'pit') await earnCard('pit');
   if (await offerStretch(hv.answer === 'pit' ? 'Two words that sound the same: hole and whole.' : 'Use the other word that sounds the same.')) {
@@ -246,10 +256,11 @@ export async function stop3() {
     ]));
     star(3);
   }
-  tell(hv.after, { wait: false });
+  const fallLines = [...hvp.after.map(x => x.replace(/[{}]/g, '')), ...aroundGap(hv.after).before]; const last = fallLines.pop();
   riding = false; sfx('fall'); const p0 = T.rider.position.clone(), hp = T.hole.position;
-  await tween(1700, e => { T.rider.position.set(p0.x + (hp.x - p0.x) * Math.min(1, e * 1.6), p0.y - e * e * 9, p0.z + (hp.z - p0.z) * Math.min(1, e * 1.6)); T.rider.rotation.x = e * 0.8; });
-  await tapOn();
+  const falling = tween(1700, e => { T.rider.position.set(p0.x + (hp.x - p0.x) * Math.min(1, e * 1.6), p0.y - e * e * 9, p0.z + (hp.z - p0.z) * Math.min(1, e * 1.6)); T.rider.rotation.x = e * 0.8; });
+  for (const x of fallLines) await beat(x);
+  await falling; await tell(last);
   hideStory(); finish(3);
   const cont = h('div', { class: 'tbc' }, h('div', {}, 'To be continued…')); document.body.append(cont); await wait(2600); cont.remove();
 }
