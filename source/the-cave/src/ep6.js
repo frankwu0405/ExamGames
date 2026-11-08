@@ -1,214 +1,291 @@
-// Episode 6 — The Old Man. Stops 16–18. Told in the present tense, like Frank's text.
+// Episode 6 — The Old Man. Stops 16–18, told in the present tense like Frank's text, staged from the storybook's page-6 panels.
+// One place for the whole episode: the gray beach, the misty wood behind it, and the old man's camp in a clearing.
 import { S, save, sfx, wait, h, shuffle } from './core.js';
-import { THREE, setCam, flyCam, tween, onTick, sparkles, textTexture, cut, dolly, quake, toon, scene } from './gfx.js';
-import { buildGrayShore } from './sets6.js';
-import { letterbox, frost, shardBurst, fogThicken } from './effects.js';
-import { tell, tapOn, filled, hideStory, chooseWord, order, think, offerStretch, earnCard, toby, tapAll, MODE } from './ui.js';
+import { THREE, setCam, flyCam, followCam, stopFollow, tween, moveTo, onTick, sparkles, textTexture, cut, dolly, quake, toon, scene, camera, builder } from './gfx.js';
+import { buildGrayShore, visionBubble, FIRE } from './sets6.js';
+import { letterbox, frost, shardBurst, fogThicken, glowSprite } from './effects.js';
+import { tell, beat, seq, tapOn, filled, hideStory, chooseWord, pick3D, spellOn, order, think, offerStretch, earnCard, toby as tobyTip, MODE } from './ui.js';
 import { playMusic } from './music.js';
 
 const star = n => { S.stars[n] = 1; save(); sfx('great'); };
 const visits = n => (S.stops[n] && S.stops[n].visits) || 0;
 const finish = n => { const v = visits(n) + 1; S.stops[n] = Object.assign(S.stops[n] || {}, { done: 1, t: Date.now(), visits: v }); if (MODE.captain && MODE.perfect) { S.captain = S.captain || {}; S.captain[n] = 1; } save(); };
 const pickV = (n, pool) => pool[visits(n) % pool.length];
-// floating word labels in the scene (tap the ones that fit)
-function labels(w, words, around, r = 6, y0 = 2) {
-  return words.map((o, i) => { const g = new THREE.Group(); const a = Math.PI * (0.15 + 0.7 * i / Math.max(1, words.length - 1)); g.position.set(around.x + Math.cos(a) * r, around.y + y0 + (i % 2) * 1.2, around.z + Math.sin(a) * 1.5);
-    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: textTexture(o.w, { w: 512, h: 150, font: '70px Chewy, sans-serif', bg: '#FFF6E2', fg: '#2E2A4F' }), depthTest: false })); sp.scale.set(3.2, 0.94, 1); g.add(sp);
-    const hit = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1, 0.3), new THREE.MeshBasicMaterial({ visible: false })); g.add(hit); w.add(g);
-    const ph = i; onTick(t => { g.position.y = around.y + y0 + (i % 2) * 1.2 + Math.sin(t * 1.4 + ph) * 0.12; });
-    return { obj: g, ok: o.ok, label: o.w }; });
-}
-const ring = (w, words) => labels(w, shuffle(words.map(([t, ok]) => ({ w: t, ok }))), new THREE.Vector3(0, 0, 0), 0, 0);
-// lay the labels out in a row in front of the camera (the shots here are close and low)
-function row(items, at, spread = 3.6, face = 0) { items.forEach((it, i) => { const k = i - (items.length - 1) / 2; it.obj.position.set(at.x + Math.cos(face) * k * spread, at.y + (i % 2) * 1.0, at.z - Math.sin(face) * k * spread); it.obj.userData.base = it.obj.position.y; }); }
-const pick = (w, words, at, spread, face) => { const it = ring(w, words); row(it, at, spread, face); it.forEach(x => { const base = x.obj.position.y, ph = Math.random() * 6; onTick(t => { x.obj.position.y = base + Math.sin(t * 1.4 + ph) * 0.1; }); }); return it; };
-const splash = (w, at, n = 40) => shardBurst(w, at, { n, power: 7, color: 0xDDEFF4 });
-
-// the figures look towards +z when rotation.y is 0; this turns one to look at a point or at another figure
-const look = (c, t) => { const p = t.g ? t.g.position : t; c.g.rotation.y = Math.atan2(p.x - c.g.position.x, p.z - c.g.position.z); };
-const manAt = (I, x, z, st = 'idle') => { I.man.g.visible = true; I.man.g.position.set(x, 0, z); I.man.pose(st); };
+const fadeIn = (col = '#0A0C10', ms = 1400) => { const v = h('div', { class: 'veil', style: { background: col } }); document.body.append(v); setTimeout(() => { v.classList.add('out'); setTimeout(() => v.remove(), ms); }, 200); };
+// ---- little staging helpers
+const lie = (G, c, x, z, ry, y = 0.26) => { c.g.rotation.order = 'YXZ'; c.g.rotation.set(-Math.PI / 2, ry, 0); c.g.position.set(x, G.hf(x, z) + y, z); c.pose('idle'); };
+const stand = (G, c, x, z, ry = 0) => { c.g.rotation.order = 'YXZ'; c.g.rotation.set(0, ry, 0); c.g.position.set(x, G.hf(x, z), z); };
+const faceTo = (c, p) => { c.g.rotation.y = Math.atan2(p.x - c.g.position.x, p.z - c.g.position.z); };
+const walk = async (G, c, x, z, ms, pose = 'walk') => { c.pose(pose); await moveTo(c.g, [x, G.hf(x, z), z], ms); c.pose('idle'); };
+const hitOn = (c, r = 0.8, y = 0.6) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), new THREE.MeshBasicMaterial({ visible: false })); m.position.y = y; c.g.add(m); return m; };
+// a steaming bowl of soup in someone's hands
+function bowlIn(c, { x = 0, y = -0.62, z = 0.18 } = {}) { const g = new THREE.Group(); g.position.set(x, y, z); c.AR.add(g);
+  const b = new THREE.Mesh(new THREE.LatheGeometry([[0, 0], [0.1, 0.01], [0.15, 0.07], [0.16, 0.1]].map(([a, b2]) => new THREE.Vector2(a, b2)), 16), toon(0x8A5A36, { side: THREE.DoubleSide })); g.add(b);
+  const s = new THREE.Mesh(new THREE.CircleGeometry(0.14, 14), toon(0xD9944E)); s.rotation.x = -Math.PI / 2; s.position.y = 0.085; g.add(s);
+  const st = glowSprite(0xF4F6F8, 0.35, 0.3); g.add(st); onTick(t => { const k = (t * 0.6) % 1; st.position.y = 0.15 + k * 0.5; st.material.opacity = 0.3 * Math.sin(k * Math.PI); }); return g; }
+// "z z z" floating up from a sleeper
+function zzz(w, at) { const tex = textTexture('z', { w: 128, h: 128, font: '90px Chewy, sans-serif', fg: '#EEF3F6' }); const zs = [0, 1, 2].map(i => { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false })); w.add(s); s.userData.ph = i / 3; return s; });
+  const off = onTick(t => zs.forEach(s => { const k = (t * 0.35 + s.userData.ph) % 1; s.position.set(at.x + k * 0.5, at.y + 0.3 + k * 1.2, at.z); s.scale.setScalar(0.18 + k * 0.25); s.material.opacity = Math.sin(k * Math.PI); }));
+  return () => { off(); zs.forEach(s => w.remove(s)); }; }
+// a splash of water: droplets thrown up and falling back, and a ring of foam
+function splashUp(w, at) { const m = new THREE.MeshBasicMaterial({ color: 0xF2FAFF }), drops = [];
+  for (let i = 0; i < 46; i++) { const d = new THREE.Mesh(new THREE.SphereGeometry(0.05 + Math.random() * 0.08, 6, 5), m); d.position.copy(at); w.add(d); const a = Math.random() * 6.28, sp = 1 + Math.random() * 2.2; d.userData.v = new THREE.Vector3(Math.cos(a) * sp, 3 + Math.random() * 3.5, Math.sin(a) * sp); drops.push(d); }
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.5, 0.8, 32), new THREE.MeshBasicMaterial({ color: 0xF2FAFF, transparent: true, opacity: 0.9, side: THREE.DoubleSide })); ring.rotation.x = -Math.PI / 2; ring.position.copy(at).setY(0); w.add(ring);
+  const t0 = performance.now(); const off = onTick((t, dt) => { const k = (performance.now() - t0) / 1000; drops.forEach(d => { d.userData.v.y -= 12 * (dt || 0.016); d.position.addScaledVector(d.userData.v, dt || 0.016); d.visible = d.position.y > -0.2; });
+    ring.scale.setScalar(1 + k * 3); ring.material.opacity = Math.max(0, 0.9 - k * 0.8); if (k > 1.6) { off(); drops.forEach(d => w.remove(d)); w.remove(ring); } }); }
+// shivering in the cold
+const shiver = c => onTick(t => { c.g.rotation.z = Math.sin(t * 40) * 0.015; });
 
 // ================================================================ stop 16 — the gray shore
 export async function stop16() {
   playMusic('cave');
-  const I = buildGrayShore(); const { leo, mia, toby: dog } = I; const w = I.w;
-  letterbox(true);
-  // wide: the gray beach and the thick white fog
-  cut([-5.5, 2.4, -8.5], [0.4, 0.9, 1.6], 52); dolly([-4.2, 2.2, -6.2], [0.4, 0.9, 1.6], 9000);
-  await tell('Mia slowly opens her eyes. She feels something warm and wet on her face. It is Toby! He is licking her cheeks to wake her up.', { wait: false });
-  mia.g.position.set(-0.4, 0, 1.5); mia.g.rotation.set(-1.05, 0.2, 0); mia.pose('idle'); dog.g.position.set(-0.3, 0, 0.55); look(dog, mia); dog.pose('bark');
-  sfx('bark'); await wait(2400);
-  cut([2.6, 1.6, 4.6], [-0.4, 0.7, 1.4], 42); dolly([2.0, 1.5, 3.8], [-0.4, 0.8, 1.4], 6000); sfx('bark'); await wait(1800); await tapOn();
-  // ---- she sits up: what does the beach feel like?
-  tween(900, e => { mia.g.rotation.x = -1.05 * (1 - e); }); mia.g.position.set(-0.4, -0.36, 1.5); mia.pose('sit'); dog.pose('wag');
-  cut([-4.8, 1.9, -5.4], [0.2, 0.9, 1.8], 55); dolly([-3.6, 1.8, -3.8], [0.2, 0.9, 1.8], 8000);
-  tell('Mia sits up in the sand. They are on a quiet, gray beach with thick white {fog}. Leo is still fast asleep.', { wait: false });
-  await wait(2200);
-  const lv = pickV(16, [
-    { prompt: 'Tap the TWO words that tell about the beach.', yes: ['quiet', 'gray'], no: ['sunny', 'noisy', 'colorful'], hints: ['Read again: a quiet, gray beach.', 'quiet and gray'] },
-    { prompt: 'Tap the TWO things you see on the beach.', yes: ['thick white fog', 'Leo, fast asleep'], no: ['a big castle', 'a pink balloon', 'a pizza'], hints: ['Read again: thick white fog… Leo is still fast asleep.', 'fog and Leo'] },
-    { prompt: 'Tap the TWO words that tell about the fog.', yes: ['thick', 'white'], no: ['thin', 'red', 'hot'], hints: ['Read again: thick white fog.', 'thick and white'] },
+  const G = buildGrayShore(), { leo, mia, toby: dog, w } = G;
+  // as in the panel: the two of them lying on the gray sand, Toby standing over Mia, the boat stuck on the rocks behind
+  lie(G, leo, -1.6, 1.4, -0.35); lie(G, mia, 1.0, 1.2, 0.3); leo.forceFace = 'blink'; mia.forceFace = 'blink';
+  const mHead = new THREE.Vector3(1.0 - Math.sin(0.3) * 0.95, 0.35, 1.2 - Math.cos(0.3) * 0.95);
+  stand(G, dog, mHead.x + 0.75, mHead.z - 0.2, -1.9); dog.pose('wag');
+  cut([mHead.x + 2.6, 2.4, mHead.z + 3.4], [mHead.x - 0.6, 0.3, mHead.z - 0.4], 46); fadeIn();
+  dolly([mHead.x + 2.0, 1.9, mHead.z + 2.6], [mHead.x - 0.4, 0.3, mHead.z - 0.2], 9000);
+  // Toby licks her face (his head dips again and again)
+  let licking = true; const lick = onTick(t => { if (licking) { dog.g.position.y = G.hf(dog.g.position.x, dog.g.position.z) + Math.max(0, Math.sin(t * 7)) * 0.06; dog.g.rotation.x = Math.max(0, Math.sin(t * 7)) * 0.25; } });
+  await beat('Mia slowly opens her eyes.', { hold: 300 }); mia.forceFace = null; mia.pose('wow');
+  sfx('pop'); await beat('She feels something warm and wet on her face.');
+  await flyCam([mHead.x + 2.6, 1.7, mHead.z + 2.4], [mHead.x + 0.3, 0.4, mHead.z], 1200);
+  dog.pose('bark'); sfx('bark'); await beat('It is Toby! He is licking her cheeks to wake her up.');
+  licking = false; lick(); dog.g.rotation.x = 0; dog.pose('wag');
+  // she sits up; the camera pulls back into the fog
+  await tween(1000, e => { mia.g.rotation.x = -Math.PI / 2 * (1 - e); mia.g.position.y = G.hf(1, 1.2) + 0.26 * (1 - e) - 0.36 * e; }); mia.pose('sit');
+  flyCam([5.5, 2.6, 7.5], [0.4, 0.6, -2], 2600); await beat('Mia sits up in the sand.');
+  // ---- fog: the letters drift by on puffs of mist
+  const sp = pickV(16, [
+    { word: 'fog', decoys: 'dlk', prompt: 'Tap the puffs of mist to spell the word. It is a low, gray cloud.', hints: ['It rhymes with frog.', 'F – O – G'] },
+    { word: 'fog', decoys: 'gbs', prompt: 'Tap the puffs to spell the word. You can hardly see through it!', hints: ['f… o… g…', 'F – O – G'] },
+    { word: 'fog', decoys: 'hrt', prompt: 'Tap the puffs to spell the word: thick white ___.', hints: ['It starts with f.', 'F – O – G'] },
   ]);
-  setCam([-0.4, 2.0, -6.5], [0.2, 1.1, 1.8]);
-  const items = pick(w, [...lv.yes.map(t => [t, true]), ...lv.no.map(t => [t, false])], new THREE.Vector3(0.2, 1.7, -0.6), 3.6, 0);
-  await tapAll({ prompt: lv.prompt, items, hints: lv.hints, onRight: it => it.obj.scale.setScalar(1.15) });
-  items.forEach(it => it.obj.visible = false);
-  // ---- the word: fog
-  await chooseWord(pickV(16, [
-    { prompt: 'Which word fits?', sentence: 'a quiet, gray beach with thick white {_}', tiles: ['fog', 'frog', 'log'], answer: 'fog', note: 'fog = low gray cloud near the ground that is hard to see through', hints: ['You cannot see far in it.', 'f – o – g'] },
-    { prompt: 'Which word is spelled right?', sentence: 'thick white {_}', tiles: ['fog', 'fogg', 'fug'], answer: 'fog', note: 'fog rhymes with dog and log', hints: ['It rhymes with dog.', 'f – o – g'] },
-    { prompt: 'Which word means “a cloud close to the ground”?', sentence: 'thick white {_}', tiles: ['fog', 'fox', 'fan'], answer: 'fog', note: 'fog = a thick cloud near the ground', hints: ['You cannot see far in it.', 'fog'] },
-  ]));
-  await filled('fog'); await earnCard('fog');
-  // ---- the sea: their boat is trapped
-  letterbox(true); cut([-3, 1.6, -3.2], [4.4, 1.0, -12.6], 46); dolly([-1.2, 1.6, -4.4], [4.8, 0.9, -12.6], 7000);
-  tell('Mia looks out at the cold sea and gasps. Their small wooden boat is stuck on sharp rocks not far in the water. They are cold and hungry, and their only way home is trapped.', { wait: false });
-  mia.pose('scared'); sfx('glow'); await wait(2000); await tapOn();
+  tell('They are on a quiet, gray beach with thick white {fog}.', { wait: false });
+  const puffs = []; const n = sp.word.length + sp.decoys.length;
+  for (let i = 0; i < n; i++) { const o = new THREE.Object3D(); const a = -0.9 + i / (n - 1) * 1.8; o.position.set(1 + Math.sin(a) * 4.2, 1.4 + (i % 2) * 0.7, -1.5 - Math.cos(a) * 1.6); w.add(o); const s = glowSprite(0xF4F7F9, 1.6, 0.55); o.add(s); o.userData.ph = i; puffs.push(o); }
+  const drift = onTick(t => puffs.forEach(o => { o.position.y += Math.sin(t * 1.2 + o.userData.ph) * 0.002; }));
+  await spellOn({ prompt: sp.prompt, word: sp.word, decoys: sp.decoys, objs: puffs, hints: sp.hints });
+  drift(); puffs.forEach(o => w.remove(o)); await filled('fog'); await earnCard('fog');
+  // ---- Leo is still asleep
+  const zOff = zzz(w, new THREE.Vector3(-1.6 + Math.sin(0.35) * 0.95, 0.4, 1.4 - Math.cos(0.35) * 0.95));
+  await flyCam([-3.4, 1.6, 3.4], [-1.6, 0.3, 1.0], 1400); await beat('Leo is still fast asleep.');
+  // ---- she gets up, looks out to sea and gasps: the boat is stuck on the rocks
+  mia.pose('idle'); await tween(500, e => { mia.g.position.y = G.hf(1, 1.2) - 0.36 * (1 - e); }); faceTo(mia, G.RK); mia.pose('wow'); sfx('whoosh'); stand(G, dog, -0.1, 1.7); faceTo(dog, G.RK); dog.pose('sit');   // (Toby sits beside her, looking out too)
+  cut([2.4, 1.9, 3.6], [3.4, 0.6, -10], 46); dolly([2.0, 1.8, 3.0], [3.8, 0.8, -12], 7000);
+  await beat('Mia looks out at the cold sea and gasps.');
+  await pick3D({ prompt: 'Where is their boat? Tap it!', answer: 'boat', targets: [{ id: 'boat', obj: G.boatHit }, { id: 'wreck', obj: G.wreck }], hints: ['It has their pirate flag.', 'Look at the sharp rocks, not far away.'], onWrong: () => tobyTip('That is an old ship, far out in the fog. Ours is closer!') });
+  await flyCam([G.RK.x + 6, 2.6, G.RK.z + 9], [G.RK.x, 0.6, G.RK.z], 1600);
+  await tell('Their small wooden boat is stuck on sharp rocks not far in the water.');
+  // ---- cold, hungry, and no way home
+  const sh = shiver(mia); mia.pose('hug'); cut([3.4, 1.5, 4.6], [0.6, 0.9, 1.2], 44);
+  tell('They are cold and hungry, and their only way home is trapped.', { wait: false });
   await think(pickV(16, [
-    { prompt: 'Why can’t they go home?', options: ['Their boat is stuck on sharp rocks', 'They do not want to go', 'The beach is too warm'], answer: 'Their boat is stuck on sharp rocks', hints: ['Look at the boat. Where is it?', 'Read again: …stuck on sharp rocks.'] },
-    { prompt: 'How do Mia and Leo feel?', options: ['Cold and hungry', 'Hot and full', 'Happy and sleepy'], answer: 'Cold and hungry', hints: ['Read again: They are cold and hungry.'] },
-    { prompt: 'Where is the little boat?', options: ['Stuck on rocks in the water', 'Under Leo', 'Up in a tree'], answer: 'Stuck on rocks in the water', hints: ['Read again: stuck on sharp rocks not far in the water.'] },
+    { prompt: 'Why is their “only way home” trapped?', options: ['The boat is stuck on the rocks.', 'The boat sank to the bottom.', 'They lost the map home.'], answer: 'The boat is stuck on the rocks.', hints: ['What is their way home? Where is it?'] },
+    { prompt: 'What is their only way home?', options: ['Their little wooden boat', 'A long bridge', 'A big airplane'], answer: 'Their little wooden boat', hints: ['They sailed here in it.'] },
+    { prompt: 'How do Mia and Leo feel?', options: ['Cold and hungry', 'Warm and full', 'Sleepy and bored'], answer: 'Cold and hungry', hints: ['Read the last line again.'] },
   ]));
-  if (await offerStretch('What does this word mean?')) {
-    await think(pickV(16, [
-      { prompt: 'Bonus! A quiet beach is…', options: ['not noisy', 'very loud', 'very hot'], answer: 'not noisy', hints: ['There is no sound but the sea.'] },
-      { prompt: 'Bonus! Something sharp can…', options: ['cut or poke you', 'make you sleepy', 'make you laugh'], answer: 'cut or poke you', hints: ['The rocks are sharp.'] },
-      { prompt: 'Bonus! “Trapped” means…', options: ['stuck and cannot get out', 'lost in a game', 'very happy'], answer: 'stuck and cannot get out', hints: ['The boat is stuck.'] },
+  sh(); mia.g.rotation.z = 0;
+  if (await offerStretch('Words that rhyme with cold.')) {
+    await chooseWord(pickV(16, [
+      { prompt: 'Bonus! Which word rhymes with cold?', sentence: 'The sea is {_}.', tiles: ['cold', 'cool', 'cloud'], answer: 'cold', note: 'cold · gold · told · old', hints: ['Listen for -old.'] },
+      { prompt: 'Bonus! Which word rhymes with cold?', sentence: 'Pirates hide their {_}.', tiles: ['gold', 'good', 'goat'], answer: 'gold', note: 'cold · gold · told · old', hints: ['-old, like cold.'] },
+      { prompt: 'Bonus! Which word rhymes with cold?', sentence: 'The man is very {_}.', tiles: ['old', 'odd', 'oak'], answer: 'old', note: 'cold · gold · told · old', hints: ['It sounds like c-old without the c.'] },
     ]));
     star(16);
   }
-  hideStory(); letterbox(false); finish(16);
+  zOff(); hideStory(); finish(16);
 }
 
-// ================================================================ stop 17 — the old man
+// ================================================================ stop 17 — the old man's fire
 export async function stop17() {
   playMusic('cave');
-  const I = buildGrayShore(); const { leo, mia, toby: dog, man } = I; const w = I.w;
-  // morning on the beach: Leo is awake now
-  leo.g.rotation.set(0, 0.5, 0); leo.g.position.set(1.0, 0, 1.4); leo.forceFace = null; leo.pose('idle'); mia.g.position.set(-0.4, 0, 1.6); mia.g.rotation.y = 0.2; mia.pose('idle'); dog.g.position.set(-1.2, 0, 1.4);
-  letterbox(true); cut([-4, 1.5, -3.6], [-0.6, 1.0, 3.6], 50);
-  tell('Toby sniffs the wet air and runs to the dark trees. Mia wakes Leo up, and they follow Toby into the trees. Soon, they see a fire glowing in the woods.', { wait: false });
-  dog.pose('run'); tween(3200, e => { dog.g.position.set(-1.2 - e * 1.5, 0, 1.4 + e * 17); dog.g.rotation.y = 0.05; });
-  await wait(900); leo.pose('walk'); mia.pose('walk'); tween(3600, e => { mia.g.position.set(-0.4 - e * 2.8, 0, 1.6 + e * 14.6); leo.g.position.set(1.0 - e * 4.6, 0, 1.4 + e * 14); mia.g.rotation.y = leo.g.rotation.y = 0.12; });
-  dolly([-5, 1.9, 4.2], [-3, 1.0, 20], 5200);
-  await wait(3200); I.fire.userData.set(true); sfx('glow'); await tapOn();
-  // ---- the old man by the fire
-  letterbox(true); manAt(I, I.fireAt.x - 1.0, I.fireAt.z + 1.1, 'idle'); dog.g.position.set(I.fireAt.x + 1.6, 0, I.fireAt.z + 0.4); dog.pose('sit');
-  leo.pose('idle'); mia.pose('idle'); leo.g.position.set(I.fireAt.x + 2.6, 0, I.fireAt.z + 2.9); mia.g.position.set(I.fireAt.x + 1.0, 0, I.fireAt.z + 3.4); [leo, mia, dog].forEach(c => look(c, man)); look(man, mia);
-  cut([I.fireAt.x + 4.2, 1.7, I.fireAt.z + 4.6], [I.fireAt.x - 1.0, 1.4, I.fireAt.z + 0.6], 46); dolly([I.fireAt.x + 3.4, 1.6, I.fireAt.z + 4.0], [I.fireAt.x - 1.0, 1.5, I.fireAt.z + 0.6], 8000);
-  tell('An old man wearing a dirty coat sits by the fire. He gives them a {kind} smile and hands them bowls of hot soup.', { wait: false });
-  man.pose('kind'); await wait(2800); man.pose('soup'); await wait(1600); await tapOn();
+  const G = buildGrayShore(), { leo, mia, toby: dog, man, w } = G;
+  lie(G, leo, -1.6, 1.4, -0.35); leo.forceFace = 'blink'; stand(G, mia, 1.0, 1.4, 0.4); stand(G, dog, 0.2, 2.4, 0);
+  const zOff = zzz(w, new THREE.Vector3(-1.6 + Math.sin(0.35) * 0.95, 0.4, 1.4 - Math.cos(0.35) * 0.95));
+  // the old man by his fire, hood up, staff beside him
+  const C = G.camp.position, ST = C.clone().add(G.STUMP), SE = C.clone().add(G.SEAT);
+  man.g.visible = true; man.g.position.set(ST.x, C.y - 0.42, ST.z); man.pose('sit');   // (hips on the stump) faceTo(man, C);
+  cut([4, 1.9, 7], [0.4, 1.2, 10], 48); fadeIn('#C4CDD1', 900);
+  // ---- Toby sniffs the air and runs for the trees
+  dog.pose('idle'); const sniff = onTick(t => { dog.g.rotation.x = -0.25 + Math.sin(t * 14) * 0.06; });
+  await beat('Toby sniffs the wet air and runs to the dark trees.', { min: 1800 }); sniff(); dog.g.rotation.x = 0;
+  dog.pose('run'); moveTo(dog.g, [1.2, G.hf(1.2, 10), 10], 1500); sfx('bark');
+  // ---- wake Leo up
+  tell('Mia wakes Leo up, and they follow Toby into the trees.', { wait: false });
+  await flyCam([-0.4, 2.4, 4.2], [-1.4, 0.3, 1.2], 1200);
+  const leoHit = hitOn(leo, 0.9, 0); mia.pose('point');
+  await pick3D({ prompt: 'Help Mia wake Leo up. Tap him!', answer: 'leo', targets: [{ id: 'leo', obj: leoHit }], hints: ['He is asleep on the sand.'] });
+  leo.g.remove(leoHit); zOff(); leo.forceFace = null; sfx('pop');
+  await tween(900, e => { leo.g.rotation.x = -Math.PI / 2 * (1 - e); leo.g.position.y = G.hf(-1.6, 1.4) + 0.26 * (1 - e); }); leo.pose('wow');
+  // ---- into the wood, along the path
+  const P = G.pathCurve; let u = 0.02; const pp = new THREE.Vector3(), tg = new THREE.Vector3(), cam = new THREE.Vector3(), look = new THREE.Vector3();
+  const place = () => { P.getPointAt(Math.min(1, u), pp); P.getTangentAt(Math.min(1, u), tg); const side = new THREE.Vector3(tg.z, 0, -tg.x);
+    [[mia, 0.5, 0], [leo, -0.5, -0.6]].forEach(([c, s, b]) => { const q = pp.clone().addScaledVector(side, s).addScaledVector(tg, b); c.g.position.set(q.x, G.hf(q.x, q.z), q.z); c.g.rotation.y = Math.atan2(tg.x, tg.z); });
+    const d = pp.clone().addScaledVector(tg, 2.2); dog.g.position.set(d.x, G.hf(d.x, d.z), d.z); dog.g.rotation.y = Math.atan2(tg.x, tg.z); };
+  [mia, leo].forEach(c => c.pose('walk')); dog.pose('run'); place();
+  followCam(() => { cam.copy(pp).addScaledVector(tg, -5).add(new THREE.Vector3(tg.z * 2, 2.6, -tg.x * 2)); look.copy(pp).addScaledVector(tg, 5).setY(pp.y + 1.2); return [cam, look]; });
+  await tween(4200, e => { u = 0.02 + e * 0.26; place(); });
+  // ---- the fork: which way did Toby go? (his paw prints run to the glow)
+  [mia, leo].forEach(c => c.pose('idle')); dog.pose('sit'); stopFollow();
+  tell('Soon, they see a fire glowing in the woods.', { wait: false });
+  await flyCam([G.FORK.x + 1, G.hf(G.FORK.x, G.FORK.z) + 3.4, G.FORK.z - 4], [G.FORK.x - 0.6, 0.8, G.FORK.z + 8], 1400);
+  await pick3D({ prompt: 'Which way did Toby go? Follow his paw prints to the glow!', answer: 'prints', targets: G.forks.map(f => ({ id: f.userData.id, obj: f })), hints: ['Look for little paw prints on the ground.', 'The prints go towards the orange light.'], onWrong: () => tobyTip('No paw prints that way… and no light!') });
+  [mia, leo].forEach(c => c.pose('walk')); dog.pose('run');
+  followCam(() => { cam.copy(pp).addScaledVector(tg, -5).add(new THREE.Vector3(tg.z * 2, 2.6, -tg.x * 2)); look.copy(pp).addScaledVector(tg, 5).setY(pp.y + 1.2); return [cam, look]; });
+  await tween(4600, e => { u = 0.28 + e * 0.6; place(); });
+  stopFollow(); const F = C.clone();
+  // they step out of the trees into the clearing: seen over their shoulders, the old man by his fire
+  stand(G, mia, F.x + 1.0, F.z - 3.6); stand(G, leo, F.x - 0.4, F.z - 3.9); stand(G, dog, F.x + 0.3, F.z - 2.9); [mia, leo, dog].forEach(c => { c.g.position.y = F.y; faceTo(c, ST); c.pose('idle'); }); mia.pose('wow');
+  cut([F.x + 1.6, F.y + 2.0, F.z - 7.4], [F.x - 0.8, F.y + 1.0, F.z], 46); dolly([F.x + 1.3, F.y + 1.8, F.z - 6.6], [F.x - 0.9, F.y + 1.0, F.z], 8000);
+  await beat('An old man wearing a dirty coat sits by the fire.', { min: 2400 });
+  // ---- kind: he smiles and hands out bowls of soup
+  man.forceFace = 'kind'; faceTo(man, mia.g.position);
   const kv = pickV(17, [
-    { prompt: 'Tap the TWO things the old man has.', yes: ['a dirty coat', 'hot soup'], no: ['a red hat', 'a big dog', 'a pizza'], hints: ['Read again: a dirty coat… bowls of hot soup.', 'coat and soup'] },
-    { prompt: 'Tap the TWO things the old man does.', yes: ['gives them soup', 'smiles at them'], no: ['runs away', 'sings a song', 'goes to sleep'], hints: ['Read again: He gives them a kind smile and hands them bowls of hot soup.', 'soup and smile'] },
-    { prompt: 'Tap the TWO things they see in the woods.', yes: ['a glowing fire', 'an old man'], no: ['a big castle', 'a flying cow', 'a school bus'], hints: ['Read again: they see a fire glowing… An old man…', 'fire and old man'] },
+    { prompt: 'Which word fits?', tiles: ['kind', 'kid', 'mean'], note: 'kind = nice and caring to others', hints: ['A smile that is nice and caring.', 'k – i – n – d'] },
+    { prompt: 'Which word means nice and caring?', tiles: ['kind', 'cold', 'grumpy'], note: 'kind = nice and caring', hints: ['Is a soup-giving smile cold or kind?'] },
+    { prompt: 'Which word is spelled right?', tiles: ['kind', 'kined', 'kynd'], note: 'kind has a long i, like find', hints: ['It rhymes with find.', 'k – i – n – d'] },
   ]);
-  setCam([I.fireAt.x + 3.2, 1.7, I.fireAt.z + 9], [I.fireAt.x - 0.6, 1.9, I.fireAt.z + 0.6]);
-  const it1 = pick(w, [...kv.yes.map(t => [t, true]), ...kv.no.map(t => [t, false])], new THREE.Vector3(I.fireAt.x - 0.4, 2.0, I.fireAt.z + 3.2), 3.6, 0);
-  await tapAll({ prompt: kv.prompt, items: it1, hints: kv.hints, onRight: it => it.obj.scale.setScalar(1.15) });
-  it1.forEach(it => it.obj.visible = false);
-  // ---- the word: kind
-  letterbox(true); man.pose('kind'); cut([I.fireAt.x - 0.2, 2.0, I.fireAt.z + 3.6], [I.fireAt.x - 1.0, 1.65, I.fireAt.z + 1.1], 34);
-  await chooseWord(pickV(17, [
-    { prompt: 'Which word fits?', sentence: 'He gives them a {_} smile.', tiles: ['kind', 'kid', 'king'], answer: 'kind', note: 'kind = nice and caring to others', hints: ['He is nice to them.', 'k – i – n – d'] },
-    { prompt: 'Which word is spelled right?', sentence: 'He gives them a {_} smile.', tiles: ['kind', 'kined', 'kynd'], answer: 'kind', note: 'kind ends with nd', hints: ['It ends with nd.', 'k – i – n – d'] },
-    { prompt: 'Which word means “nice and caring”?', sentence: 'He gives them a {_} smile.', tiles: ['kind', 'mean', 'loud'], answer: 'kind', note: 'kind = nice and caring', hints: ['A kind person helps others.', 'kind'] },
-  ]));
+  tell('He gives them a {kind} smile and hands them bowls of hot soup.', { wait: false });
+  await chooseWord({ prompt: kv.prompt, sentence: 'He gives them a {_} smile.', tiles: kv.tiles, answer: 'kind', note: kv.note, hints: kv.hints });
   await filled('kind'); await earnCard('kind');
-  // ---- he says he will walk with them
-  letterbox(true); man.pose('talk'); cut([I.fireAt.x + 3.4, 1.6, I.fireAt.z + 4.0], [I.fireAt.x - 1.0, 1.5, I.fireAt.z + 0.8], 46);
-  tell('As they eat and warm their hands, he listens to their story. He nods and says he will walk with them to help them get their boat back.', { wait: false });
-  await wait(2600); await tapOn();
-  await think(pickV(17, [
-    { prompt: 'What does the old man say he will do?', options: ['Walk with them to get their boat back', 'Sail to the moon', 'Take their soup'], answer: 'Walk with them to get their boat back', hints: ['Read again: …he will walk with them to help them get their boat back.'] },
-    { prompt: 'What does the old man do while they eat?', options: ['He listens to their story', 'He sings loudly', 'He falls asleep'], answer: 'He listens to their story', hints: ['Read again: he listens to their story.'] },
-    { prompt: 'Why is the old man nice to the kids?', options: ['He gives them hot soup', 'He is hiding from them', 'He wants to be alone'], answer: 'He gives them hot soup', hints: ['What does he hand them?'] },
-  ]));
-  // ---- the walk back: the secret
-  letterbox(true); man.pose('walk'); [leo, mia].forEach(c => c.pose('walk')); dog.pose('run');
-  const sx = I.fireAt.x, sz = I.fireAt.z;
-  cut([sx + 1.8, 1.4, sz - 4], [sx - 0.6, 1.4, sz - 10], 50);
-  man.g.position.set(sx - 1.0, 0, sz - 1.4); man.g.rotation.y = Math.PI; leo.g.position.set(sx + 0.8, 0, sz - 1.7); mia.g.position.set(sx - 2.8, 0, sz - 1.9); leo.g.rotation.y = mia.g.rotation.y = Math.PI; dog.g.position.set(sx - 0.3, 0, sz - 3.6); dog.g.rotation.y = Math.PI;
-  tween(7000, e => { [man, leo, mia, dog].forEach(c => c.g.position.z = (c === dog ? sz - 3.6 : c === man ? sz - 1.4 : sz - 1.8) - e * 16); });
-  await wait(900);
-  tell('They walk together from the woods to the shore. On the way, the old man tells them a secret. “Varn is not a true guard!” he says in a low, angry voice. “He is a {greedy} beast! Long ago, that monster stole those gems from brave sailors like me. I was trapped on this beach for years. I have no boat, but I want my gems back.” Mia knows this is a lie. She knows that the gems grow in the cave, but she does not say a word.', { wait: false });
-  man.pose('talk'); await wait(1600); dolly([sx + 2, 1.6, sz - 12], [sx - 1.0, 1.5, sz - 18], 7000); await wait(5200);
-  await chooseWord(pickV(17, [
-    { prompt: 'Which word fits?', sentence: '“He is a {_} beast!”', tiles: ['greedy', 'greedily', 'green'], answer: 'greedy', note: 'greedy = always wanting more for yourself', hints: ['A greedy person wants everything.', 'g – r – ee – d – y'] },
-    { prompt: 'Which word is spelled right?', sentence: '“He is a {_} beast!”', tiles: ['greedy', 'gredy', 'greedee'], answer: 'greedy', note: 'greedy has ee in the middle and y at the end', hints: ['It has ee, like in see.', 'g – r – ee – d – y'] },
-    { prompt: 'Which word means “wanting more and more for yourself”?', sentence: '“He is a {_} beast!”', tiles: ['greedy', 'sleepy', 'happy'], answer: 'greedy', note: 'greedy = wanting too much', hints: ['A greedy man takes all the gems.', 'greedy'] },
-  ]));
-  await filled('greedy'); await earnCard('greedy');
-  // ---- is the old man telling the truth?
-  letterbox(true); mia.pose('idle'); cut([sx - 4.6, 1.5, sz - 21], [sx - 3.0, 1.2, sz - 19], 40);
-  await think(pickV(17, [
-    { prompt: 'Mia knows the old man is not telling the truth. How does she know?', options: ['She knows the gems grow in the cave', 'Toby told her', 'She saw it on a map'], answer: 'She knows the gems grow in the cave', hints: ['Read again: She knows that the gems grow in the cave.'] },
-    { prompt: 'What does Mia say to the old man?', options: ['Nothing. She does not say a word.', '“You are a liar!”', '“Thank you for the gems!”'], answer: 'Nothing. She does not say a word.', hints: ['Read again: …she does not say a word.'] },
-    { prompt: 'What does the old man say about Varn?', options: ['Varn is a greedy beast who stole the gems', 'Varn is his best friend', 'Varn is a tiny fish'], answer: 'Varn is a greedy beast who stole the gems', hints: ['Read again: “Varn is not a true guard!”'] },
-  ]));
-  if (await offerStretch('Words that tell WHEN.')) {
-    await chooseWord(pickV(17, [
-      { prompt: 'Bonus! When did the monster steal the gems?', sentence: '“{_} ago, that monster stole those gems.”', tiles: ['Long', 'Soon', 'Never'], answer: 'Long', hints: ['The old man says it happened a very long time back.', 'Long ago'] },
-      { prompt: 'Bonus! How long was the old man on the beach?', sentence: 'He was trapped there for {_}.', tiles: ['years', 'a second', 'a sneeze'], answer: 'years', hints: ['Read again: …trapped on this beach for years.', 'years'] },
-      { prompt: 'Bonus! What does the old man want back?', sentence: '“I want my {_} back.”', tiles: ['gems', 'socks', 'soup'], answer: 'gems', hints: ['Read again: …I want my gems back.', 'gems'] },
+  // they sit on the log with their bowls; Toby lies down by the fire
+  stand(G, mia, SE.x + 0.5, SE.z - 0.3); stand(G, leo, SE.x - 0.4, SE.z + 0.35); [mia, leo].forEach(c => { c.g.position.y = C.y - 0.04; faceTo(c, C); c.pose('sit'); bowlIn(c); c.AR.rotation.x = -1.0; });
+  stand(G, dog, SE.x + 0.6, SE.z - 1.6); dog.g.position.y = C.y; faceTo(dog, C); dog.pose('sit');
+  const mb = bowlIn(man); man.AR.rotation.x = -1.0;
+  cut([F.x + 0.3, F.y + 1.9, F.z - 6.4], [F.x, F.y + 0.8, F.z + 0.3], 50); dolly([F.x + 0.2, F.y + 1.7, F.z - 5.8], [F.x, F.y + 0.8, F.z + 0.3], 9000);
+  await beat('As they eat and warm their hands, he listens to their story.');
+  const nod = onTick(t => { man.head.rotation.x = Math.max(0, Math.sin(t * 3)) * 0.25; });
+  await tell('He nods and says he will walk with them to help them get their boat back.'); nod(); man.head.rotation.x = 0;
+  await order({ prompt: 'Put what happened in order.', compact: true, items: ['Toby runs to the dark trees.', 'Mia wakes Leo up.', 'They see a fire in the woods.', 'The old man gives them soup.'], hints: ['What did Toby do first?', 'The soup comes last.'] });
+  if (await offerStretch('Another word for kind.')) {
+    await think(pickV(17, [
+      { prompt: 'Bonus! Which word means almost the same as kind?', options: ['friendly', 'angry', 'sleepy'], answer: 'friendly', hints: ['A kind person is nice to you.'] },
+      { prompt: 'Bonus! Which is the OPPOSITE of kind?', options: ['mean', 'nice', 'gentle'], answer: 'mean', hints: ['Opposite means the other way.'] },
+      { prompt: 'Bonus! Which one shows he is kind?', options: ['He gives them hot soup.', 'He wears a dirty coat.', 'He sits by a fire.'], answer: 'He gives them hot soup.', hints: ['What does he DO for them?'] },
     ]));
     star(17);
   }
   hideStory(); finish(17);
 }
 
-// ================================================================ stop 18 — the stolen boat
+// ================================================================ stop 18 — the secret, and the stolen boat
 export async function stop18() {
   playMusic('danger');
-  const I = buildGrayShore(); const { leo, mia, toby: dog, man } = I; const w = I.w; const B = I.boat.g;
-  // they stand in the shallows beside the stuck boat
-  const bx = 5.2, bz = -12.4;
-  leo.g.position.set(bx - 2.4, -0.05, bz + 1.8); leo.forceFace = null; mia.g.position.set(bx - 3.6, -0.05, bz + 2.6); leo.pose('idle'); mia.pose('idle'); dog.g.position.set(bx - 1.4, 0, bz + 3.2); dog.pose('idle');
-  manAt(I, bx - 0.8, bz + 3.0, 'idle'); man.g.position.y = -0.05; [leo, mia, dog, man].forEach(c => look(c, B.position));
-  letterbox(true); cut([bx - 6.5, 1.8, bz + 6], [bx - 0.4, 0.9, bz + 0.4], 50); dolly([bx - 5.4, 1.7, bz + 5.2], [bx - 0.4, 0.9, bz + 0.4], 7000);
-  tell('They push hard on the boat and set it free! But the man does not let go. His kind smile is gone.', { wait: false });
-  [leo, mia].forEach(c => c.pose('reach')); sfx('whoosh'); tween(1500, e => { B.position.x = bx - e * 1.2; B.position.z = bz + e * 1.8; B.rotation.z = -0.16 * (1 - e); B.rotation.x = 0.08 * (1 - e); B.position.y = 0.3 + Math.sin(e * 3) * 0.04; });
-  await wait(1800); splash(w, new THREE.Vector3(bx - 1, 0.1, bz + 1.5), 24); sfx('crash');
-  man.pose('cold'); I.boat.cast.leo.g.visible = false; await wait(1400); await tapOn();
-  // ---- close on the old man: the cold laugh
-  letterbox(true); cut([bx - 3.8, 1.9, bz + 5.6], [bx - 0.8, 1.7, bz + 3.0], 34); man.pose('cold');
-  tell('“Thank you for my new ship, kids,” he says with a cold laugh. “I am not taking you home. I am sailing back to the cave to take all the {treasure}!”', { wait: false });
-  sfx('rumble'); quake(0.8, 0.1); frost(0.35, 2000); await wait(3200);
-  await chooseWord(pickV(18, [
-    { prompt: 'Which word fits?', sentence: '“I am sailing back to the cave to take all the {_}!”', tiles: ['treasure', 'measure', 'pleasure'], answer: 'treasure', note: 'treasure = gold, gems and other precious things', hints: ['The gems are the…', 't – r – ea – s – ure'] },
-    { prompt: 'Which word is spelled right?', sentence: '“…to take all the {_}!”', tiles: ['treasure', 'tresure', 'treasur'], answer: 'treasure', note: 'treasure has ea in the middle and ure at the end', hints: ['It has ea, like in sea.', 't – r – ea – s – ure'] },
-    { prompt: 'Which word means “gold, gems and other precious things”?', sentence: '“…to take all the {_}!”', tiles: ['treasure', 'trash', 'trouble'], answer: 'treasure', note: 'treasure = a hoard of precious things', hints: ['Pirates hide it in a chest.', 'treasure'] },
-  ]));
-  await filled('treasure'); await earnCard('treasure');
+  const G = buildGrayShore(), { leo, mia, toby: dog, man, w, boat } = G;
+  man.g.visible = true;
+  // ---- they walk back along the path from the woods to the shore together (panel 3: the kids, the old man, Toby)
+  const P = G.pathCurve; let u = 0.62; const pp = new THREE.Vector3(), tg = new THREE.Vector3(), cam = new THREE.Vector3(), look = new THREE.Vector3();
+  const place = () => { P.getPointAt(u, pp); P.getTangentAt(u, tg); tg.negate(); const side = new THREE.Vector3(tg.z, 0, -tg.x);
+    [[leo, -1.0, 0], [mia, -0.4, 0.3], [man, 0.5, 0.6], [dog, 1.3, 1.0]].forEach(([c, s, f]) => { const q = pp.clone().addScaledVector(side, s).addScaledVector(tg, f); c.g.position.set(q.x, G.hf(q.x, q.z), q.z); c.g.rotation.y = Math.atan2(tg.x, tg.z); }); };
+  [leo, mia, man].forEach(c => c.pose('walk')); dog.pose('run'); place();
+  // seen from in front, a little to the side, so all four faces show as they come down the path (the mist thins while they walk)
+  followCam(() => { const side = new THREE.Vector3(tg.z, 0, -tg.x); cam.copy(pp).addScaledVector(side, 3.6).addScaledVector(tg, 6.5).setY(pp.y + 2.2); look.copy(pp).addScaledVector(side, 0.1).setY(pp.y + 1.0); return [cam, look]; });
+  { const p0 = P.getPointAt(u), t0 = P.getTangentAt(u).negate(), s0 = new THREE.Vector3(t0.z, 0, -t0.x); camera.position.copy(p0).addScaledVector(s0, 3.6).addScaledVector(t0, 6.5).setY(p0.y + 2.2); }
+  G.fogA.show(0.3, 600); G.fogB.show(0.3, 600); fadeIn('#C4CDD1', 900);
+  const walking = tween(16000, e => { u = 0.62 - e * 0.5; place(); });
+  await beat('They walk together from the woods to the shore.');
+  man.pose('talk'); await beat('On the way, the old man tells them a secret.');
+  man.forceFace = 'angry'; frost(0.2, 1500); await beat('“Varn is not a true guard!” he says in a low, angry voice.');
+  // ---- greedy
+  const gv = pickV(18, [
+    { prompt: 'Which word fits?', tiles: ['greedy', 'gentle', 'grassy'], note: 'greedy = always wanting more for yourself', hints: ['Someone who wants everything for himself.', 'g – r – ee – d – y'] },
+    { prompt: 'Which word is spelled right?', tiles: ['greedy', 'gready', 'greedie'], note: 'greedy has ee in the middle', hints: ['ee, like in see.', 'g – r – ee – d – y'] },
+    { prompt: 'Which word means wanting MORE and MORE?', tiles: ['greedy', 'sleepy', 'friendly'], note: 'greedy = always wanting more', hints: ['Not sharing anything.'] },
+  ]);
+  tell('“He is a {greedy} beast!”', { wait: false });
+  await chooseWord({ prompt: gv.prompt, sentence: '“He is a {_} beast!”', tiles: gv.tiles, answer: 'greedy', note: gv.note, hints: gv.hints });
+  await filled('greedy'); await earnCard('greedy');
+  // ---- his story, in a thought bubble over his head (Varn clutching the gems, the pirate ship beside him)
+  await walking; [leo, mia, man].forEach(c => c.pose('idle')); dog.pose('idle'); stopFollow(); G.fogA.show(1, 3000); G.fogB.show(1, 3000);
+  const VB = visionBubble(w); const hp = man.g.position.clone().add(new THREE.Vector3(0, 4.4, 0));
+  const bb = onTick(() => { VB.group.position.copy(man.g.position).add(new THREE.Vector3(0, 4.5, 0)); VB.group.quaternion.copy(camera.quaternion); });
+  man.pose('talk'); faceTo(man, mia.g.position);
+  { const side = new THREE.Vector3(tg.z, 0, -tg.x); const c0 = man.g.position.clone().addScaledVector(side, -8).addScaledVector(tg, 1).setY(hp.y - 1.6); cut(c0.toArray(), hp.clone().setY(hp.y - 1.2).toArray(), 52); }
+  VB.show(true); sfx('glow');
+  await beat('“Long ago, that monster stole those gems from brave sailors like me.”', { hold: 800 });
+  await beat('“I was trapped in this beach for years.”');
+  await beat('“I have no boat, but I want my gems back.”', { hold: 400 });
+  VB.show(false);
+  // ---- Mia knows it is a lie
+  mia.forceFace = 'determined'; { const m = mia.g.position, ry = mia.g.rotation.y, fx = Math.sin(ry), fz = Math.cos(ry); cut([m.x + fx * 2.3 + fz * 0.8, m.y + 1.3, m.z + fz * 2.3 - fx * 0.8], [m.x, m.y + 1.05, m.z], 40); }
+  await beat('Mia knows this is a lie.');
+  tell('She knows that the gems grow in the cave, but she does not say a word.', { wait: false });
   await think(pickV(18, [
-    { prompt: 'What does the old man really want?', options: ['The treasure in the cave', 'To help the kids', 'To go to sleep'], answer: 'The treasure in the cave', hints: ['Read again: …to take all the treasure!'] },
-    { prompt: 'Is the old man really kind?', options: ['No. He tricked them.', 'Yes. He is a friend.', 'Yes. He is taking them home.'], answer: 'No. He tricked them.', hints: ['He said, “I am not taking you home.”'] },
-    { prompt: 'What does the old man do with the boat?', options: ['He tries to take it for himself', 'He gives it back', 'He sinks it'], answer: 'He tries to take it for himself', hints: ['He says, “Thank you for my new ship.”'] },
+    { prompt: 'Which part of the old man’s story is a LIE?', options: ['Varn stole the gems from sailors.', 'The gems grow in the cave.', 'They walked to the shore.'], answer: 'Varn stole the gems from sailors.', hints: ['Where do the gems really come from?'] },
+    { prompt: 'How does Mia know he is lying?', options: ['She knows the gems grow in the cave.', 'He has a dirty coat.', 'Toby told her.'], answer: 'She knows the gems grow in the cave.', hints: ['Read the last line again.'] },
+    { prompt: 'Why does Mia not say a word?', options: ['She wants to be careful with him.', 'She is too sleepy.', 'She cannot talk.'], answer: 'She wants to be careful with him.', hints: ['Can they trust him now?'] },
   ]));
-  // ---- Toby saves the day
-  letterbox(true); cut([bx - 4.8, 1.0, bz + 6.4], [bx - 1.2, 0.8, bz + 2.4], 46);
-  man.pose('grab'); tell('He tries to climb inside, but Toby jumps, bites the man’s coat, and pulls him in the water. *SPLASH!* Leo pulls Toby back inside the boat.', { wait: false });
-  await wait(1400); dog.pose('bark'); sfx('bark');
-  dog.g.position.set(bx - 1.3, 0.2, bz + 3.3); await tween(520, e => { dog.g.position.set(bx - 1.4 + e * 0.5, 0.2 + Math.sin(e * Math.PI) * 1.3, bz + 3.2 - e * 0.9); });
-  await tween(1500, e => { man.g.rotation.x = e * 1.4; man.g.rotation.z = e * 0.3; man.g.position.y = -0.05 - e * 0.5; man.g.position.z = bz + 3.0 - e * 0.5; });
-  splash(w, new THREE.Vector3(bx - 1.2, 0.2, bz + 2.5), 60); sfx('crash'); quake(0.9, 0.15); sparkles(new THREE.Vector3(bx - 1.2, 1, bz + 2.5), 0xE6F6FF, 50);
-  await wait(1200);
-  leo.pose('reach'); mia.pose('scared'); await wait(1800); await tapOn();
-  // ---- what happened, in order
-  await order(pickV(18, [
-    { prompt: 'What happens? Put it in order.', compact: true, items: ['The kids push the boat free.', 'The man says he will take the treasure.', 'Toby bites the man’s coat.', 'The man falls in the water. SPLASH!'], hints: ['First they set the boat free…', 'Toby bites before the splash.'] },
-    { prompt: 'Put the story in order.', compact: true, items: ['The old man gives them soup.', 'He says he will help them.', 'The boat is set free.', 'He says, “I am not taking you home.”'], hints: ['The soup came first.', 'He tells the truth at the end.'] },
-  ]));
-  await chooseWord(pickV(18, [
-    { prompt: 'This story uses NOW words. Pick the NOW word.', sentence: 'Toby {_} the man’s coat.', tiles: ['bites', 'bit'], answer: 'bites', note: 'bites = happening now · bit = already happened', hints: ['NOW words often end in -s here.', 'bites'] },
-    { prompt: 'This story uses NOW words. Pick the NOW word.', sentence: 'The man {_} a cold laugh.', tiles: ['says', 'said'], answer: 'says', note: 'says = now · said = before', hints: ['said already happened.', 'says'] },
-    { prompt: 'This story uses NOW words. Pick the NOW word.', sentence: 'Leo {_} Toby back inside the boat.', tiles: ['pulls', 'pulled'], answer: 'pulls', note: 'pulls = now · pulled = before', hints: ['pulled already happened.', 'pulls'] },
-  ]));
-  if (await offerStretch('Find the sound word.')) {
-    await think(pickV(18, [
-      { prompt: 'Bonus! Which one is a SOUND word?', options: ['SPLASH', 'coat', 'boat'], answer: 'SPLASH', hints: ['Which one can you hear?'] },
-      { prompt: 'Bonus! Which one is a SOUND word?', options: ['CRASH', 'rock', 'gem'], answer: 'CRASH', hints: ['Which one can you hear?'] },
-      { prompt: 'Bonus! Which one is a SOUND word?', options: ['WOOF', 'old', 'soup'], answer: 'WOOF', hints: ['Which one can you hear?'] },
+  bb(); mia.forceFace = null; man.forceFace = 'kind';
+  // ---- at the water: push the boat off the rocks (three good pushes)
+  const B = boat.g, RK = G.RK; const wade = [[leo, -1.4, 1.6], [mia, -0.2, 1.9], [man, 1.4, 1.7]];
+  wade.forEach(([c, dx, dz]) => { c.g.position.set(RK.x + dx, G.hf(RK.x + dx, RK.z + dz), RK.z + dz); faceTo(c, B.position); c.pose('reach'); });
+  dog.g.position.set(RK.x - 2.4, G.hf(RK.x - 2.4, RK.z + 3), RK.z + 3); dog.pose('wag');
+  cut([RK.x - 4.5, 2.6, RK.z + 8], [RK.x + 0.2, 0.5, RK.z + 0.6], 48);
+  tell('They push hard on the boat and set it free!', { wait: false });
+  for (let i = 1; i <= 3; i++) {
+    await pick3D({ prompt: `Push the boat! (${i} / 3)`, answer: 'boat', targets: [{ id: 'boat', obj: G.boatHit }], hints: ['Tap the boat.'] });
+    sfx('clack'); quake(0.2, 0.06); const z0 = B.position.z; await tween(350, e => { B.position.z = z0 - e * 0.35; B.rotation.z = -0.2 * (1 - i / 3) + Math.sin(e * Math.PI) * 0.05; });
+  }
+  sfx('whoosh'); await tween(900, e => { B.rotation.set(0.1 * (1 - e), 0.25, 0); B.position.y = 0.1 + 0.05 * e; });
+  // the kids and Toby climb in; the old man keeps hold of the side
+  [leo, mia, dog].forEach(c => c.g.visible = false); const k = boat.cast; [k.leo, k.mia, k.toby].forEach(c => c.g.visible = true);
+  k.leo.g.position.set(-0.3, 0.45, 0.2); k.mia.g.position.set(0.3, 0.45, -0.1); k.toby.g.position.set(0.15, 0.85, -0.5); k.toby.g.scale.setScalar(0.9);   // (Toby up at the front, out of the way of the close-ups; he leaps from there)
+  // he stands in the shallows at the back of the boat (the beach side), both hands on it
+  const grip = new THREE.Vector3(0.3, 0, 1.55); man.g.rotation.order = 'YXZ'; const holdOn = onTick(() => { const p = B.localToWorld(grip.clone()); man.g.position.set(p.x, G.hf(p.x, p.z), p.z); faceTo(man, B.position); });
+  man.pose('reach');
+  cut([RK.x - 3, 2.2, RK.z + 7], [RK.x + 0.8, 0.9, RK.z + 0.4], 46);
+  await beat('But the man does not let go.');
+  // ---- his kind smile is gone: the hood comes off (panel 4)
+  man.forceFace = 'sly'; man.hood(true); sfx('rumble'); playMusic('danger');
+  // close on his face, from the boat's side of him (the gray beach behind him)
+  { const hp2 = man.g.position.clone().add(new THREE.Vector3(0, 1.7, 0)), fd = B.position.clone().sub(man.g.position).setY(0).normalize(), sd = new THREE.Vector3(fd.z, 0, -fd.x);
+    const c2 = hp2.clone().addScaledVector(fd, 1.5).addScaledVector(sd, 1.1).add(new THREE.Vector3(0, 0.1, 0)); cut(c2.toArray(), hp2.toArray(), 42); dolly(c2.clone().addScaledVector(fd, -0.35).toArray(), hp2.toArray(), 5000); }
+  await beat('His kind smile is gone.', { min: 2200 });
+  await beat('“Thank you for my new ship, kids,” he says with a cold laugh.');
+  await beat('“I am not taking you home.');
+  // ---- treasure
+  const tv = pickV(18, [
+    { prompt: 'Which word fits?', tiles: ['treasure', 'tractor', 'teacher'], note: 'treasure = gold, gems and other precious things', hints: ['Gold and gems!', 't – r – ea – s – ure'] },
+    { prompt: 'Which word is spelled right?', tiles: ['treasure', 'treshure', 'treasur'], note: 'trea-sure: the ea sounds like the e in bed', hints: ['It ends in -sure.'] },
+    { prompt: 'What does the old man really want?', tiles: ['treasure', 'soup', 'friends'], note: 'treasure = gold and gems', hints: ['He wants all the gems in the cave.'] },
+  ]);
+  tell('I am sailing back to the cave to take all the {treasure}!”', { wait: false });
+  await chooseWord({ prompt: tv.prompt, sentence: 'take all the {_}!', tiles: tv.tiles, answer: 'treasure', note: tv.note, hints: tv.hints });
+  await filled('treasure'); await earnCard('treasure');
+  // ---- he tries to climb in — Toby jumps, bites his coat and pulls him into the water. SPLASH!
+  letterbox(true); holdOn();
+  { const bp = B.position; cut([bp.x - 3.6, 2.3, bp.z + 5.2], [bp.x + 0.1, 0.9, bp.z + 1.0], 50); }
+  const climbing = beat('He tries to climb inside, but Toby jumps, bites the man’s coat, and pulls him in the water.');
+  const m0 = man.g.position.clone(), away = m0.clone().sub(B.position).setY(0).normalize(); man.pose('reach'); await tween(900, e => { man.g.position.copy(m0).lerp(B.position.clone().setY(m0.y + 0.5), e * 0.3); man.g.rotation.x = 0.35 * e; });
+  // Toby leaps at him and grabs the coat
+  const T = k.toby.g, tw0 = T.getWorldPosition(new THREE.Vector3()); B.remove(T); w.add(T); T.position.copy(tw0); sfx('bark');
+  const coat = man.g.position.clone().add(new THREE.Vector3(0, 1.2, 0));
+  await tween(500, (e, kk) => { T.position.lerpVectors(tw0, coat, e); T.position.y += Math.sin(kk * Math.PI) * 0.8; }); k.toby.pose('bark');
+  // and down he goes, backwards into the water
+  const m1 = man.g.position.clone();
+  // (falls over backwards, away from the boat, Toby still hanging on to the coat)
+  await tween(900, (e, kk) => { man.g.rotation.x = 0.35 - 1.75 * e; man.g.position.copy(m1).addScaledVector(away, e * 1.4).setY(m1.y - e * 0.9); T.position.copy(man.g.position).addScaledVector(away, -0.45).setY(man.g.position.y + 1.0 - e * 0.4); });
+  sfx('crash'); quake(0.5, 0.12); splashUp(w, man.g.position.clone().setY(-0.1)); sparkles(man.g.position.clone().setY(0.4), 0xF2FAFF, 50);
+  await climbing; await beat('*SPLASH!*', { min: 1200 });
+  // Leo pulls Toby back inside the boat
+  k.leo.pose('reach'); const tp = T.position.clone();
+  await beat('Leo pulls Toby back inside the boat.');
+  await tween(800, (e, kk) => { const to = B.localToWorld(new THREE.Vector3(0, 0.85, 0.6)); T.position.lerpVectors(tp, to, e); T.position.y += Math.sin(kk * Math.PI) * 0.6; });
+  w.remove(T); B.add(T); T.position.set(0, 0.85, 0.6); k.toby.pose('wag'); k.leo.pose('hold'); k.mia.pose('hold');
+  // the boat drifts away into the fog; the old man stands up in the water, shaking his fist
+  man.g.rotation.x = 0; man.g.position.y = G.hf(man.g.position.x, man.g.position.z) - 0.2; man.pose('point');
+  boat.wind.k = 0.7; const bz = B.position.clone();
+  // (from the beach, looking out through the gap between the two rocks: the old man in the shallows, the boat going away into the fog)
+  cut([RK.x + 1.5, 3.2, RK.z + 9], [RK.x - 1.2, 0.8, RK.z - 8], 48); dolly([RK.x + 1.3, 3.0, RK.z + 8], [RK.x - 2, 0.8, RK.z - 10], 7000);
+  tween(7000, e => { B.position.set(bz.x - e * 3, 0.1 + Math.sin(e * 20) * 0.05, bz.z - e * 16); });
+  fogThicken(scene, { near: 8, far: 40, ms: 6000 }); await wait(4200);
+  if (await offerStretch('How did he change?')) {
+    await chooseWord(pickV(18, [
+      { prompt: 'Bonus! Which word fits?', sentence: 'At first he seemed {_}, but really he was greedy.', tiles: ['kind', 'wet', 'small'], answer: 'kind', hints: ['How did he seem at the fire?'] },
+      { prompt: 'Bonus! Which word fits?', sentence: 'He seemed kind, but really he was {_}.', tiles: ['greedy', 'gentle', 'happy'], answer: 'greedy', hints: ['He wants ALL the treasure.'] },
+      { prompt: 'Bonus! Which word fits?', sentence: 'His {_} smile was gone.', tiles: ['kind', 'kid', 'kite'], answer: 'kind', hints: ['k – i – n – d'] },
     ]));
     star(18);
   }
@@ -221,8 +298,8 @@ export async function sumUp6() {
   playMusic('cave');
   const ov = h('div', { class: 'sumup' }, h('div', { class: 'sumup-title' }, 'Sum it up!'), h('div', { class: 'sumup-sub' }, 'Pass the challenge to finish Episode 6'));
   document.body.append(ov); await wait(600);
-  await order({ prompt: 'Put what happened in order.', compact: true, items: ['Toby woke Mia on the gray beach.', 'The old man gave them hot soup.', 'He told them a secret about Varn.', 'The kids set the boat free.', 'Toby pulled the old man into the water.'], hints: ['What happened first?', 'The soup came before the secret.'] });
+  await order({ prompt: 'Put what happened in order.', compact: true, items: ['Toby wakes Mia on the gray beach.', 'The old man gives them hot soup.', 'He tells them a secret about Varn.', 'They push the boat free.', 'Toby pulls the old man into the water.'], hints: ['What happened first?', 'The soup comes before the secret.'] });
   await think({ prompt: 'Was the old man really kind?', options: ['No. He wanted the treasure.', 'Yes. He wanted to help.', 'We do not know.'], answer: 'No. He wanted the treasure.', hints: ['What did he say at the boat?'] });
-  await think({ prompt: 'Why did Mia not say a word?', options: ['She knew the gems grow in the cave', 'She was asleep', 'She lost her voice'], answer: 'She knew the gems grow in the cave', hints: ['Mia knew the old man was not telling the truth.'] });
+  await think({ prompt: 'Why did Mia not say a word?', options: ['She knew he was not telling the truth.', 'She was asleep.', 'She lost her voice.'], answer: 'She knew he was not telling the truth.', hints: ['Mia knew the gems grow in the cave.'] });
   ov.remove(); S.ep6 = 1; save();
 }

@@ -60,7 +60,7 @@ export const STOPS = [
 const VIA = { '11-12': [[60, 0.5, -2.5], [56, 0.5, -6.5], [48, 0.5, -8.6]] };
 export const ROUTE = [[1, 2, 3], [3, 4, 5, 6], [2, 7, 8, 9, 6], [6, 10, 11, 12], [12, 13, 14, 15], [15, 'wave', 16, 17, 18], [18, 19, 20, 21]];
 export const EPISODES = { 1: { title: 'The Cave', stops: [1, 2, 3] }, 2: { title: 'The Cave 2', stops: [4, 5, 6] }, 3: { title: 'The Cave 3: Leo’s Side', stops: [7, 8, 9] }, 4: { title: 'The Cave 4: The Lost Island', stops: [10, 11, 12] }, 5: { title: 'The Cave 5: Guard of the Stones', stops: [13, 14, 15] }, 6: { title: 'The Cave 6: The Old Man', stops: [16, 17, 18] } };
-export const MAX_EP = 5;   // episode 6 is built but held back until the visuals are redone
+export const MAX_EP = 5;   // episode 6 is rebuilt; held back from the map until Frank OKs it (play it with ?test&stop=16)
 export function buildMap(S, onPick) {
   const w = newWorld({ sky: 0xBFE6F7, ambientI: 1.5, sunI: 1.55, sunPos: [-14, 30, 18], fog: [0xCFEAF5, 80, 170] }); const b = builder(w); setSeed(11);
   const coastX = z => -16.5 + 5.6 * Math.exp(-(((z - 10) / 5.5) ** 2)) + 0.7 * Math.sin(z * 0.37) + 0.35 * Math.sin(z * 1.1 + 1);
