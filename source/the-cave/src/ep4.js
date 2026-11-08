@@ -143,7 +143,7 @@ export async function stop12() {
     const C0 = IS.CAVE, route = new THREE.CatmullRomCurve3([[C0[0] + 19, 0.15, C0[1] + 2], [C0[0] + 25, 0.15, C0[1] - 6], [C0[0] + 18, 0.15, C0[1] - 30], [0, 0.15, -52], [-32, 0.15, -46], [-54, 0.15, -27], [-72, 0.15, -14]].map(a => new THREE.Vector3(...a)), false, 'centripetal');
     let u = 0; const pp = new THREE.Vector3(), tg = new THREE.Vector3(), c0 = new THREE.Vector3(), l0 = new THREE.Vector3();
     onTick(t => { route.getPointAt(Math.min(1, u), pp); route.getTangentAt(Math.min(1, u), tg); bt.g.position.set(pp.x, 0.15 + Math.sin(t * 1.6) * 0.06, pp.z); bt.g.rotation.set(Math.sin(t * 1.3) * 0.04, Math.atan2(tg.x, tg.z), Math.sin(t * 1.7) * 0.05); });
-    followCam(() => { c0.copy(pp).addScaledVector(tg, -9).add(new THREE.Vector3(-tg.z * 5, 4, tg.x * 5));   // (on the sea side, the island to one side) l0.copy(pp).addScaledVector(tg, 8).setY(1.5); return [c0, l0]; });
+    followCam(() => { c0.copy(pp).addScaledVector(tg, -9).add(new THREE.Vector3(-tg.z * 5, 4, tg.x * 5)); l0.copy(pp).addScaledVector(tg, 8).setY(1.5); return [c0, l0]; });
     tell('They pushed their wooden cart into the sea, and the wind filled the giant flag.', { wait: false });
     await tween(11000, e => { u = e; });
     const v = h('div', { class: 'veil', style: { background: '#BFE6F7' } }); document.body.append(v); await wait(700); stopFollow();
