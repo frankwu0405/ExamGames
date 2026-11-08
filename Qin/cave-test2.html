@@ -535,7 +535,7 @@ html:has(.wt-overlay),body:has(.wt-overlay){touch-action:pan-y}body:has(.wt-over
 .sh-slot.locked .sh-stand{cursor:default}
 @media (max-width:699px){.sh-items{gap:0 18px;padding:0 6px}.sh-plaque b{font-size:15px}.sh-plaque{padding:3px 8px}}
 /* ===== tier magic + shelf sizing v2 ===== */
-.sh-shelves{--cw:clamp(58px,calc((min(100vw,1180px) - 150px)/var(--per) * .5),120px)}
+.sh-shelves{--cw:clamp(58px,calc((min(100vw,1180px) - 150px)/var(--per) * .56),135px)}
 .sh-slot{width:100%}
 .sh-stand{width:var(--cw)}
 .sh-row{padding-top:calc(var(--cw)*.5 + 16px)}
@@ -574,7 +574,7 @@ html:has(.wt-overlay),body:has(.wt-overlay){touch-action:pan-y}body:has(.wt-over
 .fx-flash{position:fixed;inset:0;z-index:228;pointer-events:none;background:radial-gradient(circle at 50% 50%,#fff,#e4d4ff 50%,#8fe9ff55)}
 .pg-shim{position:absolute;pointer-events:none;z-index:6;background:linear-gradient(105deg,transparent 36%,#fff0 40%,#ffffffee 50%,#fff0 60%,transparent 64%) no-repeat;background-size:300% 100%;background-position:100% 0;animation:pg-shim 1.15s ease-in-out forwards}
 .pg-shim-card{inset:0;border-radius:6.5%/4.3%;mix-blend-mode:screen}
-.pg-shim-orn.wt-ornament{inset:auto;-webkit-mask:var(--frame-art) center/100% 100% no-repeat;mask:var(--frame-art) center/100% 100% no-repeat}
+.pg-shim-orn.wt-ornament{-webkit-mask:var(--frame-art) center/100% 100% no-repeat;mask:var(--frame-art) center/100% 100% no-repeat}
 .pg-shim::before,.pg-shim::after{display:none!important}
 .wt-tier-1 .pg-shim{background-image:linear-gradient(105deg,transparent 36%,#ffb87000 40%,#ffe2c2ee 50%,#ffb87000 60%,transparent 64%)}
 .wt-tier-3 .pg-shim{background-image:linear-gradient(105deg,transparent 36%,#ffd84a00 40%,#fff6c0ee 50%,#ffd84a00 60%,transparent 64%)}
