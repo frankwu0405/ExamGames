@@ -39,7 +39,7 @@ export function buildShaft() {
     const s = rr(0.5, 1.2); mesh(w, lumpy(s, 2, 0.24, 0.6), lm, Math.cos(a) * (SR - s * 0.35), y, Math.sin(a) * (SR - s * 0.35), { ry: rnd() * 6, shadow: false }); }
   // glowing blue crystals growing out of the walls light the way down
   for (let y = BOTTOM + 6, k = 0; y < 8; y += 6.5, k++) { const a = 1.9 + k * 2.4, n = new THREE.Vector3(-Math.cos(a), 0.45, -Math.sin(a)).normalize();
-    const cc = crystalCluster(w, Math.cos(a) * (SR - 0.2), y, Math.sin(a) * (SR - 0.2), { n: 5, size: 0.55, cols: PAL.crys, light: k % 2 === 0 }); cc.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), n); }
+    const cc = crystalCluster(w, Math.cos(a) * (SR - 0.2), y, Math.sin(a) * (SR - 0.2), { n: 4, size: 0.38, cols: PAL.crys, light: k % 2 === 0 }); cc.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), n); }
   // wind streaks rushing up past the cart
   const streakMat = new THREE.MeshBasicMaterial({ color: 0xDDE6FF, transparent: true, opacity: 0.35 });
   const streaks = Array.from({ length: 46 }, () => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.03, 1.6, 0.03), streakMat); const a = rnd() * Math.PI * 2, r = 0.8 + rnd() * 2.8; m.position.set(Math.cos(a) * r, -rnd() * 20, Math.sin(a) * r); w.add(m); return m; });
@@ -67,7 +67,7 @@ export function buildShaft() {
 
 // ================================================================ stop 5: the twisting tunnel, the green crystal room and the loop
 export function buildCrystal() {
-  const w = newWorld({ sky: 0x06110D, ambient: 0xBFF5D6, ambientI: 0.8, sunI: 0.35, fog: [0x06110D, 20, 70] }); const b = builder(w); setSeed(53);
+  const w = newWorld({ sky: 0x06110D, ambient: 0xD6F2E2, ambientI: 0.7, sunI: 0.3, fog: [0x06110D, 22, 70] }); const b = builder(w); setSeed(53);
   // the room: a big rock dome, and the track: a twisting tunnel in, a giant vertical loop, a tunnel out
   const RC = new THREE.Vector3(0, 2, -14), RX = 19, RY = 15, RZ = 23;
   const inRoom = p => ((p.x - RC.x) / RX) ** 2 + ((p.y - RC.y) / RY) ** 2 + ((p.z - RC.z) / RZ) ** 2;
@@ -107,16 +107,16 @@ export function buildCrystal() {
   // the room: crystals everywhere — on the floor, on the walls, hanging from the roof
   const clear = (x, z) => { for (let i = 0; i <= 120; i++) { const s = sIn + (sOut - sIn) * i / 120, q = path.getPointAt(s); if (Math.hypot(q.x - x, q.z - z) < 3.4) return false; } return true; };
   for (let i = 0, n = 0; i < 90 && n < 34; i++) { const a = rnd() * Math.PI * 2, r = rr(0.35, 0.92), x = RC.x + Math.cos(a) * RX * r, z = RC.z + Math.sin(a) * RZ * r; if (!clear(x, z) || inRoom(new THREE.Vector3(x, 0, z)) > 0.8) continue;
-    crystalCluster(w, x, hf(x, z) - 0.1, z, { n: 7, size: rr(0.8, 1.7), cols: GREENS, light: n % 6 === 0 }); n++; }
+    crystalCluster(w, x, hf(x, z) - 0.1, z, { n: 7, size: rr(0.8, 1.7), cols: GREENS, light: n % 9 === 0 }); n++; }
   for (let i = 0; i < 16; i++) { const a = rnd() * Math.PI * 2, r = rr(0.2, 0.7), x = Math.cos(a) * RX * r, z = RC.z + Math.sin(a) * RZ * r, y = RC.y + RY * Math.sqrt(Math.max(0, 1 - r * r)) - 0.6; const cc = crystalCluster(w, x, y, z, { n: 5, size: rr(0.6, 1.1), cols: GREENS, light: false }); cc.rotation.z = Math.PI; }
   scatter(w, 'rock_large', Array.from({ length: 16 }, () => { const a = rnd() * Math.PI * 2, x = Math.cos(a) * RX * 0.9, z = RC.z + Math.sin(a) * RZ * 0.9; return clear(x, z) ? { x, z, s: rr(1, 2), dy: -0.3 } : null; }).filter(Boolean), { gy: hf, style: () => [rockMat(0x6E8A80, 0.4)] });
-  [[-12, 6, 4], [12, 6, -6], [0, 9, -22], [-10, 6, -28], [10, 6, 2]].forEach(([x, y, z]) => { const l = new THREE.PointLight(GREEN, 26, 34, 1.2); l.position.set(x, y, z); w.add(l); });
+  [[-12, 6, 4], [12, 6, -6], [0, 9, -22], [-10, 6, -28], [10, 6, 2]].forEach(([x, y, z]) => { const l = new THREE.PointLight(GREEN, 11, 30, 1.3); l.position.set(x, y, z); w.add(l); });
   motes(w, 180, [-14, 0, -34], [14, 12, 6], 0xB6FFD0, 0.07);
   curveRails(w, L, frame);
   // support posts under the track (not in the loop)
   for (let d = 0; d < L; d += 4) { const s = d / L; if (s > sA - 0.01 && s < sB + 0.01) continue; const { p } = frame(s); if (p.y < -0.2) continue; b.cyl(0.08, 0.1, 0.62 + p.y, 0x3A4A44, p.x, (p.y - 0.6) / 2, p.z, { line: 0 }); }
   // the loop's own legs: tall wooden trestles on both sides
-  for (let k = 1; k < 18; k += 2) { const th = k / 18 * Math.PI * 2, x = 2.4 * k / 18, y = LR - LR * Math.cos(th), z = Zc - LR * Math.sin(th); if (y < 1.5) continue; [-1, 1].forEach(sd => b.cyl(0.07, 0.09, y + 0.6, 0x3A4A44, x + sd * 1.1, (y - 0.6) / 2, z, { line: 0.01 })); }
+  for (let k = 1; k < 18; k += 2) { const th = k / 18 * Math.PI * 2, x = 2.4 * k / 18, y = LR - LR * Math.cos(th), z = Zc - LR * Math.sin(th); if (y < 1.5) continue; [-1, 1].forEach(sd => { b.cyl(0.07, 0.09, y + 0.6, 0x3A4A44, x + sd * 2.7, (y - 0.6) / 2, z, { line: 0.01 }); b.box(2.0, 0.08, 0.08, 0x3A4A44, x + sd * 1.7, y, z, { line: 0 }); }); }
   const R = rider(w);
   const place = s => { const { p, f, r, u } = frame(Math.min(s, 0.999)); R.g.position.copy(p).addScaledVector(u, 0.05); R.g.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(r, u, f)); };
   place(0);

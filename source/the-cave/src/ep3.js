@@ -259,7 +259,7 @@ export async function stop9() {
   const out = new THREE.Group(); B.w.add(out); const ob = builder(out);
   const boat = new THREE.Group(); out.add(boat); cart(builder(boat), 0, 0, 0); const bc = makeCast(boat); bc.leo.g.position.set(-0.3, 0.45, -0.25); bc.leo.pose('cheer'); bc.leo.L.rotation.x = bc.leo.R.rotation.x = -1.4; bc.mia.g.position.set(0.3, 0.45, 0.15); bc.mia.pose('cheer'); bc.mia.L.rotation.x = bc.mia.R.rotation.x = -1.4; bc.toby.g.position.set(0, 0.85, 0.6); bc.toby.g.scale.setScalar(0.9); boat.rotation.y = Math.PI;
   cut([4.5, 1.8, -6], [0, 1, 10], 50); lift(); sfx('whoosh');
-  await tween(4200, (e, kk) => { boat.position.set(0.2, 0.12 + Math.sin(kk * 20) * 0.04, 15 - kk * 12); boat.rotation.z = Math.sin(kk * 14) * 0.05; });
+  await tween(4200, (e, kk) => { { const bz = 15 - kk * 12; boat.position.set(B.streamX(bz), 0.12 + Math.sin(kk * 20) * 0.04 - 0.2, bz); } boat.rotation.z = Math.sin(kk * 14) * 0.05; });
   // the cart runs up onto the sand… and tips over; the kids tumble out onto the beach
   const T = B.tipped, tp = T.position.clone(), b0 = boat.position.clone();
   await tween(900, e => { boat.position.lerpVectors(b0, new THREE.Vector3(tp.x, 0, tp.z), e); boat.rotation.y = Math.PI + (0.8 - Math.PI) * e; });

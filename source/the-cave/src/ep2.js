@@ -3,7 +3,7 @@
 import { S, save, sfx, wait, h, shuffle } from './core.js';
 import { THREE, setCam, flyCam, followCam, stopFollow, quake, tween, moveTo, onTick, sparkles, textTexture, toon, builder, camera } from './gfx.js';
 import { buildShaft, buildCrystal, buildRiver, buildBeach } from './sets2.js';
-import { tell, tapOn, fillGap, filled, hideStory, chooseWord, pick3D, spellOn, order, think, offerStretch, earnCard, toby, tobyHide, tapAll, steer, MODE } from './ui.js';
+import { tell, beat, sentences, aroundGap, tapOn, fillGap, filled, hideStory, chooseWord, pick3D, spellOn, order, think, offerStretch, earnCard, toby, tobyHide, tapAll, steer, MODE } from './ui.js';
 import { playMusic } from './music.js';
 
 const star = n => { S.stars[n] = 1; save(); sfx('great'); };
@@ -17,7 +17,7 @@ export async function stop4() {
   playMusic('danger');
   const D = buildShaft(); const { mia, toby: dog } = D.R.cast; let y = 0, vy = 0, g = 0;
   const cam = new THREE.Vector3(), look = new THREE.Vector3();
-  followCam(() => { cam.set(2.6, y + 1.5, 4.6); look.set(0, y + 0.4, -0.6); return [cam, look]; });
+  followCam(() => { cam.set(2.0, y + 1.6, 2.9); look.set(0, y + 0.4, -0.6); return [cam, look]; });
   onTick((t, dt) => { vy = Math.min(vy + g * dt, 30); y = Math.max(D.BOTTOM + 0.05, y - vy * dt); D.R.g.position.y = y; D.R.g.rotation.z = Math.sin(t * 7) * 0.04 * Math.min(1, vy / 10); });
   mia.pose('scared'); dog.pose('bark'); sfx('fall'); g = 18; D.wind.speed = 16;
   // ---- the gap sentence (rotates on replays), then everything slows down: glowing pebbles float by with letters
@@ -28,26 +28,30 @@ export async function stop4() {
   ]);
   const s1 = sp.gapIn === 0 ? 'Mia and Toby fell down into the big dark pit! It was the longest {drop} of their lives.' : 'Mia and Toby fell down into the big dark pit! It was the longest drop of their lives.';
   const s2 = sp.word === 'wind' ? 'The {wind} blew hard, and Mia held the puppy tight.' : sp.word === 'tight' ? 'The wind blew hard, and Mia held the puppy {tight}.' : 'The wind blew hard, and Mia held the puppy tight.';
-  tell(s1 + ' ' + s2, { wait: false });
-  await wait(2200);
-  g = 0; await tween(900, e => { vy = 18 * (1 - e) + 0.6 * e; D.wind.speed = 16 * (1 - e) + 1 * e; });
+  // the story comes one short line at a time while they fall; the line with the gap stays up while she spells
+  const fp = aroundGap(s1 + ' ' + s2);
+  const slow = (async () => { await wait(1500); g = 0; await tween(900, e => { vy = 18 * (1 - e) + 0.6 * e; D.wind.speed = 16 * (1 - e) + 1 * e; }); })();
+  for (const x of fp.before) await beat(x);
+  await slow;
+  tell(fp.gap, { wait: false });
   D.floaters.visible = true; sfx('glow');
   await spellOn({ prompt: sp.prompt, word: sp.word, decoys: sp.decoys, objs: D.fl, hints: sp.hints });
   D.floaters.visible = false; await filled(sp.word);
+  for (const x of fp.after) await beat(x);
   if (sp.word === 'drop') await earnCard('drop');
   // fast again… BANG! onto the hidden track
   g = 22; D.wind.speed = 18; sfx('fall');
   while (y > D.BOTTOM + 0.1) await wait(40);
   g = 0; vy = 0; D.wind.speed = 0; sfx('crash'); quake(1, 0.35); sparkles(new THREE.Vector3(0, D.BOTTOM + 0.3, 0), 0xFFD27A, 30);
-  tell('But BANG! The cart did not crash. It landed on a hidden track.', { wait: false });
-  mia.pose('hold'); dog.pose('idle'); await wait(900);
+  mia.pose('hold'); dog.pose('idle'); await beat('But BANG! The cart did not crash.');
   // racing along the new track; Mia looks back — no Leo
   let z = 0, sp2 = 0; stopFollow(); const off = onTick((t, dt) => { sp2 = Math.min(sp2 + dt * 9, 16); z -= sp2 * dt; if (z < -52) z = -52; D.R.g.position.z = z; D.R.g.rotation.y = Math.PI; });
   D.R.g.rotation.y = Math.PI; mia.g.rotation.y = 0;
   followCam(() => { cam.set(1.6, D.BOTTOM + 2.2, z + 4.2); look.set(0, D.BOTTOM + 0.8, z - 3); return [cam, look]; });
-  await tapOn();
-  tell('The new track was much faster than the old one. Mia looked back, but Leo was not there.', { wait: false });
-  await wait(1500); followCam(() => { cam.set(2.3, D.BOTTOM + 1.9, z - 0.6); look.set(0, D.BOTTOM + 1.3, z + 0.2); return [cam, look]; });
+  await beat('It landed on a hidden track.');
+  await beat('The new track was much faster than the old one.');
+  tell('Mia looked back, but Leo was not there.', { wait: false });
+  followCam(() => { cam.set(2.3, D.BOTTOM + 1.9, z - 0.6); look.set(0, D.BOTTOM + 1.3, z + 0.2); return [cam, look]; });
   await wait(500); mia.pose('idle'); await tween(900, e => { mia.g.rotation.y = e * Math.PI * 0.85; }); mia.pose('point'); await wait(500); mia.pose('scared');
   await tapOn();
   // ---- feelings and predictions (reading between the lines)
@@ -76,25 +80,26 @@ export async function stop5() {
   followCam(() => { const { p, f, u } = C.frame(Math.min(s, 0.999)); cam.copy(p).addScaledVector(f, -4.2).addScaledVector(u, 2.3); look.copy(p).addScaledVector(f, 3).addScaledVector(u, 0.6); return [cam, look]; });
   onTick((t, dt) => { speed += (target - speed) * Math.min(1, dt * 2); s = Math.min(0.999, s + speed * dt / C.L); C.place(s); C.R.g.rotateZ(lean); });
   const rideTo = async (to, v = 8) => { target = v; while (s < to) await wait(30); target = 0; await wait(350); };
-  tell('The track twisted left and right. It pushed the cart harder than a racecar.', { wait: false });
-  mia.pose('hold'); await rideTo(0.07);
+  mia.pose('hold'); target = 6; await beat('The track twisted left and right.');
   // ---- three bends: read the clue, lean the right way (one clue says to lean AWAY)
   const bends = pickV(5, [
-    [{ at: 0.1, clue: 'The track turns right. Lean right!', answer: 'right' }, { at: 0.2, clue: 'A big crystal is on the right. Lean AWAY from it!', answer: 'left' }, { at: 0.3, clue: 'Toby is on the right side. Lean to Toby’s side!', answer: 'right' }],
-    [{ at: 0.1, clue: 'The wall is on the left. Lean AWAY from the wall!', answer: 'right' }, { at: 0.2, clue: 'The track bends left. Lean left!', answer: 'left' }, { at: 0.3, clue: 'Do NOT lean left. Lean the other way!', answer: 'right' }],
-    [{ at: 0.1, clue: 'Mia sees a green light on her right. Lean toward it!', answer: 'right' }, { at: 0.2, clue: 'Rocks are on the right. Lean away from the rocks!', answer: 'left' }, { at: 0.3, clue: 'Lean the opposite of left!', answer: 'right' }],
+    [{ at: 0.3, clue: 'The track turns right. Lean right!', answer: 'right' }, { at: 0.55, clue: 'A big crystal is on the right. Lean AWAY from it!', answer: 'left' }, { at: 0.8, clue: 'Toby is on the right side. Lean to Toby’s side!', answer: 'right' }],
+    [{ at: 0.3, clue: 'The wall is on the left. Lean AWAY from the wall!', answer: 'right' }, { at: 0.55, clue: 'The track bends left. Lean left!', answer: 'left' }, { at: 0.8, clue: 'Do NOT lean left. Lean the other way!', answer: 'right' }],
+    [{ at: 0.3, clue: 'Mia sees a green light on her right. Lean toward it!', answer: 'right' }, { at: 0.55, clue: 'Rocks are on the right. Lean away from the rocks!', answer: 'left' }, { at: 0.8, clue: 'Lean the opposite of left!', answer: 'right' }],
   ]);
-  for (const bd of bends) {
-    await rideTo(bd.at, 7);
+  for (const [bi, bd] of bends.entries()) {
+    // (the bends are all in the twisting tunnel, before the crystal room)
+    if (bi === 1) await Promise.all([rideTo(bd.at * C.sIn, 9), beat('It pushed the cart harder than a racecar.')]); else await rideTo(bd.at * C.sIn, 7);
     await steer({ prompt: 'Read the sign. Which way?', clue: bd.clue, answer: bd.answer, hints: ['Read it again slowly.', bd.clue.includes('AWAY') || bd.clue.includes('NOT') || bd.clue.includes('opposite') ? 'Away means the other side.' : 'The sign tells you the side.'] });
     const dir = bd.answer === 'left' ? 1 : -1; sfx('whoosh');
     target = 10; await tween(500, e => { lean = dir * 0.012 * Math.sin(e * Math.PI); }); lean = 0;
   }
   dog.pose('wag');
-  await rideTo(0.42, 9);
+  await rideTo(C.sIn + 0.03, 9);
   const followRide = () => followCam(() => { const { p, f, u } = C.frame(Math.min(s, 0.999)); cam.copy(p).addScaledVector(f, -4.2).addScaledVector(u, 2.3); look.copy(p).addScaledVector(f, 3).addScaledVector(u, 0.6); return [cam, look]; });
   stopFollow(); await flyCam([0, 9, -2], [0, 3, -16], 1600);
-  await tell('They rolled into a big room full of glowing green crystals. It was the brightest room in the cave!');
+  await beat('They rolled into a big room full of glowing green crystals.');
+  await flyCam([-6, 7, -4], [2, 4, -18], 1800); await tell('It was the brightest room in the cave!');
   followRide(); await rideTo(C.sA - 0.025, 8);
   // ---- the eight big crystals carry words: tap every one with the target sound
   const sort = pickV(5, [
@@ -109,15 +114,13 @@ export async function stop5() {
   stopFollow(); await flyCam(...(() => { const { p } = C.frame(s); return [[p.x, p.y + 5.5, p.z + 7.5], [p.x, 1.6, p.z - 3]]; })(), 1200);
   await tapAll({ prompt: `Tap every crystal with ${sort.sound}, like in ${sort.like}.`, items, word: 'loop',
     hints: [`Say ${sort.like}. Listen for ${sort.sound}.`, `${sort.yes[0]} has ${sort.sound}!`],
-    onRight: it => { const m = it.obj.userData.crystal; m.material = toon(0xB6FFD0, { emissive: 0x6BFFA8, emissiveIntensity: 1 }); } });
+    onRight: it => { const lit = toon(0xffffff, { color: 0xD8FFE6, emissive: 0x6BFFA8, emissiveIntensity: 1.3, transparent: true, opacity: 0.95 }); it.obj.userData.crystal.traverse(o => { if (o.isMesh && o.material !== it.obj.userData.ink && !o.material.side) o.material = lit; }); } });
   await filled('loop'); await earnCard('loop');
   // the loop!
-  tell('The cart went high into the air. Toby gave a happy bark.', { wait: false });
   mia.pose('cheer'); sfx('whoosh');
   followRide();
-  target = 13; while (s < C.sB) await wait(30); dog.pose('bark'); sfx('bark');
-  await rideTo(0.995, 9); mia.pose('hold');
-  await tapOn();
+  target = 13; await beat('The cart went high into the air.'); while (s < C.sB) await wait(30); dog.pose('bark'); sfx('bark');
+  await Promise.all([rideTo(C.sOut - 0.03, 9), beat('Toby gave a happy bark.')]); mia.pose('hold');
   if (await offerStretch('Pick the word that compares.')) {
     await chooseWord(pickV(5, [
       { prompt: 'Bonus! Pick the right word.', sentence: 'It was the {_} room in the cave!', tiles: ['bright', 'brighter', 'brightest'], answer: 'brightest', hints: ['THE ___ in the cave means most of all.', 'Use -est.'] },
@@ -126,7 +129,8 @@ export async function stop5() {
     ]));
     star(5);
   }
-  hideStory(); finish(5);
+  // on into the dark tunnel, down towards the bottom of the cave
+  hideStory(); target = 9; while (s < 0.985) await wait(30); finish(5);
 }
 
 // ================================================================ stop 6 — the swift river, out to the beach
@@ -134,20 +138,21 @@ export async function stop6() {
   playMusic('danger');
   const V = buildRiver(); const { mia, toby: dog } = V.R.cast; const R = V.R.g;
   setCam([2.6, 3.4, 20], [0, 1, 8]);
-  tell('After the crazy ride, the cart zoomed to the bottom of the deep cave. The tracks just stopped!', { wait: false });
-  mia.pose('hold'); await moveTo(R, [0, 1.45, 10.6], 1400, { face: false }); sfx('crash'); quake(0.4, 0.1);
-  await tapOn();
-  tell('The cart fell off the edge and hit the cold river with a giant SPLASH.', { wait: false });
-  mia.pose('scared'); sfx('fall');
+  mia.pose('hold'); await Promise.all([moveTo(R, [0, 1.45, 10.6], 2200, { face: false }), beat('After the crazy ride, the cart zoomed to the bottom of the deep cave.')]); sfx('crash'); quake(0.4, 0.1);
+  await beat('The tracks just stopped!');
+  const spl = beat('The cart fell off the edge and hit the cold river with a giant SPLASH.');
+  await wait(900); mia.pose('scared'); sfx('fall');
   await tween(700, (e, k) => { R.position.set(0, 1.45 - 1.35 * k * k, 10.6 - 3.5 * k); R.rotation.x = -0.3 * Math.sin(k * Math.PI); });
   sfx('crash'); sfx('whoosh'); quake(0.7, 0.25); sparkles(new THREE.Vector3(0, 0.4, 7), 0xE6F6FF, 50); sparkles(new THREE.Vector3(0.6, 0.4, 7.4), 0xBFE8FF, 30);
-  let z = 7.1, x = 0, drift = 1.2, tx = 0; const off = onTick((t, dt) => { z -= drift * dt; x += (tx - x) * Math.min(1, dt * 1.5); R.position.set(x, 0.1 + Math.sin(t * 2.2) * 0.05, z); R.rotation.set(Math.sin(t * 1.7) * 0.04, Math.PI + Math.sin(t * 1.1) * 0.06, Math.sin(t * 2) * 0.05); });
+  // the cart only drifts as far as the story has got to (zMin): if nobody taps, it waits instead of floating off
+  let z = 7.1, x = 0, drift = 1.2, tx = 0, zMin = 3; const off = onTick((t, dt) => { z = Math.max(zMin, z - drift * dt); x += (tx - x) * Math.min(1, dt * 1.5); R.position.set(x, 0.1 + Math.sin(t * 2.2) * 0.05, z); R.rotation.set(Math.sin(t * 1.7) * 0.04, Math.PI + Math.sin(t * 1.1) * 0.06, Math.sin(t * 2) * 0.05); });
   const cam = new THREE.Vector3(), look = new THREE.Vector3();
   followCam(() => { cam.set(x + 2.2, 3.2, z + 6.2); look.set(x * 0.5, 0.6, z - 5); return [cam, look]; });
-  await tapOn();
+  await spl;
   // the light ahead
-  tell('Then, Mia saw a bright light from ahead! The exit was near.', { wait: false });
-  mia.pose('point'); await wait(900); await tapOn();
+  zMin = -4; mia.pose('point'); await beat('Then, Mia saw a bright light from ahead!');
+  stopFollow(); await flyCam([x + 1.6, 2.2, z + 3], [0, 1.2, -60], 1200); await beat('The exit was near.');
+  followCam(() => { cam.set(x + 2.2, 3.2, z + 6.2); look.set(x * 0.5, 0.6, z - 5); return [cam, look]; });
   // ---- three channels with word signs: paddle down the one that means FAST (that is where Leo is)
   const ch = pickV(6, [
     { clue: 'Paddle to the sign that means FAST.', words: ['swift', 'slow', 'still'], answer: 'swift', hints: ['Slow and still are not fast.', 'swift = very fast'] },
@@ -156,18 +161,22 @@ export async function stop6() {
   ]);
   const ord = shuffle(ch.words);
   V.gates.forEach((g, i) => { const mt = new THREE.MeshBasicMaterial({ map: textTexture(ord[i], { bg: '#F4E1B5', w: 512, h: 190, font: '92px Chewy, sans-serif' }) }); g.userData.board.material = [toon(0xC9A46A), toon(0xC9A46A), toon(0xC9A46A), toon(0xC9A46A), mt, mt]; g.userData.word = ord[i]; });
-  drift = 0.9; while (z > -11) await wait(40); drift = 0;
-  tell('“Look!” Mia said to the puppy. “That is Leo!” He was drifting in the water on a floating log. Mia paddled the cart over to fetch him.', { wait: false });
+  drift = 0.9; zMin = -11.05; while (z > -11) await wait(40); drift = 0;
+  // Leo, far ahead on his log
+  stopFollow(); flyCam([0.8, 2.0, z - 2], [0, 0.6, -42], 1300); mia.pose('point');
+  await beat('“Look!” Mia said to the puppy. “That is Leo!”');
+  await beat('He was drifting in the water on a floating log.');
+  tell('Mia paddled the cart over to fetch him.', { wait: false });
   V.paddle.visible = true; mia.pose('reach');
   // frame the three signs in the middle of the screen (with Leo's log far behind them) while she chooses
-  stopFollow(); await flyCam([0, 1.9, z - 1.5], [0, 2.1, -20], 1100);
+  await flyCam([0, 1.9, z - 1.5], [0, 2.1, -20], 1100);
   await pick3D({ backupWords: true, prompt: ch.clue, targets: V.gates.map(g => ({ id: g.userData.word, obj: g.userData.board })), answer: ch.answer, hints: ch.hints, word: 'swift' });
   const gi = ord.indexOf(ch.answer); tx = V.gates[gi].position.x;
   followCam(() => { cam.set(x + 2.2, 3.2, z + 6.2); look.set(x * 0.5, 0.6, z - 5); return [cam, look]; });
   // paddling: first line up with the right channel, THEN go down it (no cutting through the rocks), then on to Leo
   const row = onTick(t => { mia.AR.rotation.x = -0.6 + Math.sin(t * 6) * 0.7; });
   drift = 0.5; while (Math.abs(x - tx) > 0.15) await wait(40);
-  drift = 3.2; while (z > -35) await wait(40); tx = 0; while (z > -39) await wait(40); drift = 0.25; row();
+  zMin = -41; drift = 3.2; while (z > -35) await wait(40); tx = 0; while (z > -39) await wait(40); drift = 0.25; row();
   // Leo climbs in
   const lw = V.leo.g.getWorldPosition(new THREE.Vector3()); V.leoLog.remove(V.leo.g); R.add(V.leo.g); V.leo.g.position.set(-0.3, 0.45, -0.4); V.leo.g.rotation.set(0, 0, 0); V.leo.pose('cheer'); V.leo.L.rotation.x = V.leo.R.rotation.x = -1.4;
   sfx('great'); dog.pose('wag'); mia.pose('cheer'); V.paddle.visible = false;
@@ -180,7 +189,7 @@ export async function stop6() {
     { prompt: 'Which word is spelled right?', sentence: 'the swift water quickly helped them {_} out of the dark cave', tiles: ['flush', 'flosh', 'fllush'], answer: 'flush', note: 'flush rhymes with rush', hints: ['It rhymes with rush.', 'f – l – u – s – h'] },
     { prompt: 'Which word fits?', sentence: 'the swift water quickly helped them {_} out of the dark cave', tiles: ['flush', 'fresh', 'flesh'], answer: 'flush', note: 'flush = wash out fast with water', hints: ['It has a u, like rush.', 'f – l – u – s – h'] },
   ]));
-  await filled('flush'); V.flow.speed = 12; drift = 9; sfx('whoosh'); sfx('glow');
+  await filled('flush'); V.flow.speed = 12; zMin = -81; drift = 9; sfx('whoosh'); sfx('glow');
   while (z > -80) await wait(40);
   const lift = await veil('#FFF6D8', 700); off(); stopFollow();
   // ---- the beach
@@ -194,7 +203,9 @@ export async function stop6() {
   moveTo(k.leo.g, [-0.32, 0, 0], 600, { face: false }); await moveTo(k.mia.g, [0.32, 0, 0], 600, { face: false });
   k.leo.g.rotation.y = Math.PI - 0.6; k.mia.g.rotation.y = Math.PI + 0.6; k.leo.pose('hold'); k.mia.pose('hold'); sparkles(new THREE.Vector3(0.3, 1.2, 0.5), 0x9FEAFF, 30); sfx('glow');
   await flyCam([0.6, 1.6, -4.2], [0, 1, 0.5], 1400);
-  await tell('They hugged each other, so glad to be together. They had the puppy AND the treasure. It was the best adventure.');
+  await beat('They hugged each other, so glad to be together.');
+  sfx('glow'); sparkles(B.gem.getWorldPosition(new THREE.Vector3()), 0x9FEAFF, 24); await beat('They had the puppy AND the treasure.');
+  await flyCam([3.5, 3.2, -9], [0, 1, 1], 1600); await tell('It was the best adventure.');
   if (await offerStretch('Pick the word that compares.')) {
     await chooseWord(pickV(6, [
       { prompt: 'Bonus! Pick the right word.', sentence: 'They landed on the {_} sandy beach.', tiles: ['soft', 'softer', 'softest'], answer: 'softest', hints: ['THE ___ beach means most of all.', 'Use -est.'] },
