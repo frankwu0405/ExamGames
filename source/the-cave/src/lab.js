@@ -1,7 +1,6 @@
 // Character Lab: every character in one place, to settle the design before building scenes.
 import { THREE, init, newWorld, onTick, setCam, renderer, camera, toon } from './gfx.js';
-import { makeLabKids } from './chars.js';
-import { makeJackBoy, makeJackMan, makeOldJack } from './people.js';
+import { makeLabKids, makeJackBoy, makeJackMan, makeOldJack } from './chars.js';
 import { makeVarn, SHOW } from './varn.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -27,10 +26,10 @@ const CAST = [
   { id: 'mia', name: 'Mia', o: kids.mia, poses: KID_POSES, faces: true, h: 1.5, ref: [R('kids.jpg')], note: 'Pink overalls, yellow pigtails with pink bobbles. Story: kind, clever.' },
   { id: 'toby', name: 'Toby', o: kids.toby, poses: ['idle', 'run', 'wag', 'bark', 'sit'], h: 0.75, ref: [R('kids.jpg')], note: 'Golden puppy, red collar.' },
   { id: 'varn', name: 'Varn', v: V, h: 3.2, scale: 1, ref: [R('varn.jpg')], poses: ['show'], note: 'Giant guardian: teal scales, purple frills, glowing eyes. The sculpted model (varn.glb).' },
-  { id: 'yvarn', name: 'Young Varn', v: V2, h: 1.4, scale: 3.2, yv: true, ref: [R('yvarn.jpg')], poses: ['show'], note: 'Its own sculpt (rounder, friendlier), repainted in the same teal-and-violet palette with glowing rune lines.' },
-  { id: 'jack', name: 'Jack (boy)', o: jackB, poses: KID_POSES, faces: true, h: 1.5, ref: [R('jackboy.jpg')], note: 'The lost boy Varn befriends: tousled brown hair, big teal eyes, freckles, rolled sleeves, ragged vest and knee-length trousers.' },
-  { id: 'jackm', name: 'Jack (grown)', o: jackM, poses: KID_POSES, faces: true, h: 2.0, ref: [R('jackman.jpg')], note: 'Weathered, scruffy brown beard, laced cream shirt, long open teal vest, red-brown sash, leather bracers. No hat.' },
-  { id: 'old', name: 'Old Man Jack', o: oldM, poses: KID_POSES.concat(['talk']), faces: true, h: 1.9, ref: [R('oldman.jpg'), R('oldman2.jpg')], note: 'Hooded olive cloak, grey beard. The hood shades only his eyes (a story effect), his face and beard stay visible.' },
+  { id: 'yvarn', name: 'Young Varn', v: V2, h: 1.4, scale: 3.2, yv: true, ref: [R('yvarn.jpg')], poses: ['show'], note: 'Its own sculpt (rounder, friendlier), repainted in a lighter aqua than grown Varn, with glowing rune lines. The eyes are painted onto the eyeballs themselves.' },
+  { id: 'jack', name: 'Jack (boy)', o: jackB, poses: KID_POSES, faces: true, h: 1.5, ref: [R('jackboy.jpg')], note: 'The lost boy Varn befriends, built like Leo and Mia: messy brown hair, teal eyes, freckles, cream shirt with rolled sleeves, open teal waistcoat, red-brown sash, knee-length trousers.' },
+  { id: 'jackm', name: 'Jack (grown)', o: jackM, poses: KID_POSES, faces: true, h: 2.2, ref: [R('jackman.jpg')], note: 'Same face, grown up: messy brown hair, short beard as a raised block of colour, open-necked cream shirt, long torn teal vest, red-brown sash, leather bracers, boots. No hat.' },
+  { id: 'old', name: 'Old Man Jack', o: oldM, poses: KID_POSES.concat(['talk']), faces: true, h: 2.2, ref: [R('oldman.jpg'), R('oldman2.jpg')], note: 'Jack, old: olive hood and long ragged cloak, grey beard, shepherd\'s crook. The hood only shades his brow and eyes; his face stays visible.' },
 ];
 const all = () => CAST.map(c => c.o ? c.o.g : c.v.g);
 let cur = null, mode = 'one';
@@ -50,8 +49,9 @@ function show(id) {
   $('#side').style.width = ''; mode = 'one'; cur = CAST.find(c => c.id === id);
   CAST.forEach(c => { (c.o ? c.o.g : c.v.g).visible = false; });
   place(cur, 0, 0, 0.3); ring.visible = true;
-  const h = cur.h, tgt = [0, cur.v ? 1.9 : h * 0.5, 0];
-  cam([h * 1.0, h * 0.7 + 0.4, h * 2.3 + 1.2], tgt); ctl.target.set(...tgt);
+  $('#side').style.display = '';
+  const h = cur.h, tgt = [cur.yv ? 0.5 : 0, cur.yv ? 0.55 : cur.v ? 1.9 : h * 0.5, cur.yv ? 0.5 : 0];
+  if (cur.yv) cam([2.4, 1.2, 3.6], tgt); else cam([h * 1.0, h * 0.7 + 0.4, h * 2.3 + 1.2], tgt); ctl.target.set(...tgt);
   $('#nm').textContent = cur.name; $('#note').textContent = cur.note;
   $('#refs').innerHTML = cur.ref.map(r => `<img src="${r}" alt="story art" onerror="this.style.display='none'">`).join('') + '<small>Story art (reference)</small>';
   const pr = $('#pr'); pr.innerHTML = '<b>Pose</b>'; cur.poses.forEach((p, i) => { const b = btn(pr, p, b => { sel(pr, b); if (cur.o) cur.o.pose(p); }); if (i === 0) b.classList.add('on'); }); if (cur.o) cur.o.pose(cur.poses[0]);
@@ -63,16 +63,16 @@ function show(id) {
 function lineup() {
   mode = 'all'; cur = null; $('#nm').textContent = 'Lineup'; $('#note').textContent = 'All eight at the same stage. Kids and people are to scale with each other; the two Varns are shown at about a third of story size so they fit.';
   $('#refs').innerHTML = ''; $('#pr').innerHTML = ''; $('#fr').innerHTML = ''; $('#mr').innerHTML = '';
-  const xs = [-4.2, -3, -2.2, 0, 0, 1.4, 2.8, 4.2]; ring.visible = false;
-  CAST.forEach((c, i) => { place(c, c.id === 'varn' ? -4 : c.id === 'yvarn' ? 0.5 : xs[i], c.v ? -6 : 0, c.v ? 0.9 : 0.15); if (c.v) { c.v.g.scale.setScalar(c.scale * (c.id === 'varn' ? 0.4 : c.yv ? 0.8 : 0.55)); c.v.g.position.y = c.yv ? 0 : 1.2; } if (c.o && c.o.pose) c.o.pose('idle'); });
-  cam([0, 2.6, 9.5], [0, 1.1, -1]); $('#side').style.width = '220px';
+  const xs = [-3.6, -2.5, -1.7, 0, 0, 0.6, 2.0, 3.4]; ring.visible = false;
+  CAST.forEach((c, i) => { place(c, c.id === 'varn' ? -2 : c.id === 'yvarn' ? 4.6 : xs[i], c.id === 'varn' ? -10 : c.v ? -1.5 : 0, c.id === 'yvarn' ? -0.6 : c.v ? 0.9 : 0.15); if (c.v) { c.v.g.scale.setScalar(c.scale * (c.id === 'varn' ? 0.4 : c.yv ? 0.8 : 0.55)); c.v.g.position.y = c.yv ? 0 : 1.2; } if (c.o && c.o.pose) c.o.pose('idle'); });
+  cam([0, 2.4, 9.8], [0, 1.1, -1]); $('#side').style.display = 'none';
   [...$('#roster').children].forEach(b => b.classList.toggle('on', b.dataset.id === 'all'));
 }
 { const r = $('#roster'); btn(r, 'Lineup', lineup).dataset.id = 'all'; CAST.forEach(c => { const b = btn(r, c.name, () => show(c.id)); b.dataset.id = c.id; }); }
 const bgs = [['Cave', 0x0E1A22, 0x37424B], ['Gray shore', 0x9AA4A8, 0x6F7770], ['Daylight', 0x9FD8F5, 0x8CC95E], ['Studio', 0xDDDDDD, 0xBDBDBD]];
 { const r = document.createElement('div'); r.id = 'bg'; ui.append(r); bgs.forEach(([n, sky, gr]) => btn(r, n, () => { world.background = new THREE.Color(sky); if (world.fog) world.fog.color.set(sky); ground.material.color.set(gr); })); }
 show(new URLSearchParams(location.search).get('c') || 'leo'); if (location.search.includes('lineup')) lineup();
-window.__lab = { show, lineup, CAST, ctl, cam };
+window.__lab = { show, lineup, CAST, ctl, cam, V, SHOW };
 
 // ---- ?backdrop=1 : the 3D kids standing in front of the story illustration (style option B)
 if (location.search.includes('backdrop')) {

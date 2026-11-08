@@ -48,7 +48,7 @@ export const STOPS = [
   { n: 21, name: "Varn's Story", ep: 9, p: [27, 0.6, 12] },
 ];
 export const EPISODES = { 1: { title: 'The Cave', stops: [1, 2, 3] }, 2: { title: 'The Cave 2', stops: [4, 5, 6] }, 3: { title: 'The Cave 3: Leo’s Side', stops: [7, 8, 9] }, 4: { title: 'The Cave 4: The Lost Island', stops: [10, 11, 12] }, 5: { title: 'The Cave 5: Guard of the Stones', stops: [13, 14, 15] }, 6: { title: 'The Cave 6: The Old Man', stops: [16, 17, 18] } };
-export const MAX_EP = 6;
+export const MAX_EP = 5;   // episode 6 is built but held back until the visuals are redone
 export function buildMap(S, onPick) {
   const w = newWorld({ sky: 0xBFE6F7, ambientI: 1.5, sunI: 1.5, fog: [0xBFE6F7, 70, 140] }); const b = builder(w);
   // sea with a dark seabed under it, so the secret tunnel shows through the water

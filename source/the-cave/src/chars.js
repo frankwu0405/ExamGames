@@ -1,12 +1,12 @@
 // Leo, Mia and Toby as toon figures. Each has .g (group) and .pose(name); poses animate every frame.
-import { THREE, builder, onTick } from './gfx.js';
+import { THREE, builder, onTick, toon, outline } from './gfx.js';
 
 
 // ---- painted faces: one canvas per expression, swapped onto a curved patch of the head ----
 const FACE = { W: 512, H: 320 };
 function paintFace(expr, o) {
   const c = document.createElement('canvas'); c.width = FACE.W; c.height = FACE.H; const x = c.getContext('2d');
-  x.translate(256, 150); x.scale(1.4, 1.4); x.translate(-256, -165); x.lineCap = 'round'; x.lineJoin = 'round'; const ink = '#2A1B1B';
+  const FS = o.adult ? 1.25 : 1.4; x.translate(256, o.adult ? 140 : 150); x.scale(FS, FS); x.translate(-256, -165); x.lineCap = 'round'; x.lineJoin = 'round'; const ink = '#2A1B1B';
   const eye = (cx, cy, rx, ry, look = 0, lid = 0) => {
     x.save(); x.beginPath(); x.ellipse(cx, cy, rx, ry, 0, 0, 7); x.fillStyle = '#fff'; x.fill(); x.lineWidth = 5; x.strokeStyle = ink; x.stroke(); x.clip();
     const ir = Math.min(rx, ry) * 0.95; x.beginPath(); x.ellipse(cx + look, cy + ry * 0.08, ir * 0.8, ir, 0, 0, 7); x.fillStyle = o.iris; x.fill();
@@ -20,7 +20,7 @@ function paintFace(expr, o) {
   const brow = (cx, cy, w, tilt, lift = 0) => { x.strokeStyle = o.brow; x.lineWidth = o.lash ? 7 : 12; x.beginPath(); x.moveTo(cx - w, cy + lift - tilt); x.quadraticCurveTo(cx, cy + lift - 12 - Math.abs(tilt) * 0.2, cx + w, cy + lift + tilt); x.stroke(); };
   const cheek = () => { x.fillStyle = o.cheek; [150, 362].forEach(px => { x.globalAlpha = 0.55; x.beginPath(); x.ellipse(px, 218, 34, 20, 0, 0, 7); x.fill(); }); x.globalAlpha = 1; };
   const nose = () => { x.strokeStyle = o.nose; x.lineWidth = 6; x.beginPath(); x.moveTo(246, 196); x.quadraticCurveTo(256, 206, 266, 196); x.stroke(); };
-  const EX = 98, EY = 148, ER = 28, EH = 40;
+  const EX = o.ex || 98, EY = 148, ER = o.er || 28, EH = o.eh || 40;
   const E = { happy: () => { eye(256 - EX, EY, ER, EH, 3); eye(256 + EX, EY, ER, EH, -3); brow(256 - EX, 84, 30, 6, 0); brow(256 + EX, 84, 30, -6, 0); cheek(); nose();
       x.fillStyle = '#7A2230'; x.beginPath(); x.moveTo(204, 238); x.quadraticCurveTo(256, 250, 308, 238); x.quadraticCurveTo(300, 292, 256, 292); x.quadraticCurveTo(212, 292, 204, 238); x.fill();
       x.fillStyle = '#fff'; x.beginPath(); x.moveTo(214, 241); x.quadraticCurveTo(256, 252, 298, 241); x.lineTo(296, 252); x.quadraticCurveTo(256, 262, 216, 252); x.fill();
@@ -37,24 +37,34 @@ function paintFace(expr, o) {
       x.fillStyle = '#9fd8ff'; x.beginPath(); x.moveTo(160, 196); x.quadraticCurveTo(172, 222, 160, 236); x.quadraticCurveTo(148, 222, 160, 196); x.fill(); },
     blink: () => { [256 - EX, 256 + EX].forEach(cx => { x.strokeStyle = ink; x.lineWidth = 9; x.beginPath(); x.arc(cx, EY - 4, 28, 0.15, Math.PI - 0.15); x.stroke(); }); brow(256 - EX, 86, 30, 6, 0); brow(256 + EX, 86, 30, -6, 0); cheek(); nose();
       x.strokeStyle = ink; x.lineWidth = 8; x.beginPath(); x.moveTo(220, 250); x.quadraticCurveTo(256, 280, 292, 250); x.stroke(); } };
-  (E[expr] || E.happy)(); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
+  (E[expr] || E.happy)();
+  if (o.freckles) { x.fillStyle = o.freckles; x.globalAlpha = 0.6; [[-70, 200], [-52, 212], [-88, 214], [-60, 192], [70, 200], [52, 212], [88, 214], [60, 192]].forEach(([dx, dy]) => { x.beginPath(); x.arc(256 + dx, dy, 4.5, 0, 7); x.fill(); }); x.globalAlpha = 1; }
+  if (o.wrinkles) { x.strokeStyle = o.wrinkles; x.lineWidth = 4; [-1, 1].forEach(sd => { for (let k = 0; k < 3; k++) { x.beginPath(); x.moveTo(256 + sd * (EX + ER + 6), EY - 8 + k * 11); x.lineTo(256 + sd * (EX + ER + 26), EY - 16 + k * 15); x.stroke(); } });
+    for (let k = 0; k < 2; k++) { x.beginPath(); x.moveTo(256 - 60, 64 + k * 12); x.quadraticCurveTo(256, 56 + k * 12, 256 + 60, 64 + k * 12); x.stroke(); } }
+  x.setTransform(1, 0, 0, 1, 0, 0);
+  if (o.shade) { // the hood's shadow: a soft band over the brow and eyes, fading out downwards and towards the sides
+    const sc = document.createElement('canvas'); sc.width = 512; sc.height = 320; const y = sc.getContext('2d');
+    const gr = y.createLinearGradient(0, 0, 0, 178); gr.addColorStop(0, 'rgba(22,26,16,0.8)'); gr.addColorStop(0.6, 'rgba(22,26,16,0.55)'); gr.addColorStop(1, 'rgba(22,26,16,0)'); y.fillStyle = gr; y.fillRect(0, 0, 512, 178);
+    y.globalCompositeOperation = 'destination-in'; const hg = y.createLinearGradient(0, 0, 512, 0); hg.addColorStop(0, 'rgba(0,0,0,0)'); hg.addColorStop(0.1, 'rgba(0,0,0,1)'); hg.addColorStop(0.9, 'rgba(0,0,0,1)'); hg.addColorStop(1, 'rgba(0,0,0,0)'); y.fillStyle = hg; y.fillRect(0, 0, 512, 320);
+    x.globalCompositeOperation = 'source-atop'; x.drawImage(sc, 0, 0); x.globalCompositeOperation = 'destination-over'; x.drawImage(sc, 0, 0); x.globalCompositeOperation = 'source-over'; }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
 }
 const FACES = {};
 function facePatch(head, o) {
-  const key = o.iris + o.skin; const maps = FACES[key] || (FACES[key] = {});
+  const key = JSON.stringify(o); const maps = FACES[key] || (FACES[key] = {});
   const geo = new THREE.SphereGeometry(0.2735, 28, 18, Math.PI / 2 - 0.95, 1.9, Math.PI / 2 - 0.55, 1.2);
   const mat = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, toneMapped: false });
   const m = new THREE.Mesh(geo, mat); m.renderOrder = 2; head.add(m);
   const set = e => { mat.map = maps[e] || (maps[e] = paintFace(e, o)); mat.needsUpdate = true; };
   set('happy'); return { mesh: m, set };
 }
-function kid({ skin, shirt, legs, shoes, hair, face, overalls }) {
+function kid({ skin, shirt, legs, shoes, hair, face, overalls, sock, torso, sleeve, cuff }) {
   const g = new THREE.Group(); const b = builder(g);
   const limb = (x, y, parts) => { const p = new THREE.Group(); p.position.set(x, y, 0); g.add(p); parts(builder(p)); return p; };
   const E = (o, sx, sy, sz) => { o.scale.set(sx, sy, sz); return o; };
   const sole = (b) => { E(b.ball(0.1, 0xF4F1EA, 0, -0.485, 0.045, { line: 0.02, seg: 18 }), 1.0, 0.3, 1.6); E(b.ball(0.1, shoes, 0, -0.45, 0.04, { line: 0.02, seg: 18 }), 0.92, 0.6, 1.5); };
   // one smooth shape per limb / torso; colour is painted along its length
-  const W = 0xF4F1EA, cuffC = new THREE.Color(legs).lerp(new THREE.Color(0xffffff), 0.25).getHex();
+  const W = sock || 0xF4F1EA, cuffC = new THREE.Color(legs).lerp(new THREE.Color(0xffffff), 0.25).getHex();
   const leg = x => limb(x, 0.5, b => {
     const P = overalls
       ? [[0.001, -0.43, legs], [0.07, -0.425, cuffC], [0.098, -0.395, cuffC], [0.098, -0.36, cuffC], [0.088, -0.35, legs], [0.088, -0.2, legs], [0.098, -0.05, legs], [0.085, 0.04, legs], [0.001, 0.05, legs]]
@@ -62,7 +72,7 @@ function kid({ skin, shirt, legs, shoes, hair, face, overalls }) {
     b.paint(P, 0, 0, 0, { line: 0.02, seg: 22 }); if (!overalls) b.rbox(0.04, 0.09, 0.075, legs, x > 0 ? 0.105 : -0.105, -0.1, 0.02, { line: 0.012 }); sole(b); });
   const L = leg(-0.11), R = leg(0.11);
   const tee = shirt, bot = overalls ? legs : shirt, pk = new THREE.Color(legs).multiplyScalar(0.78).getHex();
-  const torsoFn = overalls ? (x, y, z, base) => {
+  const torsoFn = torso ? (x, y, z, base) => torso(x, y, z, base) : overalls ? (x, y, z, base) => {
     if (y > 1.1) return base; const ax = Math.abs(x);
     if (y < 0.86) return legs;
     if (z > 0 && ax < 0.1 && y < 1.0) return (ax < 0.052 && y > 0.885 && y < 0.95) ? pk : legs;      // bib + pocket
@@ -71,7 +81,9 @@ function kid({ skin, shirt, legs, shoes, hair, face, overalls }) {
   b.paint([[0.001, 0.5, bot], [0.195, 0.5, bot], [0.212, 0.55, bot], [0.2, 0.68, bot], [0.205, 0.84, bot], [0.208, 0.87, tee], [0.21, 0.9, tee], [0.2, 0.99, tee], [0.15, 1.05, tee], [0.095, 1.095, tee], [0.074, 1.12, skin], [0.07, 1.2, skin], [0.001, 1.2, skin]], 0, 0, 0, { line: 0.025, seg: 120, fn: torsoFn || undefined,
     bend: (x, y, z) => [0, 0, (y > 0.6 ? 0.012 * (1 - Math.abs(y - 0.95) / 0.35) : 0)] });
   const arm = x => limb(x, 0.96, b => {
-    b.paint([[0.001, 0.07, tee], [0.06, 0.05, tee], [0.07, -0.02, tee], [0.068, -0.12, tee], [0.056, -0.125, skin], [0.052, -0.2, skin], [0.043, -0.3, skin], [0.05, -0.34, skin], [0.066, -0.39, skin], [0.064, -0.43, skin], [0.03, -0.46, skin], [0.001, -0.465, skin]].reverse(), 0, 0, 0, { line: 0.02, seg: 20, bend: (x, y, z) => { const t = Math.max(0, (-0.12 - y) / 0.35); return [0, 0.02 * t * t, 0.09 * t * t + 0.0]; } });
+    const AP = sleeve === 'long' ? [[0.001, 0.07, tee], [0.06, 0.05, tee], [0.07, -0.02, tee], [0.067, -0.12, tee], [0.06, -0.2, tee], [0.066, -0.215, cuff || tee], [0.066, -0.265, cuff || tee], [0.048, -0.27, skin], [0.044, -0.3, skin], [0.05, -0.34, skin], [0.066, -0.39, skin], [0.064, -0.43, skin], [0.03, -0.46, skin], [0.001, -0.465, skin]]
+      : [[0.001, 0.07, tee], [0.06, 0.05, tee], [0.07, -0.02, tee], [0.068, -0.12, tee], [0.056, -0.125, skin], [0.052, -0.2, skin], [0.043, -0.3, skin], [0.05, -0.34, skin], [0.066, -0.39, skin], [0.064, -0.43, skin], [0.03, -0.46, skin], [0.001, -0.465, skin]];
+    b.paint(AP.reverse(), 0, 0, 0, { line: 0.02, seg: 20, bend: (x, y, z) => { const t = Math.max(0, (-0.12 - y) / 0.35); return [0, 0.02 * t * t, 0.09 * t * t + 0.0]; } });
     const th = b.ball(0.026, skin, Math.sign(x) * -0.045, -0.385, 0.045, { line: 0.012, seg: 10 }); });
   const AL = arm(-0.275), AR = arm(0.275);
   const head = new THREE.Group(); head.position.y = 1.32; g.add(head); const hb = builder(head);
@@ -141,7 +153,7 @@ function animate(c, kind) {
     if (s === 'hide') { c.AR.rotation.x = c.AL.rotation.x = 0.75; c.AR.rotation.z = -0.35; c.AL.rotation.z = 0.35; }
     if (s === 'sit') { c.L.rotation.x = c.R.rotation.x = -1.4; }
     c.head.rotation.z = s === 'idle' ? Math.sin(t * 1.5 + c.t0) * 0.05 : 0;
-    c.head.position.y = 1.32 + (run ? Math.abs(Math.sin(k)) * 0.04 : 0);
+    c.head.position.y = (c.headY || 1.32) + (run ? Math.abs(Math.sin(k)) * 0.04 : 0);
     { const bl = Math.sin(t * 0.9 + c.t0 * 2) > 0.985 && !c.forceFace; const e = c.forceFace || (bl ? 'blink' : (s === 'scared' || s === 'hide' ? 'scared' : s === 'wow' ? 'surprised' : s === 'cheer' || s === 'hug' || s === 'slide' ? 'happy' : s === 'reach' || s === 'hold' || s === 'run' ? 'determined' : 'happy')); if (e !== c.curFace) { c.curFace = e; c.fp.set(e); } }
     c.mouth.scale.y = s === 'scared' || s === 'hide' ? -1 : s === 'wow' ? -2 : 1; c.mouth.scale.x = s === 'wow' ? 0.8 : 1;
   };
@@ -209,36 +221,117 @@ export function makeOldMan(world) {
   world.add(g); return o;
 }
 
-// ---------------------------------------------------------------- Jack, three ages (lab designs)
-// Jack as the lost boy: messy brown hair, cream shirt, navy waistcoat.
-export function makeJackBoy(world) {
-  const SK = 0xF1CBA5, c = animate(kid({ skin: SK, shirt: 0xE9DDBF, legs: 0x4B3D31, shoes: 0x3A2A1E, face: { iris: '#3C86BE', skin: '#F1CBA5', brow: '#4A3220', cheek: '#EE8D79', nose: '#CE957C' }, hair: hb => {
-    const A = 0x6B4527, C = [0, 0.08, -0.06], R = 0.29;
-    hb.ball(R, A, ...C, { line: 0.02, seg: 24 }).scale.set(1.06, 0.98, 1.02);
-    [[-0.17, 0.2, 0.12], [0.1, 0.27, 0.1], [0.2, 0.17, 0.08], [-0.05, 0.3, 0.14], [0.0, 0.26, 0.2], [-0.24, 0.05, 0.02], [0.25, 0.04, 0.0]].forEach(([x, y, z]) => hb.ball(0.085, A, x, y, z, { line: 0, seg: 10 }));
-  } }), 'kid');
-  const b = builder(c.g); const v = b.ball(0.218, 0x2F4258, 0, 0.88, 0, { line: 0.02, seg: 22 }); v.scale.set(1, 0.62, 0.9);
-  b.ball(0.07, 0xE9DDBF, 0, 1.06, 0.12, { line: 0.012, seg: 12 }).scale.set(1.2, 0.5, 0.7);
-  c.g.traverse(o => { if (o.isMesh) o.userData.noRecv = true; }); world.add(c.g); onTick(c.tick); return c;
+// ---------------------------------------------------------------- Jack, three ages (built in the same toon language as Leo and Mia)
+const sm01 = v => { v = Math.max(0, Math.min(1, v)); return v * v * (3 - 2 * v); };
+const rnd = seed => () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+// a surface over the head sphere, described in (theta from the top, phi round from the front); rFn gives the radius, null = no surface there
+function headShell(head, color, { th0 = () => 0, th1, ph0 = -Math.PI, ph1 = Math.PI, rFn, nc = 150, nr = 30, line = 0.012, phWarp = null }) {
+  const pos = [], idx = [];
+  for (let i = 0; i <= nc; i++) { const ph = ph0 + (ph1 - ph0) * i / nc, a = th0(ph), b = th1(ph);
+    for (let j = 0; j <= nr; j++) { const v = j / nr, th = a + (b - a) * v, r = rFn(th, ph, v, a, b), pw = phWarp ? phWarp(ph, v) : ph;
+      pos.push(r * Math.sin(th) * Math.sin(pw), r * Math.cos(th), r * Math.sin(th) * Math.cos(pw)); } }
+  for (let i = 0; i < nc; i++) for (let j = 0; j < nr; j++) { const a = i * (nr + 1) + j, b = a + nr + 1; idx.push(a, a + 1, b, a + 1, b + 1, b); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+  const m = new THREE.Mesh(g, toon(color, { side: THREE.DoubleSide })); if (line) outline(m, line); head.add(m); m.castShadow = true; return m;
 }
-// Jack, grown: a captain with a long coat, tricorn hat and a rough brown beard.
+// messy hair: a cap with uneven, slightly pointed tufts round the edge and a few soft peaks on the crown (no balls)
+function messyHair(head, color, { front = 0.98, back = 2.05, R = 0.288, tufts = 15, jag = 0.2, peaks = 9, seed = 7, sweep = 0.22 } = {}) {
+  const r = rnd(seed), T = Array.from({ length: tufts }, () => 0.55 + r() * 0.75), PH = r() * 6.28;
+  const pk = Array.from({ length: peaks }, () => ({ th: 0.25 + r() * 0.75, ph: (r() - 0.5) * 2 * Math.PI, a: 0.035 + r() * 0.045, w: 0.32 + r() * 0.2 }));
+  const tri = ph => { const u = ((ph + Math.PI) / (2 * Math.PI)) * tufts + PH, k = Math.floor(u), f = u - k; return { t: 1 - Math.abs(2 * f - 1), L: T[((k % tufts) + tufts) % tufts] }; };
+  const edge = ph => { const a = Math.abs(ph) / Math.PI, { t, L } = tri(ph); return front + (back - front) * Math.pow(a, 1.25) + jag * L * t * (1 - 0.35 * a); };
+  return headShell(head, color, { th1: edge, rFn: (th, ph, v) => { let rr = R * (1 + 0.018 * Math.sin(ph * 7 + th * 9) * Math.cos(ph * 3 - th * 5));
+      pk.forEach(p => { const d = Math.hypot((th - p.th), Math.sin((ph - p.ph) / 2) * 2 * Math.max(0.3, Math.sin(th))); rr += p.a * Math.pow(Math.max(0, 1 - d / p.w), 1.7); });
+      const { t, L } = tri(ph); return rr * (1 + 0.1 * v * v * v * t * L); },
+    phWarp: (ph, v) => ph + sweep * v * v * Math.cos(ph) });
+}
+// a beard as a raised block of colour that hugs the face; the mouth stays clear
+function beard(head, color, { top = 2.17, bottom = 2.82, cheek = 1.72, side = 1.4, width = 1.4, R = 0.27, lift = 0.022, full = 0.03, point = 0, seed = 3 } = {}) {
+  const r = rnd(seed), J = Array.from({ length: 12 }, () => r());
+  const t0 = ph => { const a = Math.abs(ph); return top - (top - cheek) * sm01((a - 0.3) / 0.24) - (cheek - side) * sm01((a - 0.62) / 0.7); };
+  const t1 = ph => { const a = Math.abs(ph), k = Math.floor((ph / width + 1) * 5.5); return bottom + point * (1 - sm01(a / 0.5)) - (bottom - 2.35) * sm01((a - 0.75) / 0.65) + 0.05 * (J[Math.max(0, Math.min(11, k))] - 0.5); };
+  const rf = (th, ph, v, a, b) => { const e = Math.min(v, 1 - v, (width - Math.abs(ph)) / 0.08); return R * (1 + 0.004 + (lift + full * sm01((th - top) / 0.5)) * sm01(e / 0.12)) + 0.0025 * Math.sin(th * 40 + ph * 23); };
+  const bm = headShell(head, color, { th0: t0, th1: t1, ph0: -width, ph1: width, rFn: rf, nc: 90, nr: 26 });
+  // moustache, joined to the beard at the corners of the mouth
+  const mt0 = ph => 1.765 + 0.12 * sm01((Math.abs(ph) - 0.2) / 0.16), mt1 = ph => 1.86 + 0.32 * sm01((Math.abs(ph) - 0.16) / 0.22);
+  const mm = headShell(head, color, { th0: mt0, th1: mt1, ph0: -0.46, ph1: 0.46, rFn: (th, ph, v) => R * (1 + 0.004 + lift * 1.1 * sm01(Math.min(v, 1 - v, (0.46 - Math.abs(ph)) / 0.1) / 0.15)), nc: 40, nr: 10 });
+  return [bm, mm];
+}
+// a grown-up body in the kids' style: same lathe-painted shapes, longer legs, broader chest, slightly smaller head
+function adult({ skin, shirt, sleeve, cuffC, legsC, boots, bootCuff, torso, face, hair, bracer, headS = 0.93 }) {
+  const g = new THREE.Group(); const b = builder(g);
+  const limb = (x, y, parts) => { const p = new THREE.Group(); p.position.set(x, y, 0); g.add(p); parts(builder(p)); return p; };
+  const HIP = 0.86;
+  const leg = x => limb(x, HIP, q => {
+    q.paint([[0.001, -0.86, boots], [0.075, -0.855, boots], [0.096, -0.82, boots], [0.094, -0.66, boots], [0.104, -0.64, bootCuff], [0.104, -0.58, bootCuff], [0.086, -0.57, legsC], [0.092, -0.4, legsC], [0.108, -0.2, legsC], [0.118, -0.02, legsC], [0.001, 0.05, legsC]], 0, 0, 0, { line: 0.02, seg: 22 });
+    const toe = q.ball(0.1, boots, 0, -0.81, 0.07, { line: 0.02, seg: 16 }); toe.scale.set(0.95, 0.55, 1.35); });
+  const L = leg(-0.125), R = leg(0.125);
+  b.paint([[0.001, 0.84, legsC], [0.24, 0.84, legsC], [0.252, 0.92, legsC], [0.238, 1.04, shirt], [0.24, 1.12, shirt], [0.258, 1.3, shirt], [0.252, 1.42, shirt], [0.2, 1.5, shirt], [0.12, 1.55, shirt], [0.085, 1.575, skin], [0.08, 1.66, skin], [0.001, 1.66, skin]], 0, 0, 0, { line: 0.025, seg: 120, fn: torso ? (x, y, z, base) => torso(x, y, z, base) : undefined,
+    bend: (x, y, z) => [0, 0, (y > 0.95 ? 0.016 * (1 - Math.abs(y - 1.3) / 0.4) : 0)] });
+  const arm = x => limb(x, 1.42, q => {
+    const BR = bracer || sleeve;
+    q.paint([[0.001, 0.07, sleeve], [0.07, 0.05, sleeve], [0.084, -0.02, sleeve], [0.08, -0.2, sleeve], [0.072, -0.34, sleeve], [0.078, -0.36, BR], [0.078, -0.52, BR], [0.07, -0.53, cuffC || sleeve], [0.068, -0.56, cuffC || sleeve], [0.054, -0.57, skin], [0.05, -0.6, skin], [0.06, -0.63, skin], [0.074, -0.68, skin], [0.072, -0.72, skin], [0.035, -0.75, skin], [0.001, -0.755, skin]].reverse(), 0, 0, 0, { line: 0.02, seg: 20, bend: (x, y, z) => { const t = Math.max(0, (-0.3 - y) / 0.45); return [0, 0.02 * t * t, 0.1 * t * t]; } });
+    q.ball(0.03, skin, Math.sign(x) * -0.05, -0.67, 0.07, { line: 0.012, seg: 10 }); });
+  const AL = arm(-0.33), AR = arm(0.33);
+  const head = new THREE.Group(); head.position.y = 1.86; head.scale.setScalar(headS); g.add(head); const hb = builder(head);
+  hb.ball(0.27, skin, 0, 0, 0, { line: 0.025, seg: 28 });
+  [-1, 1].forEach(sx => { const e = hb.ball(0.055, skin, sx * 0.262, -0.01, 0, { line: 0.015, seg: 14 }); e.scale.set(0.5, 1, 0.8); });
+  const fp = facePatch(head, face); hair && hair(hb, head);
+  return { g, L, R, AL, AR, head, mouth: new THREE.Object3D(), fp, face, headY: 1.86 };
+}
+const finish = (c, world) => { c.g.traverse(o => { if (o.isMesh) o.userData.noRecv = true; }); world.add(c.g); onTick(c.tick); return c; };
+
+// Jack as the lost boy: tousled brown hair, teal eyes, freckles, cream shirt with rolled sleeves, open teal waistcoat, red-brown sash, knee-length trousers, brown shoes
+export function makeJackBoy(world) {
+  const SK = 0xF2CDA8, SH = 0xE7DDC2, VE = 0x36535F, SA = 0x8A3B2C, TR = 0x6F6A47;
+  const c = animate(kid({ skin: SK, shirt: SH, legs: TR, shoes: 0x5A3A22, sock: SK, sleeve: 'long', cuff: 0xD8CCAE,
+    face: { iris: '#2E9AA6', skin: '#F2CDA8', brow: '#6A4626', cheek: '#EC8B76', nose: '#CF957A', freckles: '#C07A55' },
+    torso: (x, y, z) => { if (y < 0.66) return TR; if (y < 0.75) return SA; if (y > 1.06) return SH; if (z > 0 && Math.abs(x) < 0.045 + (y - 0.75) * 0.12) return SH; return VE; },
+    hair: (hb, head) => messyHair(head, 0x7A532C, { front: 1.0, back: 2.55, seed: 11 }) }), 'kid');
+  return finish(c, world);
+}
+// Jack, grown: the same face older, scruffy brown hair and a short beard; laced cream shirt, long open teal vest, sash, leather bracers, boots. No hat.
 export function makeJackMan(world) {
-  const SK = 0xD9A67C, c = animate(kid({ skin: SK, shirt: 0x36546A, legs: 0x3A2E26, shoes: 0x2B2019, face: { iris: '#4A3320', skin: '#D9A67C', brow: '#33231A', cheek: '#C77A5E', nose: '#A9704F' }, hair: hb => {
-    const A = 0x5A3B20;
-    hb.ball(0.285, A, 0, 0.09, -0.06, { line: 0.02, seg: 22 }).scale.set(1.04, 0.95, 1.0);
-    // beard hugging the jaw, leaving the mouth clear
-    [[-0.2, -0.08, 0.1], [0.2, -0.08, 0.1], [-0.17, -0.19, 0.12], [0.17, -0.19, 0.12], [-0.09, -0.27, 0.14], [0.09, -0.27, 0.14], [0, -0.31, 0.13], [-0.22, 0.0, 0.05], [0.22, 0.0, 0.05]].forEach(([x, y, z]) => hb.ball(0.06, A, x * 0.95, y, z, { line: 0.01, seg: 10 }));
-    // tricorn
-    const hat = hb.cyl(0.36, 0.3, 0.07, 0x2A2420, 0, 0.27, -0.02, { line: 0.02, seg: 3 }); hat.rotation.y = Math.PI / 2;
-    hb.cyl(0.2, 0.22, 0.15, 0x2A2420, 0, 0.35, -0.02, { line: 0.02, seg: 16 });
-    hb.box(0.14, 0.02, 0.02, 0xD8CBA0, 0, 0.31, 0.2, { line: 0 });
-  } }), 'kid');
-  const b = builder(c.g);
-  b.paint([[0.001, 0.3, 0x36546A], [0.3, 0.32, 0x2C4557], [0.26, 0.6, 0x36546A], [0.235, 0.92, 0x36546A], [0.225, 1.06, 0x36546A], [0.08, 1.1, 0x36546A]], 0, 0, 0, { line: 0.025, seg: 24 });
-  b.box(0.5, 0.07, 0.4, 0x7B2E2A, 0, 0.82, 0, { line: 0.02 });
-  b.box(0.06, 0.07, 0.04, 0xD8B64A, 0, 0.82, 0.21, { line: 0.01 });
-  c.g.scale.set(1.12, 1.42, 1.12); c.head.scale.set(0.84, 0.72, 0.84);
-  c.g.traverse(o => { if (o.isMesh) o.userData.noRecv = true; }); world.add(c.g); onTick(c.tick); return c;
+  const SK = 0xDFAE86, SH = 0xDCD1B4, VE = 0x34505C, SA = 0x7E3528, TR = 0x6A6544;
+  const c = animate(adult({ skin: SK, shirt: SH, sleeve: SH, cuffC: 0xCFC3A4, bracer: 0x6B4A2E, legsC: TR, boots: 0x4A3220, bootCuff: 0x5C3E27,
+    face: { adult: true, er: 26, eh: 33, ex: 96, iris: '#4F7F8C', skin: '#DFAE86', brow: '#4A2F1A', cheek: '#D7967A', nose: '#B67E5C' },
+    torso: (x, y, z) => { const ax = Math.abs(x); if (y < 0.96) return TR; if (y < 1.07) return SA; if (z > 0 && y > 1.36 && ax < (y - 1.36) * 0.9) return SK; if (z > 0 && ax < 0.06 + (y - 1.07) * 0.1) return SH; return VE; },
+    hair: (hb, head) => { messyHair(head, 0x5E4024, { front: 0.95, back: 2.6, seed: 23, jag: 0.17 }); beard(head, 0x553A22, { top: 2.17, bottom: 2.78, seed: 5 }); } }), 'kid');
+  c.headY = 1.86;
+  // long open vest tails, torn at the hem
+  const r = rnd(41), N = 22, pos = [], idx = []; const a0 = Math.PI * 0.16, a1 = Math.PI * 1.84;
+  for (let i = 0; i <= N; i++) { const a = a0 + (a1 - a0) * i / N, hem = 0.5 + (i % 2 ? 0.05 : 0) + r() * 0.04;
+    [[0.26, 1.1], [0.29, 0.8], [0.32, hem]].forEach(([rr, y]) => pos.push(Math.sin(a) * rr, y, Math.cos(a) * rr)); }
+  for (let i = 0; i < N; i++) for (let j = 0; j < 2; j++) { const p = i * 3 + j, q = p + 3; idx.push(p, p + 1, q, p + 1, q + 1, q); }
+  const vg = new THREE.BufferGeometry(); vg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); vg.setIndex(idx); vg.computeVertexNormals();
+  const vm = new THREE.Mesh(vg, toon(VE, { side: THREE.DoubleSide })); outline(vm, 0.015); c.g.add(vm);
+  return finish(c, world);
+}
+// Jack, old: the hooded stranger. Olive cloak and hood, grey beard; the hood only shades his eyes.
+export function makeOldJack(world) {
+  const SK = 0xE2BC98, CL = 0x5E6540, CL2 = 0x4A5033, TU = 0x463F30;
+  const c = animate(adult({ skin: SK, shirt: TU, sleeve: CL, cuffC: CL2, legsC: 0x3A3428, boots: 0x4A3220, bootCuff: 0x4A3220, headS: 0.92,
+    face: { adult: true, er: 25, eh: 30, ex: 96, iris: '#6F7F86', skin: '#E2BC98', brow: '#C9C7BE', cheek: '#E0A58A', nose: '#B98563', wrinkles: '#B08566', shade: true },
+    hair: (hb, head) => {
+      beard(head, 0xD3D3CB, { top: 2.15, bottom: 2.95, point: 0.12, full: 0.045, seed: 9 });
+      // the hood: open at the face, falling to the shoulders
+      headShell(head, CL, { th0: ph => 0, th1: ph => { const a = Math.abs(ph); return 1.1 + 0.12 * sm01((a - 0.25) / 0.25) + 1.05 * sm01((a - 0.44) / 0.3) + 0.25 * sm01((a - 1.0) / 1.5); }, rFn: (th, ph, v) => 0.335 * (1 + 0.04 * Math.sin(ph * 5 + th * 3)) * (1 + 0.12 * sm01((th - 1.6) / 0.8)), nc: 140, nr: 26, line: 0.016 });
+      
+    } }), 'kid');
+  c.headY = 1.86;
+  // cloak: from the shoulders to the ground, open at the front, ragged hem
+  const r = rnd(77), N = 30, pos = [], idx = []; const a0 = Math.PI * 0.14, a1 = Math.PI * 1.86;
+  for (let i = 0; i <= N; i++) { const a = a0 + (a1 - a0) * i / N, hem = 0.1 + (i % 2 ? 0.07 : 0) + r() * 0.06;
+    [[0.2, 1.62], [0.31, 1.45], [0.34, 1.1], [0.4, 0.6], [0.45, hem]].forEach(([rr, y]) => pos.push(Math.sin(a) * rr, y, Math.cos(a) * rr)); }
+  for (let i = 0; i < N; i++) for (let j = 0; j < 4; j++) { const p = i * 5 + j, q = p + 5; idx.push(p, p + 1, q, p + 1, q + 1, q); }
+  const cg = new THREE.BufferGeometry(); cg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); cg.setIndex(idx); cg.computeVertexNormals();
+  const cm = new THREE.Mesh(cg, toon(CL, { side: THREE.DoubleSide })); outline(cm, 0.016); c.g.add(cm);
+  // a rope belt and a shepherd's crook in his right hand
+  const bb = builder(c.g); bb.torus(0.25, 0.022, 0x6B5638, 0, 1.0, 0, { rx: Math.PI / 2, line: 0.008, seg: 28 });
+  const st = new THREE.Group(); st.position.set(0, -0.68, 0.08); c.AR.add(st); const sb = builder(st);
+  sb.cyl(0.028, 0.034, 2.0, 0x6B4A2E, 0, 0.3, 0, { line: 0.012, seg: 10 }); sb.torus(0.11, 0.028, 0x6B4A2E, 0.11, 1.3, 0, { arc: Math.PI * 1.2, rz: 0.05, line: 0.01, seg: 16 });
+  c.staff = st;
+  return finish(c, world);
 }
 export function makeLabKids(world) {
   const leo = animate(LEO(), 'kid'), mia = animate(MIA(), 'kid'), toby = animate(dog(), 'dog');
