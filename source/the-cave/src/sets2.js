@@ -128,9 +128,9 @@ export function crystalRoom(w) {
   mesh(w, lumpy(3.4, 2, 0.2, 0.9), lm, LEDGE.x + 1, LEDGE.y - 6.2, LEDGE.z + 2, { sc: [1, 1.2, 0.9], shadow: false });
   { const top = new THREE.Mesh(new THREE.CylinderGeometry(4.6, 4.9, 0.6, 26), rockMat(0x8A80A0, 0.35)); top.position.set(LEDGE.x + 1.6, LEDGE.y - 0.3, LEDGE.z + 1.4); top.scale.set(1.5, 1, 1.2); w.add(top); outline(top, 0.04); }
   mesh(w, lumpy(3.8, 3, 0.14, 0.7), lm, LEDGE.x + 5, LEDGE.y - 2, LEDGE.z + 3.5, { sc: [1.1, 0.7, 1], shadow: false });
-  for (let i = 0; i < 12; i++) { const a = rnd() * 6.28, r = rr(1.4, 4); mesh(w, lumpy(rr(0.15, 0.35), 1, 0.3, 0.7), lm, LEDGE.x + Math.cos(a) * r, LEDGE.y + 0.05, LEDGE.z + 0.6 + Math.sin(a) * r, { ry: rnd() * 6 }); }
+  for (let i = 0; i < 12; i++) { const a = rnd() * 6.28, r = rr(1.4, 4), x = LEDGE.x - 1.5 + Math.cos(a) * r - 2.5; if (x > LEDGE.x - 2.4) continue; mesh(w, lumpy(rr(0.15, 0.35), 1, 0.3, 0.7), lm, x, LEDGE.y + 0.05, LEDGE.z + 0.6 + Math.sin(a) * r, { ry: rnd() * 6 }); }   // (rubble only off to the side, never on Leo's way to the slide)
   [[-3.2, 2.4], [-3.6, -1.2], [2.8, 3.2]].forEach(([dx, dz]) => crystalCluster(w, LEDGE.x + dx, LEDGE.y, LEDGE.z + dz, { n: 4, size: 0.55, cols: PAL.rainbow, light: false }));
-  caveMouth(w, MOUTH.clone().setY(LEDGE.y), new THREE.Vector3(0, 0, -1), { r: 1.6, mat: lm, stream: false, sandTop: false });
+  caveMouth(w, MOUTH.clone().setY(LEDGE.y), new THREE.Vector3(0, 0, -1), { r: 1.6, mat: lm, stream: false, sandTop: false, formations: false });
   // the spring pouring out of the wall into a stone pool, the slide down to the floor, and the river running out of the cavern
   { const fall = new THREE.CylinderGeometry(0.35, 0.5, 2, 12, 6, true); water(w, fall, { deep: 0x5BC4F0, shallow: 0xCFF6FF, flow: [0, -2], opacity: 0.85, speed: 1.6 }).position.set(SPRING.x, SPRING.y - 1, SPRING.z - 0.6); }
   { const pool = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.4, 0.6, 16), rockMat(0x8A80A0, 0.4)); pool.position.set(SPRING.x, LEDGE.y + 0.1, SPRING.z - 1.6); w.add(pool); outline(pool, 0.04);
@@ -143,7 +143,7 @@ export function crystalRoom(w) {
     onTick(t => splash.children.forEach(m => { const k = (t * 1.6 + m.userData.ph / 8) % 1; m.position.set(Math.cos(m.userData.ph) * k * 1.3, Math.sin(k * Math.PI) * 1.0, Math.sin(m.userData.ph) * k * 1.3); })); }
   // crystals: green along the track, rainbow on the far floor and all over the walls and roof
   const trackD = (x, z) => { let d = 1e9; for (let i = 0; i <= 120; i++) { const q = path.getPointAt(sIn + (sOut - sIn) * i / 120); d = Math.min(d, Math.hypot(q.x - x, q.z - z)); } return d; };
-  const clear = (x, z) => trackD(x, z) > 3.4 && rDist(x, z) > 4 && Math.hypot(x - LEDGE.x, z - LEDGE.z) > 6.5;
+  const clear = (x, z) => trackD(x, z) > 3.4 && rDist(x, z) > 5.5 && Math.hypot(x - LEDGE.x, z - LEDGE.z) > 6.5;
   for (let i = 0, n = 0; i < 160 && n < 46; i++) { const a = rnd() * Math.PI * 2, r = rr(0.3, 0.92), x = RC.x + Math.cos(a) * RX * r, z = RC.z + Math.sin(a) * RZ * r; if (!clear(x, z) || inRoom(new THREE.Vector3(x, 0, z)) > 0.82) continue;
     const td = trackD(x, z); crystalCluster(w, x, hf(x, z) - 0.1, z, { n: 7, size: rr(0.8, 1.8), cols: td < 9 ? GREENS : PAL.rainbow, light: n % 7 === 0 }); n++; }
   for (let i = 0; i < 40; i++) { const a = rnd() * Math.PI * 2, el = rr(0.02, 0.3), nx = Math.cos(a) * Math.cos(el * 1.3), ny = Math.sin(el * 1.3), nzz = Math.sin(a) * Math.cos(el * 1.3);

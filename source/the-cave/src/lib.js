@@ -19,6 +19,6 @@ import { buildCliff, buildShelf, buildCrack } from './sets3.js';
 import { stop16, stop17, stop18, sumUp6 } from './ep6.js';
 import { buildGrayShore } from './sets6.js';
 import { S, load } from './core.js';
-import { init, camera, renderer, THREE } from './gfx.js';
-window.__caveApi = { THREE, stop16, stop17, stop18, sumUp6, buildGrayShore, save, audioInit, sfx, say, h, wait, englishVoices, setVoice, currentVoice, hush, setCam, flyCam, pickAt, stopFollow, newWorld, buildMap, STOPS, setCamRef, EPISODES, MAX_EP, mountUI, hideStory, hideTask, MODE, ownedCount, cardTotal, CARDS, cardSrc, playMusic, setMusic, cloudsIn, cloudsCovered, cloudsOut, stop1, stop2, stop3, sumUp, stop4, stop5, stop6, sumUp2, stop7, stop8, stop9, sumUp3, stop10, stop11, stop12, sumUp4, stop13, stop14, stop15, sumUp5, debugVarn, buildBeach, makeCast, makeVarn, buildCliff, buildShelf, buildCrack,
+import { init, camera, renderer, THREE, scene } from './gfx.js';
+window.__caveApi = { THREE, scene: () => scene, stop16, stop17, stop18, sumUp6, buildGrayShore, save, audioInit, sfx, say, h, wait, englishVoices, setVoice, currentVoice, hush, setCam, flyCam, pickAt, stopFollow, newWorld, buildMap, STOPS, setCamRef, EPISODES, MAX_EP, mountUI, hideStory, hideTask, MODE, ownedCount, cardTotal, CARDS, cardSrc, playMusic, setMusic, cloudsIn, cloudsCovered, cloudsOut, stop1, stop2, stop3, sumUp, stop4, stop5, stop6, sumUp2, stop7, stop8, stop9, sumUp3, stop10, stop11, stop12, sumUp4, stop13, stop14, stop15, sumUp5, debugVarn, buildBeach, makeCast, makeVarn, buildCliff, buildShelf, buildCrack,
   load, init, S: () => S, camera: () => camera, renderer: () => renderer };

@@ -185,8 +185,9 @@ export async function stop9() {
   letterbox(true); leo.pose('idle');
   const slideLines = (async () => { await beat('Next to the cliff, he found a smooth rock path filled with rushing water.'); await beat('It looked just like a fun water slide!'); tell('Leo took a deep breath, pinched his nose, and jumped right in.', { wait: false }); })();
   cut([LEDGE.x - 3.4, LEDGE.y + 3.2, LEDGE.z - 7.5], [SPRING.x + 1, LEDGE.y - 1, LEDGE.z + 2], 52); dolly([LEDGE.x - 2.6, LEDGE.y + 3.6, LEDGE.z - 8.2], [SPRING.x + 1.5, LEDGE.y - 1.5, LEDGE.z + 1], 8000);
-  await run(leo, [SPRING.x - 1.6, LEDGE.y + 0.05, LEDGE.z + 2.2], 1400);
-  const sp0 = K.slidePath.getPointAt(0.04); leo.g.rotation.y = Math.PI / 2; await wait(1500); await slideLines; await tapOn();
+  // he runs along the ledge to where the slide starts (standing beside it, on the ledge — not into the cliff)
+  const sp0 = K.slidePath.getPointAt(0.04), st0 = K.slidePath.getTangentAt(0.04);
+  await run(leo, [sp0.x - st0.z * 1.3 - st0.x * 0.4, LEDGE.y + 0.05, sp0.z + st0.x * 1.3 - st0.z * 0.4], 1400); leo.g.rotation.y = Math.atan2(sp0.x - leo.g.position.x, sp0.z - leo.g.position.z); await wait(1500); await slideLines; await tapOn();
   // whee! sitting down, all the way down the slide…
   playMusic('danger'); sfx('whoosh'); await moveTo(leo.g, [sp0.x, sp0.y + 0.05, sp0.z], 450, { hop: 0.8 }); leo.pose('slide');
   const cam = new THREE.Vector3(), look = new THREE.Vector3(); let sl = 0.04; leo.g.rotation.order = 'YXZ';
@@ -196,15 +197,21 @@ export async function stop9() {
   stopFollow(); const endP = K.slidePath.getPointAt(1), endT = K.slidePath.getTangentAt(1);
   cut([endP.x + 6, endP.y + 2.2, endP.z + 3], [endP.x + 1, endP.y, endP.z - 2], 50);
   await tween(600, (e, k) => { leo.g.position.copy(endP).addScaledVector(endT, k * 2.5).add(new THREE.Vector3(0, Math.sin(k * Math.PI) * 1.2 - k * 0.9, 0)); });
-  sfx('crash'); sparkles(endP.clone().addScaledVector(endT, 2.5).add(new THREE.Vector3(0, 0.3, 0)), 0xE6F6FF, 50); leo.g.visible = false; await wait(700);
-  // ---- the river: spinning in the swift water
+  sfx('crash'); sparkles(endP.clone().addScaledVector(endT, 2.5).add(new THREE.Vector3(0, 0.3, 0)), 0xE6F6FF, 50);
+  // the river grabs him and sweeps him away along the cavern floor, spinning, into its dark tunnel
+  const RP = K.riverPath; let ru = 0.06; const rp = new THREE.Vector3(), rq = new THREE.Vector3(); leo.pose('scared'); leo.g.rotation.set(0, 0, 0);
+  followCam(() => { RP.getPointAt(Math.min(ru, 1), rp); RP.getPointAt(Math.max(0, ru - 0.14), rq); const t = RP.getTangentAt(Math.min(ru, 1)); cam.copy(rq).add(new THREE.Vector3(-t.z * 1.2, 3.6, t.x * 1.2)); look.copy(rp).add(new THREE.Vector3(0, -0.6, 0)); return [cam, look]; });
+  const swept = beat('Whoosh! The slide dropped him into the deep river.');
+  await tween(4600, (e, k) => { ru = 0.06 + k * 0.84; RP.getPointAt(ru, rp); leo.g.position.set(rp.x, -1.55 + Math.sin(e * 24) * 0.06, rp.z); leo.g.rotation.y += 0.11; });
+  const dark = h('div', { class: 'veil', style: { background: '#05070C' } }); document.body.append(dark); await wait(450); stopFollow();
+  // ---- the river (further down, in the dark): still spinning in the swift water
   const V = buildRiver({ exitZ: -62 }); V.R.g.visible = false; V.gates.forEach(g => g.visible = false);
   const L = V.leo; V.leoLog.remove(L.g); V.w.add(L.g); L.pose('scared'); L.g.position.set(0, -0.6, -6);
   V.leoLog.position.set(-2.2, 0.1, 2); V.leoLog.rotation.y = Math.PI / 2;
   let spin = true; const sOff = onTick((t, dt) => { if (spin) { L.g.rotation.y += dt * 3; L.g.position.y = -0.6 + Math.sin(t * 3) * 0.08; } });
-  sfx('crash'); sparkles(new THREE.Vector3(0, 0.3, -6), 0xE6F6FF, 40);
-  letterbox(true); cut([3.2, 3.4, 0], [0, 0, -6], 50);
-  await beat('Whoosh! The slide dropped him into the deep river.'); await tell('The water was far too swift, and Leo spun around in the fast water.');
+  letterbox(true); cut([3.2, 3.4, 0], [0, 0, -6], 50); dolly([2.6, 3.0, -1.5], [0, -0.2, -6.5], 6000);
+  dark.classList.add('out'); setTimeout(() => dark.remove(), 900);
+  await swept; await tell('The water was far too swift, and Leo spun around in the fast water.');
   // ---- science: what floats?
   tell('He needed something to help him stay up.', { wait: false });
   await think(pickV(9, [

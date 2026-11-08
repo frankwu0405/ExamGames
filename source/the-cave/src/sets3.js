@@ -92,6 +92,6 @@ export function buildCliff() {
   const toRide = s => (s - s0) / (s1 - s0);
   // ---- Leo, on the ledge
   const cast = makeCast(w); cast.mia.g.visible = false; cast.toby.g.visible = false; const leo = cast.leo;
-  leo.g.position.set(K.LEDGE.x - 0.6, K.LEDGE.y + 0.05, K.LEDGE.z - 1.2); leo.g.rotation.y = Math.PI;
+  leo.g.position.set(K.LEDGE.x - 0.6, K.LEDGE.y + 0.05, K.LEDGE.z - 2.2);   // near the front edge, where the camera can see him over the cavern leo.g.rotation.y = Math.PI;
   return { w, leo, LEDGE: K.LEDGE, MOUTH: K.MOUTH, SPRING: K.SPRING, tiny, hitBox, ride, slidePath: K.slidePath, riverPath: K.riverPath, G: K.G, track: K.path, sA: toRide(K.sA), sB: toRide(K.sB) };
 }

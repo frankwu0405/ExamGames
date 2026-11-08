@@ -23,8 +23,8 @@ export async function stop10() {
   const HC = I.HC, cam = new THREE.Vector3(), look = new THREE.Vector3(); let u0 = 0, climbing = false; const S0 = I.START[0];
   // first a moment on the beach: they stand and look up at the tall hill behind them, before setting off
   leo.pose('point'); mia.pose('wow'); dog.pose('sit');
-  setCam([S0[0] + 13, 2.8, S0[1] - 8], [S0[0] - 6, 5, S0[1] + 1]);
-  await wait(1400); await flyCam([S0[0] + 7, 4.2, S0[1] - 3.5], [S0[0] - 5, 4, S0[1]], 2800); await wait(700);
+  setCam([S0[0] + 12, 3, S0[1] + 9], [S0[0] - 6, 5, S0[1] - 1]);
+  await wait(1400); await flyCam([S0[0] + 7, 4.2, S0[1] + 5], [S0[0] - 5, 4, S0[1] - 1], 2800); await wait(700);
   K.forEach(c => c.pose(c === dog ? 'run' : 'walk')); climbing = true;
   const lag = [0.04, 0, -0.04], sm = v => { v = Math.max(0, Math.min(1, v)); return v * v * (3 - 2 * v); };
   const cOff = onTick((t, dt) => { if (!climbing) return; u0 = Math.min(1.06, u0 + dt / 22);
@@ -95,7 +95,7 @@ export async function stop11() {
   await run(dog, [-4.3, 0, -1.4], 700); dog.g.rotation.y = Math.PI; dog.pose('bark');
   const mound = D.mounds.find(m => m.userData.id === 'palm');
   for (let i = 0; i < 6; i++) { sparkles(new THREE.Vector3(-4.3, 0.3, -2.4), 0xE6C886, 10); sfx('pop'); await wait(220); }
-  await tween(900, e => { mound.scale.y = 0.35 * (1 - e); D.pole.position.y = -3.4 + e * 3.1; }); sfx('great');
+  await tween(900, e => { mound.scale.y = Math.max(0.002, 0.35 * (1 - e)); D.pole.position.y = -3.4 + e * 3.1; }); mound.visible = false; sfx('great');
   // ---- the gap word, spelled on shells (rotates on replays)
   const sp = pickV(11, [
     { text: 'Mia and Leo watched as he pulled out something crazy: a giant, old pirate {flag} still hanging onto a long wooden pole!', word: 'flag', decoys: 'tae', prompt: 'Tap the shells to spell the word. It waves on a pole.', hints: ['It starts with fl.', 'F – L – A – G'] },

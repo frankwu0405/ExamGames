@@ -42,7 +42,8 @@ export async function buildIsland(G) {
     scatter(G, 'palm-detailed-long', Array.from({ length: 9 }, (_, i) => { const z = CAVE[1] - 22 + i * 3.2 + rr(-1, 1), x = CAVE[0] + rr(3, 12); return sDist(x, z) > 3.5 && hf(x, z) > 0.4 ? { x, z, ry: rr(0, 6), rz: rr(-0.12, 0.12) } : null; }).filter(Boolean), { gy: hf, norm: 7.5 });
     scatter(G, 'palm-detailed-short', Array.from({ length: 7 }, () => { const z = CAVE[1] + rr(-24, 5), x = CAVE[0] + rr(2, 13); return sDist(x, z) > 3.5 && hf(x, z) > 0.4 ? { x, z, ry: rr(0, 6) } : null; }).filter(Boolean), { gy: hf, norm: 5 });
     // trees, palms and bushes on the island, flowers and grass
-    const onLand = (x, z) => hf(x, z) > 0.6 && hf(x, z) < 1.3 && Math.hypot(x - HC[0], z - HC[1]) > HR + 1 && x < CAVE[0] - 6;
+    const lowPath = PATH.filter((p, i) => i % 3 === 0 && p[2] < 6);   // (keep trees off the lower path and the start, so they never block the climb's camera)
+    const onLand = (x, z) => hf(x, z) > 0.6 && hf(x, z) < 1.3 && Math.hypot(x - HC[0], z - HC[1]) > HR + 1 && x < CAVE[0] - 6 && Math.hypot(x - PATH[0][0], z - PATH[0][1]) > 11 && lowPath.every(p => Math.hypot(x - p[0], z - p[1]) > 6);
     const spot = () => { for (let k = 0; k < 300; k++) { const x = rr(-38, 38), z = rr(-38, 38); if (onLand(x, z)) return [x, z]; } return null; };
     const T = { tree_oak: [], tree_fat: [], tree_pine: [], 'palm-detailed-long': [], 'palm-detailed-short': [] }; Object.keys(T).forEach((k, j) => { for (let i = 0; i < 12; i++) { const s = spot(); if (s) T[k].push({ x: s[0], z: s[1], s: k.startsWith('palm') ? 1 : rr(1.4, 2.2) }); } });
     for (const k in T) await scatter(G, k, T[k], { gy: hf, norm: k.startsWith('palm') ? rr(3.8, 4.8) : 0 });
@@ -77,7 +78,7 @@ export async function buildIsland(G) {
     let reveal = 0; const showTunnel = on => { reveal = on ? 1 : 0; };
     onTick((t, dt) => { const r = glowLine.material.opacity + ((reveal ? 0.55 : 0.18) - glowLine.material.opacity) * Math.min(1, (dt || 0.016) * 2); glowLine.material.opacity = r;
       pulses.forEach(p => { p.k = (p.k + (dt || 0.016) * 0.06) % 1; const q = tc.getPointAt(p.k); p.s.position.set(q.x, Math.max(q.y, -3.95) + 0.3, q.z); p.s.material.opacity = (reveal ? 0.9 : 0.35) * Math.sin(p.k * Math.PI); }); });
-    const START = [[PATH[0][0] + 2.2, PATH[0][1] - 1.6], [PATH[0][0] + 3.2, PATH[0][1] - 0.6], [PATH[0][0] + 2.6, PATH[0][1] - 2.4]];
+    const START = [[PATH[0][0] + 1.5, PATH[0][1] + 2.6], [PATH[0][0] + 2.6, PATH[0][1] + 3.4], [PATH[0][0] + 2.2, PATH[0][1] + 1.8]];   // on open grass, clear of the cliff
     const along = u => { u = Math.max(0, Math.min(1, u)); const f = u * (PATH.length - 1), i = Math.floor(f), j = Math.min(PATH.length - 1, i + 1), k = f - i, a = PATH[i], b = PATH[j]; return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k]; };
     clouds(G, 12, 24, 40, -60);
     return { hf, PATH, HC, CAVE, START, along, showTunnel, wheel, tc, TOP };

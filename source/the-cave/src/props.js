@@ -235,13 +235,13 @@ const _rk = new Map(); rockHook.mat = c => { if (!_rk.has(c)) _rk.set(c, rockMat
 export const rockInside = (c, scale = 0.2) => { const m = rockMat(c, scale); m.side = THREE.BackSide; return m; };
 // a rough, natural cave mouth: a ring of jagged stones round the opening, rubble along the banks, craggy rock formations
 // beside it, bushes on top and vines hanging over the hole. p = centre of the opening at ground level, d = the way it faces.
-export function caveMouth(G, p, d, { r = 2.2, mat = null, hf = null, stream = true, sandTop = true } = {}) {
+export function caveMouth(G, p, d, { r = 2.2, mat = null, hf = null, stream = true, sandTop = true, formations = true } = {}) {
   const D = d.clone().setY(0).normalize(), S = new THREE.Vector3(D.z, 0, -D.x), m = mat || rockMat(0xC9A884, 0.35), y = (x, z) => hf ? hf(x, z) : p.y;
   for (let i = 0; i <= 10; i++) { const a = Math.PI * i / 10, q = p.clone().addScaledVector(S, Math.cos(a) * (r + 0.45)).addScaledVector(D, 0.3); q.y = p.y + Math.sin(a) * (r * 1.3 + 0.35) - 0.2;
     mesh(G, lumpy(rr(0.55, 0.95), 1, 0.32, rr(0.7, 1)), m, q.x, q.y, q.z, { rx: rnd() * 6, ry: rnd() * 6 }); }
-  for (let i = 0; i < 16; i++) { const lat = (rnd() < 0.5 ? -1 : 1) * rr(stream ? 2.0 : 0.6, 4.5), fw = rr(0.3, 5), q = p.clone().addScaledVector(S, lat).addScaledVector(D, fw); const s = rr(0.18, 0.55);
+  for (let i = 0; i < 16; i++) { const lat = (rnd() < 0.5 ? -1 : 1) * rr(stream ? 2.0 : r * 0.9, 4.5), fw = rr(0.3, 5), q = p.clone().addScaledVector(S, lat).addScaledVector(D, fw); const s = rr(0.18, 0.55);
     mesh(G, lumpy(s, 1, 0.3, 0.7), m, q.x, y(q.x, q.z) + s * 0.25, q.z, { ry: rnd() * 6 }); }
-  scatter(G, 'formation-rock', [-1, 1].map(sd => { const q = p.clone().addScaledVector(S, sd * (r + 2.6)).addScaledVector(D, 0.6); return { x: q.x, z: q.z, y: y(q.x, q.z) - 0.2, s: rr(0.8, 1.1), ry: rnd() * 6 }; }), { norm: 4.2, style: (n, mn) => [/sand/.test(mn) && sandTop ? toon(0xE6CF96) : m] });
+  if (formations) scatter(G, 'formation-rock', [-1, 1].map(sd => { const q = p.clone().addScaledVector(S, sd * (r + 2.6)).addScaledVector(D, 0.6); return { x: q.x, z: q.z, y: y(q.x, q.z) - 0.2, s: rr(0.8, 1.1), ry: rnd() * 6 }; }), { norm: 4.2, style: (n, mn) => [/sand/.test(mn) && sandTop ? toon(0xE6CF96) : m] });
   const top = p.clone().addScaledVector(D, -1.2); top.y = p.y + r * 1.3 + 1.1;
   scatter(G, 'bush', [-1, 0, 1].map(k => ({ x: top.x + S.x * k * 1.6, z: top.z + S.z * k * 1.6, y: top.y + (k ? -0.3 : 0), s: rr(0.7, 1.0) })), {});
   const vm = toon(0x3E8E41); for (let i = 0; i < 7; i++) { const lat = (i / 6 - 0.5) * r * 1.6, L = rr(0.8, 1.9), q = p.clone().addScaledVector(S, lat).addScaledVector(D, 0.55); q.y = p.y + Math.sqrt(Math.max(0, 1 - (lat / (r + 0.3)) ** 2)) * (r * 1.3) + 0.1 - L / 2;
