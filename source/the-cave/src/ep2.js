@@ -77,6 +77,7 @@ export async function stop5() {
   playMusic('wonder');
   const C = buildCrystal(); const { mia, toby: dog } = C.R.cast; let s = 0, speed = 0, target = 0, lean = 0;
   const cam = new THREE.Vector3(), look = new THREE.Vector3();
+  { const { p, f, u } = C.frame(0.004); setCam(p.clone().addScaledVector(f, -4.2).addScaledVector(u, 2.3).toArray(), p.clone().addScaledVector(f, 3).addScaledVector(u, 0.6).toArray()); }
   followCam(() => { const { p, f, u } = C.frame(Math.min(s, 0.999)); cam.copy(p).addScaledVector(f, -4.2).addScaledVector(u, 2.3); look.copy(p).addScaledVector(f, 3).addScaledVector(u, 0.6); return [cam, look]; });
   onTick((t, dt) => { speed += (target - speed) * Math.min(1, dt * 2); s = Math.min(0.999, s + speed * dt / C.L); C.place(s); C.R.g.rotateZ(lean); });
   const rideTo = async (to, v = 8) => { target = v; while (s < to) await wait(30); target = 0; await wait(350); };

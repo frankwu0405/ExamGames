@@ -1,6 +1,7 @@
 // Episode 5 places: the frozen sea in the fog, and Varn, guard of the deep stones.
 import { THREE, builder, toon, newWorld, onTick } from './gfx.js';
-import { rnd, ferris } from './sets.js';
+import { rnd } from './sets.js';
+import { ferris } from './props.js';
 import { cartBoat } from './sets4.js';
 import { makeVarn } from './varn.js';
 import { mist, snow, glowSprite } from './effects.js';
@@ -37,7 +38,7 @@ export function buildIce() {
   // the hometown, faint in the fog: buildings and the Ferris wheel
   const ghost = new THREE.Group(); w.add(ghost); const gb = builder(ghost);
   for (let i = 0; i < 16; i++) gb.box(3 + rnd() * 3, 4 + rnd() * 9, 3, 0x6E7896, -40 + i * 5.2, 2, -78 - rnd() * 6, { line: 0 });
-  ferris(gb, -14, 0, -72, 2.8);
+  ferris(ghost, -14, 0, -72, 0.5, 0);   // facing out over the frozen sea
   ghost.traverse(o => { if (o.material) { o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = 0.5; } });
   // fog drifting low over the ice, and tiny ice crystals in the air
   const fogA = mist(w, { count: 30, center: new THREE.Vector3(0, 0, -6), spread: 46, inner: 16, y: [0.6, 3.5], size: [8, 18], color: 0xC9D3E6, opacity: 0.55 }); fogA.show(1, 10);

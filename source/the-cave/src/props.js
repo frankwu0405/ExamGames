@@ -1,5 +1,5 @@
 // Shared props for every place: CC0 models (Kenney, Quaternius, pmndrs market) restyled to the toon look, plus code-built water, rock, crystals, carts, rails, lanterns, signs, flags.
-import { THREE, onTick, toon, builder, outline } from './gfx.js';
+import { THREE, onTick, toon, builder, outline, rockHook } from './gfx.js';
 import { glowTex, cloudTex, glowSprite } from './effects.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
@@ -96,6 +96,7 @@ export function rockMat(tint = 0xffffff, scale = 0.18, { steep = false } = {}) {
       vec3 tc = texture2D(uRock, vRW.yz * ${scale.toFixed(3)}).rgb * bw.x + texture2D(uRock, vRW.xz * ${scale.toFixed(3)}).rgb * bw.y + texture2D(uRock, vRW.xy * ${scale.toFixed(3)}).rgb * bw.z;
       float lum = dot(tc, vec3(0.333)); vec3 rk = mix(vec3(0.62), vec3(1.25), smoothstep(0.15, 0.6, lum)) * mix(vec3(1.0), tc / max(lum, 0.05), 0.35);
       ${steep ? 'float st = 1.0 - smoothstep(0.7, 0.88, vRN.y); diffuseColor.rgb = mix(diffuseColor.rgb * mix(vec3(1.0), rk, 0.25), vec3(0.62, 0.58, 0.54) * rk, st);' : 'diffuseColor.rgb *= rk;'}`); };
+  m.customProgramCacheKey = function () { return this.onBeforeCompile.toString() + scale + steep; };   // (three caches shaders by the hook's source text, so say what differs)
   return m;
 }
 export function lumpy(r, d = 3, amp = 0.22, sq = 0.85) { let g = new THREE.IcosahedronGeometry(r, d); const p = g.attributes.position, v = new THREE.Vector3(), s = rnd() * 9;
@@ -213,6 +214,7 @@ export function cutHoles(mat, holes) {
   const o = mat.onBeforeCompile; const f3 = v => `vec3(${v.x.toFixed(3)}, ${v.y.toFixed(3)}, ${v.z.toFixed(3)})`;
   const code = holes.map(({ p, d, r, depth = 4 }) => { const D = d.clone().normalize(); return `{ vec3 hd = vRW - ${f3(p)}; float al = dot(hd, ${f3(D)}); vec3 pp = hd - al * ${f3(D)}; if (abs(al) < ${depth.toFixed(1)} && pp.y > -0.3 && length(vec2(length(pp.xz), pp.y - ${(r * 0.35).toFixed(2)})) < ${r.toFixed(2)}) discard; }`; }).join('\n');
   mat.onBeforeCompile = sh => { o(sh); sh.fragmentShader = sh.fragmentShader.replace('void main() {', 'void main() {\n' + code); };
+  const k0 = mat.customProgramCacheKey.bind(mat); mat.customProgramCacheKey = () => k0() + code;
   return mat;
 }
 // rockTube: a lumpy rock tunnel around part of a track curve (s0..s1), with a flat floor just under the track.
@@ -226,3 +228,8 @@ export function rockTube(parent, curve, { s0 = 0, s1 = 1, r = 2.6, lift = 1.3, t
 // timber frame (two posts and a beam) standing across a track at point p facing along t
 export function timber(parent, p, t, { w = 4.4, h = 3.2 } = {}) { const g = new THREE.Group(); g.position.copy(p); g.lookAt(p.clone().add(new THREE.Vector3(t.x, 0, t.z))); parent.add(g); const b = builder(g);
   [-1, 1].forEach(sd => b.rbox(0.28, h, 0.28, WOOD2, sd * w / 2, h / 2, 0, { line: 0.02 })); b.rbox(w + 0.5, 0.32, 0.34, WOOD, 0, h, 0, { line: 0.02 }); return g; }
+
+// every old-style b.rock(...) now gets the textured rock (one material per colour)
+const _rk = new Map(); rockHook.mat = c => { if (!_rk.has(c)) _rk.set(c, rockMat(new THREE.Color(c).multiplyScalar(1.15).getHex(), 0.4)); return _rk.get(c); };
+// a rock-textured material for the inside of caves and tunnels
+export const rockInside = (c, scale = 0.2) => { const m = rockMat(c, scale); m.side = THREE.BackSide; return m; };

@@ -1,5 +1,6 @@
 // 3D engine: one renderer, one scene; each place builds into `world` and is swapped out.
 import * as THREE from 'three';
+export const rockHook = { mat: null };   // the prop library plugs its textured rock in here, so every b.rock() gets real rock
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
@@ -58,7 +59,7 @@ export function builder(group) {
       for (let i = 0; i <= N; i++) { cur.getPointAt(i / N, ctr); const r = rf(i / N); for (let j = 0; j <= 14; j++) { const k = i * 15 + j; v.fromBufferAttribute(P, k).sub(ctr).multiplyScalar(r).add(ctr); P.setXYZ(k, v.x, v.y, v.z); } }
       geo.computeVertexNormals(); const m = add(geo, c, 0, 0, 0, { line: 0 }); if (o.line !== 0) { const sh = new THREE.Mesh(geo, INK_MAT); const q = geo.clone(), Q = q.attributes.position, Nn = q.attributes.normal; for (let k = 0; k < Q.count; k++) Q.setXYZ(k, Q.getX(k) + Nn.getX(k) * (o.line || 0.018), Q.getY(k) + Nn.getY(k) * (o.line || 0.018), Q.getZ(k) + Nn.getZ(k) * (o.line || 0.018)); sh.geometry = q; sh.userData.isOutline = true; m.add(sh); } return m; },
     lathe: (pts, c, x, y, z, o = {}) => add(new THREE.LatheGeometry(pts.map(p => new THREE.Vector2(p[0], p[1])), o.seg || 28), c, x, y, z, o),
-    rock: (r, c, x, y, z, o = {}) => add(lumpy(r), c, x, y, z, o),
+    rock: (r, c, x, y, z, o = {}) => add(lumpy(r), rockHook.mat && typeof c === 'number' ? rockHook.mat(c) : c, x, y, z, o),
     rbox: (w, h, d, c, x, y, z, o) => add(new RoundedBoxGeometry(w, h, d, 3, Math.min(w, h, d) * 0.3), c, x, y, z, o),
     torus: (r, t, c, x, y, z, o = {}) => add(new THREE.TorusGeometry(r, t, 8, o.seg || 24, o.arc || Math.PI * 2), c, x, y, z, o),
   };

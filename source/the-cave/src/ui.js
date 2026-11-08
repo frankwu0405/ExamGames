@@ -61,6 +61,8 @@ export async function beat(text, { min = 0, hold = 0 } = {}) {
   await Promise.race([Promise.all([reading, wait(Math.max(min, S.settings.read && !MODE.captain ? 1200 : byWords))]).then(() => wait(hold + 500)), new Promise(r => { const iv = setInterval(() => { if (tapped && performance.now() - t0 > 600) { clearInterval(iv); r(); } }, 80); })]);
   panel.removeEventListener('click', go); if (tapped) hush();
 }
+// A run of short lines: each is a beat that moves on by itself, and the last one stays up (for an activity or a tap).
+export function seq(list) { return (async () => { for (let i = 0; i < list.length - 1; i++) await beat(list[i]); await tell(list[list.length - 1], { wait: false }); })(); }
 // Cut a passage into sentences; the one holding the {gap} is kept apart so the activity shows only that sentence.
 export function sentences(text) { return text.match(/[^.!?…]+[.!?…]+["”’]?\s*|[^.!?…]+$/g).map(x => x.trim()).filter(Boolean); }
 export function aroundGap(text) { const ss = sentences(text), i = ss.findIndex(x => /\{/.test(x)); return { before: i < 0 ? ss : ss.slice(0, i), gap: i < 0 ? '' : ss[i], after: i < 0 ? [] : ss.slice(i + 1) }; }

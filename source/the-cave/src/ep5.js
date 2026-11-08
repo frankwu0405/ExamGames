@@ -3,7 +3,7 @@ import { S, save, sfx, wait, h, shuffle } from './core.js';
 import { THREE, setCam, flyCam, followCam, stopFollow, quake, tween, moveTo, onTick, sparkles, textTexture, cut, dolly, lens, scene, toon } from './gfx.js';
 import { buildIce } from './sets5.js';
 import { letterbox, frost, shardBurst, fogThicken, glowSprite } from './effects.js';
-import { tell, tapOn, filled, hideStory, chooseWord, spellOn, order, think, offerStretch, earnCard, toby, tapAll, MODE } from './ui.js';
+import { tell, beat, seq, tapOn, filled, hideStory, chooseWord, spellOn, order, think, offerStretch, earnCard, toby, tapAll, MODE } from './ui.js';
 import { playMusic } from './music.js';
 
 const star = n => { S.stars[n] = 1; save(); sfx('great'); };
@@ -52,17 +52,17 @@ export async function stop13() {
   // close on the kids: the ice cracks under them
   cut([2.4, 2.0, -4.8], [0, 1.15, 0], 40); dolly([1.8, 1.9, -4.0], [0, 1.2, 0], 6000);
   [leo, mia].forEach(c => c.pose('scared')); dog.pose('bark');
-  tell('The thick ice cracks loudly. *CRACK!* A giant, scary beast rises from the dark water!', { wait: false });
-  sfx('crash'); quake(0.6, 0.12); await wait(2500); await tapOn();
+  const q55 = seq(['The thick ice cracks loudly. *CRACK!*', 'A giant, scary beast rises from the dark water!']);
+  sfx('crash'); quake(0.6, 0.12); await q55; await tapOn();
   // high above: a long glowing shape circles under the ice
   await flyCam([0, 21, 7], [0, 0, -1.5], 2200, { fov: 55 }); dolly([0, 19, 4], [0, 0, -1.5], 9000);
   await tell('It swims quickly in circles around their little boat, keeping its huge body hidden under the water.');
   // low behind the boat — it bursts out of the ice (like the picture in the book)
   playMusic('danger'); letterbox(true);
   cut([2.4, 1.2, 4.6], [1.2, 4.8, -11], 56);
-  tell('Then, it breaks out of the ice right in front of them! Toby barks. Mia is scared.', { wait: false });
+  tell('Then, it breaks out of the ice right in front of them!', { wait: false });
   await wait(600); dolly([2, 1.1, 3.8], [1.2, 5.4, -11], 7000);
-  await burstOut(I); sfx('bark'); dog.pose('bark');
+  await burstOut(I); sfx('bark'); dog.pose('bark'); await beat('Toby barks.'); mia.pose('scared'); tell('Mia is scared.', { wait: false });
   await tapOn();
   // ---- read the description: tap what Varn really has
   const dv = pickV(13, [
@@ -76,7 +76,7 @@ export async function stop13() {
   // ---- the voice: he lifts his great head over the boat and looks down at them
   letterbox(true); V.to('rear', 2600); V.lookAt(new THREE.Vector3(0, 4, 4), 0.85, 2000);
   await flyCam([8.5, 4.6, 5.5], [0, 6.4, -6], 2400, { fov: 52 }); dolly([6.4, 5.4, 2.6], [0, 7, -6], 8000);
-  tell('A cold, deep {voice} speaks right inside their heads: “I am Varn, guard of the deep stones! Give me back my blue gem!”', { wait: false });
+  tell('A cold, deep {voice} speaks right inside their heads:', { wait: false });
   V.state.anger = 1; sfx('rumble'); V.roar(1600); frost(0.7, 2500);
   await wait(2200);
   await chooseWord(pickV(13, [
@@ -85,6 +85,7 @@ export async function stop13() {
     { prompt: 'Which word fits?', sentence: 'A cold, deep {_} speaks inside their heads.', tiles: ['voice', 'vase', 'van'], answer: 'voice', note: 'voice = the sound of talking', hints: ['You talk with your…', 'voice'] },
   ]));
   await filled('voice'); await earnCard('voice');
+  tell('“I am Varn, guard of the deep stones! Give me back my blue gem!”', { wait: false });
   // ---- speech marks: where do they go?
   await think(pickV(13, [
     { prompt: 'Which one has the speech marks in the right place?', options: ['“Give me back my blue gem!”', 'Give me back “my blue gem!”', '“Give me” back my blue gem!'], answer: '“Give me back my blue gem!”', hints: ['Speech marks go around ALL the words Varn says.'] },
@@ -110,8 +111,7 @@ export async function stop14() {
   letterbox(true); frost(0.5, 1500);
   cut([4, 2.3, -7.8], [-3.2, 1.8, -2], 50); dolly([3.2, 2.2, -6.8], [-3.2, 1.9, -2], 9000);
   mia.pose('scared'); leo.pose('scared');
-  tell('Mia is very scared, but she is also brave. She wants to keep the gem. They worked so hard in the dark cave to find this beautiful treasure!', { wait: false });
-  await wait(1500); await tapOn();
+  await seq(['Mia is very scared, but she is also brave.', 'She wants to keep the gem.', 'They worked so hard in the dark cave to find this beautiful treasure!']); await tapOn();
   // ---- feelings: tap the words that fit Mia right now
   const fv = pickV(14, [
     { prompt: 'Tap the TWO words that tell how Mia feels.', yes: ['scared', 'brave'], no: ['sleepy', 'bored', 'silly'], hints: ['Read again: Mia is very scared, but she is also brave.', 'scared and brave'] },
@@ -125,9 +125,9 @@ export async function stop14() {
   // she hides the gem behind her back
   // from behind: the gem glows in Mia’s hands, hidden behind her back
   letterbox(true); cut([-1.4, 1.9, 2.8], [-2.4, 1.4, -2.2], 50); dolly([-1.3, 1.8, 2.2], [-2.5, 1.5, -2.2], 7000);
-  tell('Mia is not ready to give it away to a scary sea monster. She has to think fast, so she hides her hands behind her back. “We don’t have it!” she yells at the water. “We are just lost kids!” Toby barks again.', { wait: false });
+  const q128 = seq(['Mia is not ready to give it away to a scary sea monster.', 'She has to think fast, so she hides her hands behind her back.', '“We don’t have it!” she yells at the water. “We are just lost kids!”', 'Toby barks again.']);
   mia.pose('hide'); leo.pose('reach'); sfx('bark'); dog.pose('bark'); tween(1200, e => { I.gemLight.intensity = e * 6; I.gemGlow.scale.setScalar(0.01 + e * 0.9); });
-  await wait(1800); await tapOn();
+  await q128; await tapOn();
   // ---- is she telling the truth?
   await think(pickV(14, [
     { prompt: 'Is Mia telling the truth?', options: ['No. The gem is behind her back.', 'Yes. They lost it in the cave.', 'Yes. Toby has it.'], answer: 'No. The gem is behind her back.', hints: ['Where are Mia’s hands? What is in them?'] },
@@ -138,14 +138,15 @@ export async function stop14() {
   // close on his glowing eye… the air turns freezing cold
   letterbox(true); V.state.sway = 0.25; V.lookAt(mia.g.getWorldPosition(new THREE.Vector3()).setY(1.3), 1, 1200);
   { const hp = V.headPos(), o = (a, b, c) => [hp.x + a, hp.y + b, hp.z + c], L = o(0, 0.6, 0); await flyCam(o(7.5, 2.8, -2.4), L, 1600, { fov: 44 }); dolly(o(6.4, 2.4, -2), L, 7000); }
-  tell('You cannot trick an old magic beast. Varn stops swimming and looks right at Mia with its giant, glowing eyes. The air turns freezing cold. Suddenly, the blue gem behind Mia’s back starts to shine. It glows so brightly that a strong blue light shines all around her!', { wait: false });
-  V.state.anger = 1; frost(1, 3000); await wait(2600);
+  V.state.anger = 1; frost(1, 3000);
+  await beat('You cannot trick an old magic beast.'); await beat('Varn stops swimming and looks right at Mia with its giant, glowing eyes.'); await beat('The air turns freezing cold.');
   // the gem shines — blue light all around her
   cut([2.6, 2.2, 4.4], [-1, 1.8, -2.5], 52); dolly([2.2, 2.4, 3.6], [-1, 2, -2.5], 6000);
+  const q141 = seq(['Suddenly, the blue gem behind Mia’s back starts to shine.', 'It glows so brightly that a strong blue light shines all around her!']);
   sfx('glow'); await tween(1600, e => { I.gemLight.intensity = 6 + e * 34; I.gemGlow.scale.setScalar(0.9 + e * 3.4); V.eyeLight.intensity = 14 + e * 10; });
-  await tapOn();
+  await q141; await tapOn();
   // ---- the lie
-  tell('Varn is very angry. Its voice yells in their heads: “You {lie}! You are greedy and bad, just like the greedy men on the island long ago!”', { wait: false });
+  await beat('Varn is very angry.'); tell('Its voice yells in their heads: “You {lie}!”', { wait: false });
   letterbox(true); V.state.sway = 1; V.to('rear', 1300); V.roar(1800); sfx('rumble'); quake(1.6, 0.25);
   cut([1.8, 1.1, 6.5], [0, 6, -6], 60); dolly([1.4, 1.0, 5.4], [0, 6.6, -6], 6000); await wait(1800);
   await chooseWord(pickV(14, [
@@ -154,6 +155,7 @@ export async function stop14() {
     { prompt: 'Which word is spelled right?', sentence: '“You {_}!”', tiles: ['lie', 'ly', 'lye'], answer: 'lie', note: 'lie rhymes with pie and tie', hints: ['It rhymes with pie.', 'l – i – e'] },
   ]));
   await filled('lie'); await earnCard('lie');
+  tell('“You are greedy and bad, just like the greedy men on the island long ago!”', { wait: false });
   await think(pickV(14, [
     { prompt: 'What does greedy mean?', options: ['Wanting more and more for yourself', 'Kind and sharing', 'Very sleepy'], answer: 'Wanting more and more for yourself', hints: ['The greedy men took the gems.'] },
     { prompt: 'Why does Varn call Mia greedy?', options: ['She wants to keep his gem', 'She ate his lunch', 'She is too loud'], answer: 'She wants to keep his gem', hints: ['What is Mia hiding?'] },
@@ -194,7 +196,7 @@ export async function stop15() {
   if (sp.word !== 'smash') toby('Great! Now… SMASH!');
   await filled('smash'); await earnCard('smash');
   // CRASH!
-  tell('*CRASH!* The hard hit breaks the ice and makes a huge, angry {wave}. The water catches their small boat and pushes them away from the Ferris wheel.', { wait: false });
+  tell('*CRASH!* The hard hit breaks the ice and makes a huge, angry {wave}.', { wait: false });
   letterbox(true); cut([10, 3, 7], [3, 1.8, -4], 56); await V.to('tailSmash', 420);
   sfx('crash'); sfx('rumble'); quake(2, 0.6); flash();
   shardBurst(I.w, new THREE.Vector3(5.2, 0.3, -2.4), { n: 40, power: 12 }); I.hole.scale.setScalar(3.4);
@@ -207,12 +209,12 @@ export async function stop15() {
     { prompt: 'Which word fits?', sentence: 'a huge, angry {_}', tiles: ['wave', 'cave', 'save'], answer: 'wave', note: 'wave = a big moving hill of water', hints: ['It is made of water and it moves.', 'wave'] },
     { prompt: 'Which word fits?', sentence: 'a huge, angry {_}', tiles: ['wave', 'wove', 'wife'], answer: 'wave', note: 'wave = water that rises and rolls', hints: ['It pushes the boat.', 'w – a – v – e'] },
   ]));
-  await filled('wave'); await earnCard('wave');
+  await filled('wave'); await beat('The water catches their small boat and pushes them away from the Ferris wheel.'); await earnCard('wave');
   // the wave pushes the boat away; the gem flies to Varn
   const B = I.boat.g; const z0 = B.position.z; letterbox(true);
   tween(3400, e => { B.position.z = z0 + e * 9; B.position.y = 0.12 + Math.sin(e * Math.PI) * 1.4; B.rotation.z = Math.sin(e * 9) * 0.15; wave.position.z = -3.5 + e * 9; wave.position.y = -1.4 - e * 2.5; });
   cut([5.5, 2.4, 15], [-0.5, 3, -2], 58); dolly([6, 3, 17], [-0.5, 4, -3], 7000);
-  tell('Suddenly, Mia feels something moved in her hands. The blue gem flies up into the air and floats away to Varn! Mia, Leo, and Toby watched as their boat drifts away...', { wait: false });
+  const q215 = seq(['Suddenly, Mia feels something moved in her hands.', 'The blue gem flies up into the air and floats away to Varn!']);
   const gp = I.gem.getWorldPosition(new THREE.Vector3()); I.boat.cast.mia.g.remove(I.gem); I.w.add(I.gem); I.gem.position.copy(gp); mia.pose('reach'); sfx('glow');
   V.to('rear', 1400); I.gemGlow.scale.setScalar(2.2);
   await tween(2400, e => { const vh = V.headPos().add(new THREE.Vector3(0, 1.8, 1.2)); I.gem.position.lerpVectors(gp, vh, e); I.gem.position.y += Math.sin(e * Math.PI) * 4; I.gem.rotation.y += 0.1; });
@@ -221,7 +223,7 @@ export async function stop15() {
   [leo, mia].forEach(c => c.pose('scared'));
   V.lookAt(null, 0, 800); V.to('dive', 2600); await wait(2200); hold(); tween(1600, e => { I.gem.position.y -= e * 0.4; I.gemGlow.material.opacity = 1 - e; I.gem.scale.setScalar(Math.max(0.01, 1 - e)); });
   V.to('gone', 3000); sfx('crash'); fogThicken(scene, { near: 4, far: 22, ms: 4500 }); frost(0.3, 3000);
-  await tapOn();
+  await q215; tell('Mia, Leo, and Toby watched as their boat drifts away...', { wait: false }); await tapOn();
   // ---- the story is told in NOW words
   await chooseWord(pickV(15, [
     { prompt: 'This story uses NOW words. Pick the NOW word.', sentence: 'Varn {_} a big, heavy tail.', tiles: ['lifts', 'lifted'], answer: 'lifts', note: 'lifts = happening now · lifted = already happened', hints: ['NOW words often end in -s here.', 'lifts'] },

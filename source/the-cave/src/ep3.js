@@ -7,7 +7,7 @@ import { makeCast } from './chars.js';
 import { cart } from './sets.js';
 import { buildShelf, buildCrack, buildCliff } from './sets3.js';
 import { buildRiver, buildBeach } from './sets2.js';
-import { tell, tapOn, filled, hideStory, chooseWord, pick3D, spellOn, order, think, offerStretch, earnCard, toby, tapAll, MODE } from './ui.js';
+import { tell, beat, tapOn, filled, hideStory, chooseWord, pick3D, spellOn, order, think, offerStretch, earnCard, toby, tapAll, MODE } from './ui.js';
 import { playMusic } from './music.js';
 
 const star = n => { S.stars[n] = 1; save(); sfx('great'); };
@@ -25,15 +25,15 @@ export async function stop7() {
   const B = buildBeach(); const k = B.cast;
   k.leo.g.position.set(-3.8, 0, 0); k.mia.g.position.set(-2.6, 0, 0.2); k.toby.g.position.set(-4.7, 0, 0.5); k.leo.pose('sit'); k.mia.pose('sit'); k.leo.g.position.y = k.mia.g.position.y = -0.32; k.leo.g.rotation.y = Math.PI - 0.5; k.mia.g.rotation.y = Math.PI + 0.5; k.toby.pose('sit');
   setCam([-3, 1.6, -4.4], [-3.2, 0.8, 0.4]);
-  await tell('Mia and Leo sat on the warm, sandy beach. “Leo, how did you get here?” Mia asked. Leo smiled and told his story.');
+  await beat('Mia and Leo sat on the warm, sandy beach.'); await beat('“Leo, how did you get here?” Mia asked.'); k.leo.pose('cheer'); await tell('Leo smiled and told his story.');
   // back in time: the cave, the moment the floor tipped
   const lift = await memory(); playMusic('danger');
   const Sh = buildShelf(); const leo = Sh.leo;
   setCam([0, 3.2, 9.5], [0, 1.4, -2]); lift();
   leo.pose('scared'); sfx('rumble'); quake(1.6, 0.18);
-  tell('When the cave floor tipped down, huge rocks fell from the roof! It looked like Leo would be crushed.', { wait: false });
+  const rocksLine = (async () => { await beat('When the cave floor tipped down, huge rocks fell from the roof!'); tell('It looked like Leo would be crushed.', { wait: false }); })();
   let rain = true; (async () => { while (rain) { Sh.drop(-5 + Math.random() * 10, -2 + Math.random() * 6, 0.25 + Math.random() * 0.25, 7, () => { sfx('crash'); quake(0.25, 0.08); }); await wait(700 + Math.random() * 500); } })();
-  await tapOn();
+  await rocksLine; await tapOn();
   // ---- activity: pick the shelf that will keep Leo safe
   const sv = pickV(7, [
     { prompt: 'Tap the THICK, strong shelf!', hints: ['Thick means big and fat, not thin.', 'Find the fattest shelf.'] },
@@ -183,10 +183,10 @@ export async function stop9() {
   await pick3D({ prompt: 'Find Mia and Toby! Tap their cart.', answer: 'cart', targets: [{ id: 'cart', obj: K.hitBox }], hints: ['Look at the green loop!', 'It comes out of the tunnel and goes round.'] });
   // ---- the water slide: a spring pours into a stone pool, then a smooth path of rushing water goes down the cliff
   letterbox(true); leo.pose('idle');
-  tell('Next to the cliff, he found a smooth rock path filled with rushing water. It looked just like a fun water slide! Leo took a deep breath, pinched his nose, and jumped right in.', { wait: false });
+  const slideLines = (async () => { await beat('Next to the cliff, he found a smooth rock path filled with rushing water.'); await beat('It looked just like a fun water slide!'); tell('Leo took a deep breath, pinched his nose, and jumped right in.', { wait: false }); })();
   cut([LEDGE.x - 3.4, LEDGE.y + 3.2, LEDGE.z - 7.5], [SPRING.x + 1, LEDGE.y - 1, LEDGE.z + 2], 52); dolly([LEDGE.x - 2.6, LEDGE.y + 3.6, LEDGE.z - 8.2], [SPRING.x + 1.5, LEDGE.y - 1.5, LEDGE.z + 1], 8000);
   await run(leo, [SPRING.x - 1.6, LEDGE.y + 0.05, LEDGE.z + 2.2], 1400);
-  const sp0 = K.slidePath.getPointAt(0.04); leo.g.rotation.y = Math.PI / 2; await wait(1500); await tapOn();
+  const sp0 = K.slidePath.getPointAt(0.04); leo.g.rotation.y = Math.PI / 2; await wait(1500); await slideLines; await tapOn();
   // whee! sitting down, all the way down the slide…
   playMusic('danger'); sfx('whoosh'); await moveTo(leo.g, [sp0.x, sp0.y + 0.05, sp0.z], 450, { hop: 0.8 }); leo.pose('slide');
   const cam = new THREE.Vector3(), look = new THREE.Vector3(); let sl = 0.04; leo.g.rotation.order = 'YXZ';
@@ -204,7 +204,7 @@ export async function stop9() {
   let spin = true; const sOff = onTick((t, dt) => { if (spin) { L.g.rotation.y += dt * 3; L.g.position.y = -0.6 + Math.sin(t * 3) * 0.08; } });
   sfx('crash'); sparkles(new THREE.Vector3(0, 0.3, -6), 0xE6F6FF, 40);
   letterbox(true); cut([3.2, 3.4, 0], [0, 0, -6], 50);
-  await tell('Whoosh! The slide dropped him into the deep river. The water was far too swift, and Leo spun around in the fast water.');
+  await beat('Whoosh! The slide dropped him into the deep river.'); await tell('The water was far too swift, and Leo spun around in the fast water.');
   // ---- science: what floats?
   tell('He needed something to help him stay up.', { wait: false });
   await think(pickV(9, [
@@ -213,8 +213,8 @@ export async function stop9() {
     { prompt: 'Why does a log help Leo?', options: ['Wood floats on water', 'Logs are warm', 'Logs can swim'], answer: 'Wood floats on water', hints: ['Think: float or sink?'] },
   ]));
   letterbox(true);
-  tell('Luckily, he bumped into an old log floating by. He grabbed it tight and drifted down the dark river until he saw a bright light, and Mia paddled over to {fetch} him.', { wait: false });
-  await moveTo(V.leoLog, [0, 0.1, -5.6], 1400, { face: false });
+  await Promise.all([beat('Luckily, he bumped into an old log floating by.'), moveTo(V.leoLog, [0, 0.1, -5.6], 1400, { face: false })]);
+  tell('He grabbed it tight and drifted down the dark river until he saw a bright light, and Mia paddled over to {fetch} him.', { wait: false });
   // he grabs the log and holds on tight, lying across it (like the picture in the book)
   spin = false; sOff(); V.w.remove(L.g); const grip = new THREE.Group(); grip.rotation.y = -Math.PI / 2; V.leoLog.add(grip); grip.add(L.g);
   L.g.rotation.set(Math.PI / 2, 0, 0); L.g.position.set(0, 0.42, 0.55); L.head.rotation.x = -0.8; L.pose('hug');
