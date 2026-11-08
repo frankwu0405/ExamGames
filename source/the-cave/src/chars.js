@@ -414,7 +414,7 @@ export function makeOldJack(world) {
     if (hoodT0 >= 0) { const u = Math.min(1, (performance.now() - hoodT0) / 1700); c.hoodK = hoodFrom + (hoodTo - hoodFrom) * sm01((u - 0.25) / 0.55);
       const arms = Math.sin(Math.PI * Math.min(1, u)) ; c.AL.rotation.x = c.AR.rotation.x = -2.5 * arms + (hoodTo ? 0.4 : -0.2) * arms * sm01((u - 0.35) / 0.4); c.AL.rotation.z = -0.35 * arms; c.AR.rotation.z = 0.35 * arms;
       if (u >= 1) hoodT0 = -1; }
-    const k = c.hoodK; hairM.scale.setScalar(0.9 + 0.1 * sm01((k - 0.35) / 0.4));   // the hood flattens his hair until it comes off
+    const k = c.hoodK; hairM.scale.setScalar(0.8 + 0.2 * sm01((k - 0.35) / 0.4));   // the hood flattens his hair until it comes off
     hood.rotation.x = -2.25 * k; hood.scale.set(1.14, 0.94 * (1 - 0.25 * k), 1.06 * (1 - 0.35 * k));   // a roomier hood than the narrow oval head under it hood.position.y = -0.2 - 0.06 * k;
     fpB.mesh.material.opacity = sm01((k - 0.3) / 0.5); fpA.mesh.material.opacity = 1 - fpB.mesh.material.opacity; };
   c.headY = 1.9;
