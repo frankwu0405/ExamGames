@@ -151,6 +151,16 @@ const SHOWPATH = {
 };
 SHOW.speeds = { cruise: 5.2, hover: 2.4, loop: 6.4, corkscrew: 6.8 };
 SHOW.amp = { cruise: 0.9, hover: 0.55, loop: 0.7, corkscrew: 1.1 };
+// ---- in place: the same swimming wave, flippers and tail, but the body stays centred on the spot (for inspecting him)
+SHOW.inplace = { amp: 0.9, speed: 1, bob: 0.5 };
+POSES.inplace = t => {
+  const I = SHOW.inplace, A = I.amp, r = I.speed, L = SEG * 8, out = [];
+  for (let i = 0; i < 9; i++) { const f = Math.pow(i / 8, 1.0) * (1 + (i > 5 ? (i - 5) * 0.35 : 0)), w = t * 3.1 * r - i * 0.85;
+    out.push(new THREE.Vector3(L / 2 - i * SEG, Math.sin(w + 1.1) * A * f * 1.2 + Math.sin(t * 0.9 * r) * I.bob, Math.sin(w) * A * f * 0.8)); }
+  for (let i = 1; i < 9; i++) { const v = out[i].clone().sub(out[i - 1]); out[i] = v.setLength(SEG).add(out[i - 1]); }
+  const cx = (out[0].x + out[8].x) / 2; out.forEach(p => { p.x -= cx; });
+  return out;
+};
 POSES.show = t => {
   const m = SHOW.mode, path = SHOWPATH[m], sp = SHOW.speeds[m] * SHOW.rate, u = t * sp, A = SHOW.amp[m] * Math.min(1, 0.4 + SHOW.rate * 0.6);
   // the body is laid along the path with every joint exactly SEG from the last, so tight turns and slow-downs can never squash or bunch it up
@@ -283,7 +293,7 @@ export function makeVarn(parent) {
       const mapPt = (s, a, b, out) => { const fi = Math.pow(s, 1 / SPOW) * (M - 1), k = Math.max(0, Math.min(M - 2, Math.floor(fi))), f = Math.max(0, Math.min(1, fi - k)), kk = K();
         return out.set(0, 0, 0).addScaledVector(pts[k], 1 - f).addScaledVector(pts[k + 1], f).addScaledVector(N[k], a * kk * (1 - f)).addScaledVector(N[k + 1], a * kk * f).addScaledVector(B[k], -b * kk * (1 - f)).addScaledVector(B[k + 1], -b * kk * f); };
       model.update = t => { const kk = K(), pp = pos2, nn = nor2; { const A = SHOW.flap * 0.2; for (let g = 0; g < 4; g++) { const ph = t * 3.1 * Math.min(1.6, SHOW.rate) * 0.55 + (g >> 1) * 0.9 + (g & 1) * 0.0; fa[g] = Math.sin(ph) * A; fb[g] = Math.cos(ph) * A * 0.5; } } { const cp = st.clip ? iceCut : null; if (mat.clippingPlanes !== cp) { mat.clippingPlanes = cp; ink2.material.clippingPlanes = cp; mat.needsUpdate = ink2.material.needsUpdate = true; } rim2.visible = !st.clip; capGlow.visible = !st.clip; } const kF = model.kF || 0, wv = t * 3.1 * Math.min(1.6, SHOW.rate) - 8 * 0.85, th = Math.atan2(T[kF].y, N[kF].y) + SHOW.tail * 0.55 * Math.sin(wv + 2.4), yw = SHOW.tail * 0.22 * Math.sin(wv + 0.9), cF = Math.cos(th), sFn = Math.sin(th);
-        for (let i = 0; i < cnt; i++) { const k = i0[i], f = fr[i], g = 1 - f, wq = isF[i], ca = 1 + (cF - 1) * wq, sa = sFn * wq, a = (oy[i] * ca - ot[i] * sa + (fw[i] ? fw[i] * fa[fg[i]] : 0) + (wq ? SHOW.tail * Math.sin(wv + 3.2 - ot[i] * 14) * (ot[i] * 1.6 + Math.abs(oz[i]) * 0.55) * wq : 0)) * kk, b = -oz[i] * kk + (wq ? yw * (oy[i] * sFn + ot[i] * cF) * kk * wq : 0), c0 = (oy[i] * sa + ot[i] * ca + (fw[i] ? fw[i] * fb[fg[i]] : 0)) * kk, A = pts[k], A2 = pts[k + 1], NA = N[k], NB2 = N[k + 1], BA = B[k], BB = B[k + 1], TT = T[k], TT2 = T[k + 1];
+        for (let i = 0; i < cnt; i++) { const k = i0[i], f = fr[i], g = 1 - f, wq = isF[i], ca = 1 + (cF - 1) * wq, sa = sFn * wq, a = (oy[i] * ca - ot[i] * sa + (fw[i] ? fw[i] * fa[fg[i]] : 0) + (wq ? SHOW.tail * Math.sin(wv + 3.2 - ot[i] * 3.5) * (Math.min(ot[i], 0.1) * 1.6 + Math.abs(oz[i]) * 0.55) * wq : 0)) * kk, b = -oz[i] * kk + (wq ? yw * (oy[i] * sFn + ot[i] * cF) * kk * wq : 0), c0 = (oy[i] * sa + ot[i] * ca + (fw[i] ? fw[i] * fb[fg[i]] : 0)) * kk, A = pts[k], A2 = pts[k + 1], NA = N[k], NB2 = N[k + 1], BA = B[k], BB = B[k + 1], TT = T[k], TT2 = T[k + 1];
           pp[i * 3] = A.x * g + A2.x * f + (NA.x * g + NB2.x * f) * a + (BA.x * g + BB.x * f) * b + (TT.x * g + TT2.x * f) * c0; pp[i * 3 + 1] = A.y * g + A2.y * f + (NA.y * g + NB2.y * f) * a + (BA.y * g + BB.y * f) * b + (TT.y * g + TT2.y * f) * c0; pp[i * 3 + 2] = A.z * g + A2.z * f + (NA.z * g + NB2.z * f) * a + (BA.z * g + BB.z * f) * b + (TT.z * g + TT2.z * f) * c0;
           const nx = NX[i], ny = NY[i], nz = N0.getZ(i), TA = T[k], TB = T[k + 1], qy0 = ny, qz = -nz / (isF[i] || xs[i] < FX ? 1 : wAt(xs[i])), qx0 = -nx, qy = qy0 * ca - qx0 * sa, qx = qy0 * sa + qx0 * ca;
           nn[i * 3] = (TA.x * g + TB.x * f) * qx + (NA.x * g + NB2.x * f) * qy + (BA.x * g + BB.x * f) * qz; nn[i * 3 + 1] = (TA.y * g + TB.y * f) * qx + (NA.y * g + NB2.y * f) * qy + (BA.y * g + BB.y * f) * qz; nn[i * 3 + 2] = (TA.z * g + TB.z * f) * qx + (NA.z * g + NB2.z * f) * qy + (BA.z * g + BB.z * f) * qz; }
