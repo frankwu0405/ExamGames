@@ -105,7 +105,7 @@ function renderGates(){
  }
 }
 let config;
-async function loadRecords(){
+async function loadKnownRecords(){
  if(state.loading)return;
  const local=islandBrowserRecords();
  state.records=mergeIslandRecords(local,state.records.filter(record=>!record.local));
@@ -128,6 +128,117 @@ async function loadRecords(){
   $('#roster-status').textContent=config.private===false?'Account codes stay in this browser. Student saves are read-only.':`Account list checked ${registry.checked}. All accounts are included until you hide them.`;
  }catch(e){$('#connection').classList.add('error');$('#connection-text').textContent='Cloud refresh unavailable. Browser saves are still shown.';toast('Could not refresh: '+e.message);}
  finally{state.loading=false;$('#refresh').disabled=false;render();}
+}
+const teacherEmail='tp993307@gmail.com';
+let teacherUser=null, teacherAuth, syncPending=false;
+const signInButton=el('button',{class:'button',disabled:true},'Teacher sign-in');
+$('.header-right').insertBefore(signInButton,$('#manage-accounts'));
+async function teacherConfig(){
+ if(!config){
+  const response=await fetch('./config.json');
+  if(!response.ok)throw new Error('Dashboard configuration unavailable.');
+  config=await response.json();
+ }
+ return config;
+}
+function allowedTeacher(user){
+ return user?.email===teacherEmail&&user.emailVerified===true;
+}
+async function initTeacherAuth(){
+ try{
+  const settings=await teacherConfig();
+  const [firebase,api]=await Promise.all([
+   import('https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js'),
+   import('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js')
+  ]);
+  teacherAuth=api.getAuth(firebase.initializeApp({apiKey:settings.key,projectId:settings.project,authDomain:settings.authDomain||settings.project+'.firebaseapp.com'}));
+  signInButton.onclick=async()=>{
+   signInButton.disabled=true;
+   try{
+    if(teacherUser)await api.signOut(teacherAuth);
+    else{
+     const provider=new api.GoogleAuthProvider();
+     provider.setCustomParameters({login_hint:teacherEmail,prompt:'select_account'});
+     await api.signInWithPopup(teacherAuth,provider);
+    }
+   }catch(error){toast('Teacher sign-in: '+error.message);}
+   finally{signInButton.disabled=false;}
+  };
+  api.onAuthStateChanged(teacherAuth,async user=>{
+   if(user&&!allowedTeacher(user)){
+    await api.signOut(teacherAuth);
+    toast('Use the verified teacher account to sync student saves.');
+    return;
+   }
+   if(teacherUser&&teacherUser.uid!==user?.uid){
+    state.records=state.records.filter(record=>record.local);
+    state.roster=[];$('#updated-time').textContent='';
+   }
+   teacherUser=user;
+   signInButton.disabled=false;
+   signInButton.textContent=user?'Sign out':'Teacher sign-in';
+   loadRecords();
+  });
+ }catch(error){
+  signInButton.textContent='Teacher sign-in unavailable';
+  toast(error.message);
+ }
+}
+async function discoverSaves(base,user,fetchPage=fetch){
+ if(!allowedTeacher(user))throw new Error('A verified teacher sign-in is required.');
+ const idToken=await user.getIdTokenResult();
+ if(idToken.claims.email!==teacherEmail||idToken.claims.email_verified!==true)throw new Error('The teacher token must have a verified email.');
+ const records=new Map(),seen=new Set();
+ let pageToken='';
+ do{
+  const query='?pageSize=100'+(pageToken?'&pageToken='+encodeURIComponent(pageToken):'');
+  const response=await fetchPage(base+query,{headers:{Authorization:'Bearer '+idToken.token},signal:AbortSignal.timeout(18000)});
+  if(response.status===401||response.status===403)throw new Error('Firestore refused teacher access to the saves collection.');
+  if(!response.ok)throw new Error('Firestore sync failed (HTTP '+response.status+').');
+  const page=await response.json();
+  for(const record of await Promise.all((page.documents||[]).map(decodeDoc))){
+   if(record)records.set(record.id,record);
+  }
+  pageToken=page.nextPageToken||'';
+  if(pageToken&&seen.has(pageToken))throw new Error('Firestore repeated a page cursor.');
+  if(pageToken)seen.add(pageToken);
+ }while(pageToken);
+ return [...records.values()];
+}
+async function loadRecords(){
+ if(state.loading){syncPending=true;return;}
+ const user=teacherUser;
+ if(!user){
+  await loadKnownRecords();
+  if(syncPending){syncPending=false;loadRecords();}
+  return;
+ }
+ state.loading=true;$('#refresh').disabled=true;
+ $('#connection').classList.remove('error');
+ $('#connection-text').textContent='Syncing Firestore saves…';
+ $('.private-pill').textContent='Teacher signed in';
+ render();
+ try{
+  const settings=await teacherConfig();
+  const base='https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(settings.project)+'/databases/(default)/documents/saves';
+  const cloud=await discoverSaves(base,user);
+  if(teacherUser!==user)return;
+  state.records=mergeIslandRecords(islandBrowserRecords(),cloud);
+  state.roster=cloud.map(record=>record.id);
+  state.errors=cloud.filter(record=>record.error);state.imported=false;
+  $('#connection').classList.toggle('error',state.errors.length>0);
+  $('#connection-text').textContent=(cloud.length-state.errors.length)+' Firestore saves synced'+(state.errors.length?' · '+state.errors.length+' need attention':'');
+  $('#updated-time').textContent='Updated '+new Date().toLocaleTimeString('en',{hour:'numeric',minute:'2-digit'});
+  $('#roster-status').textContent='Island saves sync automatically. Gate 8 progress comes from this browser.';
+ }catch(error){
+  if(teacherUser===user){
+   $('#connection').classList.add('error');
+   $('#connection-text').textContent=error.message;
+  }
+ }finally{
+  state.loading=false;$('#refresh').disabled=false;render();
+  if(syncPending){syncPending=false;loadRecords();}
+ }
 }
 function closeModal(){const root=$('#modal-root');root.replaceChildren();state.modal=null;document.body.style.overflow='';closeModal.focus?.focus();}
 function modal(title,subtitle,large=false){closeModal.focus=document.activeElement;const backdrop=el('div',{class:'modal-backdrop'+(large?' inspector-backdrop':''),onclick:e=>{if(e.target===backdrop)closeModal();}}),content=el('section',{class:'modal'+(large?' inspector':''),role:'dialog','aria-modal':'true','aria-label':title}),header=el('header',{class:'modal-header'},el('div',{},el('h2',{},title),el('p',{},subtitle)),el('button',{class:'close-modal','aria-label':'Close inspector',onclick:closeModal},'×'));content.append(header);backdrop.append(content);$('#modal-root').replaceChildren(backdrop);document.body.style.overflow='hidden';state.modal=content;header.querySelector('button').focus();return content;}
@@ -176,4 +287,6 @@ for(const kind of ['grid','list'])$('#'+kind+'-view').onclick=()=>{prefs.view=ki
 $('#import-button').onclick=()=>$('#import-file').click();$('#import-file').onchange=async e=>{try{const file=e.target.files[0];if(!file)return;const imported=JSON.parse(await file.text());const codes=imported.accounts||(Array.isArray(imported)&&imported.every(x=>typeof x==='string')?imported:null);if(codes){if(!Array.isArray(codes)||codes.some(x=>typeof x!=='string'||!worldFor(x)))throw new Error('Use PEBBLE-, DINO- or ROCKET- save codes.');prefs.added=[...new Set([...prefs.added,...codes])];if(Array.isArray(imported.hidden))prefs.hidden=[...new Set([...prefs.hidden,...imported.hidden.filter(x=>codes.includes(x))])];persist();await loadRecords();toast('Account list imported on this browser.');}else{state.records=await parseImport(imported);state.imported=true;$('#connection-text').textContent='Imported snapshot · '+state.records.length+' accounts';$('#connection').classList.remove('error');$('#updated-time').textContent='Imported '+new Date().toLocaleTimeString();render();toast('Save data imported. No cloud records were changed.');}}catch(error){toast(error.message);}e.target.value='';};
 $('#export').onclick=()=>{const rows=shown();const csv=[['Name','World','Cloud save code','Items tried','Mastered','Built / collected','Review items','Currency','Saved at'],...rows.map(r=>{const w=WORLDS.find(w=>w.id===r.world),m=metrics(r);return[r.name,w.label,r.id,m?.tried??'',m?.mastered??'',m?.built??'',m?.review??'',m?.currency??'',r.updated?new Date(r.updated).toISOString():''];})].map(row=>row.map(safeCSV).join(',')).join('\r\n');const url=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));const a=el('a',{href:url,download:'island-classroom-view.csv'});a.click();setTimeout(()=>URL.revokeObjectURL(url),500);};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&state.modal)closeModal();});
-render();loadRecords();
+render();initTeacherAuth();loadRecords();
+setInterval(()=>{if(teacherUser&&!document.hidden&&!state.loading)loadRecords();},60000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&teacherUser)loadRecords();});
