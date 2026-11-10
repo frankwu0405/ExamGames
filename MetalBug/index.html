@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Metal Bug Mission</title>
+<style>
+*{box-sizing:border-box}body{margin:0;padding:20px;background:#111b31;color:#f5f8ff;font:1.15rem system-ui}main{max-width:560px;margin:auto}h1{line-height:1.1}small{color:#a9dfff}section{padding:20px;background:#213354;border-radius:22px}button{font:inherit;font-weight:700;min-height:48px;padding:8px 14px;margin:5px;border:0;border-radius:12px;background:#c8ebff;color:#10213c;cursor:pointer}button:focus-visible{outline:3px solid #ffca66;outline-offset:3px}button:disabled{opacity:.45;cursor:default}#letters{display:flex;flex-wrap:wrap;justify-content:center}#letters button{font-size:2rem;min-width:48px}button[aria-pressed=true],#next{background:#ffca66}#scene{font-size:4rem;text-align:center;margin:0}#status{min-height:3em}a{color:#c8ebff}@keyframes spark{50%{transform:scale(1.22) rotate(15deg);filter:drop-shadow(0 0 14px #7cdcff)}}@media(prefers-reduced-motion:no-preference){#scene.spark{animation:spark .55s ease}}
+</style>
+<main><a href="../">Exam Games</a><h1>The Metal Bug Mission</h1>
+<small id="progress"></small>
+<section><div id="scene" aria-hidden="true"></div><h2 id="title" tabindex="-1"></h2>
+<p id="clue"></p><p id="prompt"></p><div id="letters"></div>
+<div id="options"></div><button id="hear" hidden>Hear the word</button>
+<button id="mic" hidden>🎙 Say it</button><details><summary>About the microphone</summary>The mic is optional. Your browser may send speech to its recognition service. This game does not save recordings or answers.</details><p id="status" role="status"></p><button id="next">Next</button>
+</section></main>
+<script>
+const missions = [
+  {icon:'🪲', title:'Repair the bug', words:[['turn','ur'],['burn','ur'],['curl','ur']],
+   clue:'The metal bug goes dark. Kip bends its wings and taps it three times. The bug glows blue again.',
+   question:'Who fixes the bug?', choices:['Kip','Finn','Nara'], answers:['kip']},
+  {icon:'🌀', title:'Get the bug flying', words:[['bird','ir'],['dirt','ir'],['circle','ir']],
+   clue:'The bug flies up and turns in a happy circle.',
+   question:'What does the bug do after Kip fixes it?', choices:['It goes dark','It flies in a circle'], answers:['it flies in a circle','flies in a circle','in a circle','a circle','circle'], correct:1},
+  {icon:'🗺️', title:'Find the workshop', words:[['turn','ur'],['bird','ir'],['curl','ur'],['dirt','ir'],['light','igh'],['out','ou']],
+   clue:'The red dot leads the friends to a workshop. Finn sees a drawing on the wall.',
+   question:'What does Finn see on the wall?', choices:['A map','A metal bug','A drawing'], answers:['a drawing','drawing','a picture','picture'], correct:2}
+];
+const byId = id => document.getElementById(id);
+const {progress, scene, title, clue, prompt, letters, options, hear, mic, status, next} =
+  Object.fromEntries(['progress','scene','title','clue','prompt','letters','options','hear','mic','status','next'].map(id => [id, byId(id)]));
+const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let mission = 0, step = 0, selected = [], listening, renderVersion = 0, expected = [];
+function button(parent, label, action) {
+  const control = document.createElement('button');
+  control.textContent = label;
+  control.onclick = action;
+  parent.append(control);
+  return control;
+}
+function render() {
+  renderVersion++;
+  if (listening) listening.abort();
+  listening = null;
+  mic.disabled = false;
+  selected = [];
+  scene.classList.remove('spark');
+  expected = [];
+  letters.replaceChildren();
+  options.replaceChildren();
+  status.textContent = '';
+  clue.textContent = '';
+  hear.hidden = mic.hidden = true;
+  next.disabled = true;
+  next.textContent = 'Next';
+  const current = missions[mission];
+  if (!current) {
+    progress.textContent = '3 of 3 missions complete';
+    scene.textContent = '✨';
+    title.textContent = 'Mission complete!';
+    prompt.textContent = 'You fixed the bug and found the drawing. Can you read turn, bird, light, and out one more time?';
+    next.textContent = 'Play again';
+    next.disabled = false;
+    return;
+  }
+  progress.textContent = 'Mission ' + (mission + 1) + ' of ' + missions.length;
+  scene.textContent = current.icon;
+  const drill = current.words[step];
+  if (!drill) {
+    title.textContent = current.title + ' • Story check';
+    clue.textContent = current.clue;
+    prompt.textContent = current.question;
+    expected = current.answers;
+    mic.hidden = !Recognition;
+    current.choices.forEach((choice, index) => button(options, choice, () => {
+      if (index === (current.correct ?? 0)) {
+        status.textContent = 'You found the clue!';
+        next.disabled = false;
+      } else {
+        status.textContent = 'Read the clue again, then try another answer.';
+      }
+    }));
+    return;
+  }
+  const [word, pattern] = drill;
+  title.textContent = current.title + ' • Word ' + (step + 1) + ' of ' + current.words.length;
+  prompt.textContent = 'Tap the letters that make one sound, in order.';
+  if (step === 0 && mission < 2) clue.textContent = 'Look for ' + pattern + '.';
+  const start = word.indexOf(pattern);
+  const target = Array.from(pattern, (_, index) => start + index);
+  [...word].forEach((letter, index) => {
+    const tile = button(letters, letter, () => {
+      if (index !== target[selected.length]) {
+        selected = [];
+        for (const control of letters.children) control.setAttribute('aria-pressed', 'false');
+        status.textContent = 'Look for ' + pattern + '. Tap those letters from left to right.';
+        return;
+      }
+      selected.push(index);
+      tile.setAttribute('aria-pressed', 'true');
+      if (selected.length !== target.length) return;
+      const chunks = [word.slice(0, start), pattern, word.slice(start + pattern.length)].filter(Boolean);
+      letters.replaceChildren();
+      scene.classList.add('spark');
+      letters.textContent = chunks.join(' · ');
+      letters.style.fontSize = '2rem';
+      status.textContent = 'Say each chunk, then blend: ' + word + '.';
+      expected = [word];
+      hear.hidden = !('speechSynthesis' in window);
+      hear.onclick = () => {
+        const speech = new SpeechSynthesisUtterance(word);
+        speech.lang = 'en-US';
+        speech.rate = 0.8;
+        speechSynthesis.cancel();
+        speechSynthesis.speak(speech);
+      };
+      mic.hidden = !Recognition;
+      next.textContent = 'I read it';
+      next.disabled = false;
+    });
+    tile.setAttribute('aria-pressed', 'false');
+  });
+}
+mic.onclick = () => {
+  if (listening) return;
+  const version = renderVersion;
+  const recognition = new Recognition();
+  recognition.lang = 'en-US';
+  listening = recognition;
+  mic.disabled = true;
+  status.textContent = 'Listening…';
+  recognition.onresult = event => {
+    if (version !== renderVersion) return;
+    const heard = event.results[0][0].transcript;
+    const answer = heard.toLowerCase().replace(/[^a-z ]/g, '').trim().replace(/ +/g, ' ');
+    if (expected.includes(answer)) {
+      status.textContent = 'Matched! I heard “' + heard + '.”';
+      next.disabled = false;
+    } else {
+      status.textContent = 'I heard “' + heard + '.” Try again or use the buttons.';
+    }
+  };
+  recognition.onerror = () => {
+    if (version === renderVersion) status.textContent = 'The mic could not pick that up. Try again or use the buttons.';
+  };
+  recognition.onend = () => {
+    if (version !== renderVersion) return;
+    listening = null;
+    mic.disabled = false;
+    if (status.textContent === 'Listening…') status.textContent = 'Try again or use the buttons.';
+  };
+  try { recognition.start(); }
+  catch {
+    listening = null;
+    mic.disabled = false;
+    status.textContent = 'The mic is unavailable. Use the buttons to continue.';
+  }
+};
+next.onclick = () => {
+  if (mission === missions.length) {
+    mission = 0;
+    step = 0;
+  } else if (step === missions[mission].words.length) {
+    mission++;
+    step = 0;
+  } else {
+    step++;
+  }
+  render();
+  title.focus();
+};
+render();
+</script>
+</html>
