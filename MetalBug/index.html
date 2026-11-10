@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#0d1220">
+<meta name="gate-build" content="20261111-refresh-1">
 <title>The Gate 8: The Empty Room</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Lexend:wght@500;700;800&display=swap" rel="stylesheet">
@@ -837,9 +838,35 @@ const NOTES=[
  ["The team finds the purple door and a workshop with curly wires. The big empty space shows a machine was taken (by Vex).","What proves something is missing, rather than just broken?"],
  ["Finn studies the drawing, sees the man helped them all along, and decides it is their turn to help him. The tower shines red.","Why does Finn change from worried to ready? Which clues matter, and which are only true?"]
 ];
+async function reloadGame(){
+  Mic.off();
+  const control=document.querySelector('#reload-game');
+  if(control)control.disabled=true;
+  clearTimeout(cloudTimer);
+  if(student&&cloudReadyFor===student.id){
+    try{await uploadStudent(student);}catch(error){cloudFailure(error);}
+  }
+  const url=new URL(location.href);
+  url.searchParams.set('v',Date.now().toString());
+  location.replace(url.href);
+}
+async function checkGameUpdate(){
+  if(document.hidden||!document.querySelector('#title')||checkGameUpdate.busy)return;
+  checkGameUpdate.busy=true;
+  try{
+    const response=await fetch(location.pathname,{cache:'no-store'});
+    if(!response.ok)return;
+    const html=await response.text();
+    const match=html.match(/<meta name="gate-build" content="([^"]+)"/);
+    const current=document.querySelector('meta[name="gate-build"]')?.content;
+    if(match&&match[1]!==current)await reloadGame();
+  }catch{}finally{checkGameUpdate.busy=false;}
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkGameUpdate();});
 function openTeacher(){
   const b=$('#tbody');b.replaceChildren();
   b.append(el('h3','','Teacher'));
+  const refreshButton=el('button','','Refresh game ↻');refreshButton.onclick=reloadGame;b.append(refreshButton);
   const mk=(t,f,pri)=>{const x=el('button',pri?'pri':'',t);x.onclick=f;return x;};
   b.append(el('h4','','Student progress'));
   b.append(el('p','',student?'Playing as '+student.name:'Enter a student name on the title screen.'));
@@ -1341,6 +1368,14 @@ function skipNow(){
   if(go){go.click();return;}
   const jump=[...document.querySelectorAll('#play .hear')].find(b=>/jump to next clue/.test(b.textContent));
   if(jump)jump.click();
+}
+{
+ const refreshButton=el('button','','↻');
+ refreshButton.id='reload-game';
+ refreshButton.setAttribute('aria-label','Refresh game');
+ refreshButton.style.cssText='width:36px;min-width:36px;padding:0;font:700 24px system-ui;color:var(--paper);background:none;border:0';
+ refreshButton.onclick=reloadGame;
+ $('#hud').append(refreshButton);
 }
 if(TEST){const sk=document.createElement('button');sk.id='skip';sk.textContent='SKIP ›';sk.setAttribute('aria-label','Test skip');
   sk.style.cssText='width:auto;padding:0 10px;font:400 18px var(--hd);letter-spacing:.05em;background:var(--orange);color:#000';
