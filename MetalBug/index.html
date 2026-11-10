@@ -120,16 +120,11 @@ html,body{margin:0;height:100%;background:#05070d;color:var(--paper);font-family
 .ttl{font:400 clamp(50px,16vw,104px)/.94 var(--hd);color:var(--paper);-webkit-text-stroke:4px #000;paint-order:stroke fill;text-shadow:6px 6px 0 #000;font-kerning:normal;letter-spacing:.008em;white-space:nowrap;transform:rotate(-3deg);margin:0 0 8px 6px}
 .ttl em{display:block;font-style:normal;color:var(--red);font-size:.57em;letter-spacing:.035em;margin-left:.22em}
 
-.student-badge{background:#ffe0a1;color:#151425;border:3px solid #090910;box-shadow:4px 4px #090910;padding:8px 12px;transform:rotate(-1deg)}
-.student-tag{display:block;font:400 19px/1 var(--hd);letter-spacing:.09em}
-.student-form{display:grid;grid-template-columns:minmax(0,1fr) 46px;gap:6px}
-.student-form label{grid-column:1/-1}
-.student-input,.student-confirm{min-height:44px;border:2px solid #10101b;color:#161422;font:700 16px var(--bd)}
-.student-input{min-width:0;background:#fff7e5;padding:6px 9px}
-.student-confirm{background:#ffcf55;box-shadow:2px 2px #10101b}
-.student-greeting{font:400 clamp(24px,7vw,38px)/1.05 var(--hd);margin:4px 0;overflow-wrap:anywhere}
-.student-edit{color:#191529;background:none;border:0;padding:4px 0;text-decoration:underline;font:700 13px var(--bd)}
-.go:disabled{opacity:.5;cursor:default}
+.student-form{margin:0}
+.student-input{display:block;width:100%;min-height:44px;border:0;border-radius:0;appearance:none;background:#fff;color:var(--ink);padding:9px 18px;font:700 16px var(--bd);clip-path:polygon(0 0,100% 0,calc(100% - 14px) 100%,0 100%)}
+.student-input::placeholder{color:#85858e;opacity:1}
+.student-input:focus-visible{outline:2px solid var(--yellow);outline-offset:-4px}
+.student-greeting{color:#fff;font:700 clamp(16px,4vw,22px)/1.2 var(--bd);overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -848,37 +843,40 @@ function title(editName=false){
   const go=el('button','go',S.ch>0&&S.ch<5?`Continue · paragraph ${Math.min(S.ch+1,4)} ▸`:'Start ▸');
   const wrap=el('div','');wrap.style.cssText='display:flex;flex-direction:column;gap:10px;margin-top:auto';
   go.onclick=()=>{Snd.init();Snd.resume();tl.remove();startChapter(S.ch>=4?0:S.ch);};
-  const badge=el('div','student-badge');
-  if(student&&!editName){
-    badge.append(el('div','student-tag','PLAYER IDENTIFIED'),el('div','student-greeting','Welcome, '+student.name+'!'));
-    const edit=el('button','student-edit','Change player');
-    edit.onclick=()=>title(true);badge.append(edit);
-  }else{
-    go.disabled=true;
-    const form=el('form','student-form');
-    const label=el('label','student-tag','WHO’S PLAYING?');
-    label.htmlFor='student-name';
-    const input=el('input','student-input');
-    input.id='student-name';input.placeholder='Enter your name';input.maxLength=32;
-    input.required=true;input.autocomplete='off';input.autocapitalize='words';
-    const confirm=el('button','student-confirm','✓');
-    confirm.type='submit';confirm.setAttribute('aria-label','Confirm player name');
-    form.append(label,input,confirm);
-    form.onsubmit=event=>{
-      event.preventDefault();
-      const name=input.value.trim().replace(/\s+/g,' ');
-      if(!name){input.focus();return;}
-      selectStudent(name);title();$('#play .go')?.focus();
-    };
-    badge.append(form);
-    if(student){
-      const cancel=el('button','student-edit','Keep '+student.name);
-      cancel.onclick=()=>title();badge.append(cancel);
+  const nameArea=el('div','student-name-area');
+  wrap.append(nameArea,go);
+  const startGame=go.onclick;
+  function showGreeting(){
+    nameArea.replaceChildren(el('div','student-greeting','Welcome, '+student.name+'!'));
+    go.textContent=S.ch>0&&S.ch<5?`Continue · paragraph ${Math.min(S.ch+1,4)} ▸`:'Start ▸';
+    go.onclick=startGame;
+    if(S.ch>0&&S.ch<5&&!wrap.querySelector('.alt')){
+      const restart=el('button','go alt','From the start');
+      restart.style.fontSize='22px';
+      restart.onclick=()=>{Snd.init();Snd.resume();tl.remove();S.ch=0;startChapter(0);};
+      wrap.append(restart);
     }
+  }
+  if(student&&!editName)showGreeting();
+  else{
+    const form=el('form','student-form');
+    const input=el('input','student-input');
+    input.name='student-name';input.placeholder='name';input.maxLength=32;
+    input.required=true;input.autocomplete='off';input.autocapitalize='words';
+    input.setAttribute('aria-label','Student name');
+    input.enterKeyHint='done';
+    form.append(input);
+    nameArea.append(form);
+    function confirmName(){
+      const name=input.value.trim().replace(/\s+/g,' ');
+      if(!name)return false;
+      selectStudent(name);showGreeting();return true;
+    }
+    form.onsubmit=event=>{event.preventDefault();if(confirmName())go.focus();};
+    input.onblur=()=>{confirmName();};
+    go.onclick=()=>{if(confirmName())startGame();else input.focus();};
     if(editName)requestAnimationFrame(()=>input.focus());
   }
-  wrap.append(badge,go);
-  if(student&&!editName&&S.ch>0&&S.ch<5){const n=el('button','go alt','From the start');n.style.fontSize='22px';n.onclick=()=>{Snd.init();Snd.resume();tl.remove();S.ch=0;startChapter(0);};wrap.append(n);}
   play.append(el('div','sm','Read · listen · decide'),wrap);
   Snd.music(false);
   if(!Mic.ok){const w=el('div','sm','No speech recognition here — teacher mode');w.style.color='#ffb061';play.insertBefore(w,wrap);}
