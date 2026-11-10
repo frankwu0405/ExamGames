@@ -1,4 +1,4 @@
-import {WORLDS,worldFor,decodeDoc,metrics,visibleRecords,parseImport,safeCSV} from './data.js';
+import {WORLDS,worldFor,decodeDoc,unpack,metrics,visibleRecords,parseImport,safeCSV} from './data.js';
 import {previewHTML,expand} from './preview.js';
 const $=s=>document.querySelector(s);
 function el(tag,props={},...children){const node=document.createElement(tag);for(const[k,v]of Object.entries(props)){if(k==='class')node.className=v;else if(k==='text')node.textContent=v;else if(k==='style')Object.assign(node.style,v);else if(k.startsWith('on'))node.addEventListener(k.slice(2).toLowerCase(),v);else if(v!==false&&v!=null)node.setAttribute(k,v===true?'':String(v));}node.append(...children.flat().filter(x=>x!=null));return node;}
@@ -76,7 +76,14 @@ function mergeIslandRecords(local,cloud){
  }
  return [...records.values()];
 }
+let gateCloudProfiles=[];
 function gateProfiles(){
+ const localProfiles=localGateProfiles();
+ const merged=new Map(localProfiles.map(entry=>[entry.name.trim().toLowerCase(),entry]));
+ for(const entry of gateCloudProfiles){const key=entry.name.trim().toLowerCase(),local=merged.get(key);if(!local||Number(entry.progress.savedAt||0)>=Number(local.progress.savedAt||0))merged.set(key,entry);}
+ return [...merged.values()];
+}
+function localGateProfiles(){
  const roster=browserSave('gate8-students');
  if(Array.isArray(roster?.students)&&roster.students.length){
   return roster.students.filter(entry=>entry?.progress&&typeof entry.name==='string');
@@ -89,6 +96,8 @@ function renderGates(){
  const host=$('#gate-records');
  if(!host)return;
  const profiles=gateProfiles();
+ const label=document.querySelector('.gate-device');
+ if(label)label.textContent=gateCloudProfiles.length?'Cloud progress and this browser':'Reading progress on this browser';
  host.replaceChildren();
  if(!profiles.length){
   host.append(el('p',{class:'muted'},'No Gate 8 progress is saved in this browser yet. Open the episode and enter a player name to begin.'));
@@ -171,6 +180,7 @@ async function initTeacherAuth(){
     return;
    }
    if(teacherUser&&teacherUser.uid!==user?.uid){
+    gateCloudProfiles=[];
     state.records=state.records.filter(record=>record.local);
     state.roster=[];$('#updated-time').textContent='';
    }
@@ -196,7 +206,13 @@ async function discoverSaves(base,user,fetchPage=fetch){
   if(response.status===401||response.status===403)throw new Error('Firestore refused teacher access to the saves collection.');
   if(!response.ok)throw new Error('Firestore sync failed (HTTP '+response.status+').');
   const page=await response.json();
-  for(const record of await Promise.all((page.documents||[]).map(decodeDoc))){
+  for(const record of await Promise.all((page.documents||[]).map(async doc=>{
+    if(!doc.name?.split('/').pop().startsWith('GATE8-'))return decodeDoc(doc);
+    try{
+      const progress=await unpack(doc.fields?.d?.stringValue);
+      return {world:'gates',id:doc.name.split('/').pop(),name:String(progress.name||'Unnamed player'),progress};
+    }catch{return null;}
+  }))){
    if(record)records.set(record.id,record);
   }
   pageToken=page.nextPageToken||'';
@@ -223,13 +239,14 @@ async function loadRecords(){
   const base='https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(settings.project)+'/databases/(default)/documents/saves';
   const cloud=await discoverSaves(base,user);
   if(teacherUser!==user)return;
-  state.records=mergeIslandRecords(islandBrowserRecords(),cloud);
-  state.roster=cloud.map(record=>record.id);
+  gateCloudProfiles=cloud.filter(record=>record.world==='gates');
+  state.records=mergeIslandRecords(islandBrowserRecords(),cloud.filter(record=>record.world!=='gates'));
+  state.roster=cloud.filter(record=>record.world!=='gates').map(record=>record.id);
   state.errors=cloud.filter(record=>record.error);state.imported=false;
   $('#connection').classList.toggle('error',state.errors.length>0);
   $('#connection-text').textContent=(cloud.length-state.errors.length)+' Firestore saves synced'+(state.errors.length?' · '+state.errors.length+' need attention':'');
   $('#updated-time').textContent='Updated '+new Date().toLocaleTimeString('en',{hour:'numeric',minute:'2-digit'});
-  $('#roster-status').textContent='Island saves sync automatically. Gate 8 progress comes from this browser.';
+  $('#roster-status').textContent='Island and Gate 8 saves sync automatically.';
  }catch(error){
   if(teacherUser===user){
    $('#connection').classList.add('error');
