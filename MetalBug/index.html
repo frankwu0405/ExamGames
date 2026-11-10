@@ -149,6 +149,8 @@ html,body{margin:0;height:100%;background:#05070d;color:var(--paper);font-family
    Static page. Browser speech recognition + WebAudio only.
    ========================================================= */
 const IW=2576, IH=1438;
+const TEST=/[?&]test/.test(location.search);
+const testBtn=(label,f)=>{const b=el('button','hear','TEST · '+label);b.style.cssText='border-color:#ff7a1a;color:#ffb061';b.onclick=f;return b;};
 const $=s=>document.querySelector(s);
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e;};
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
@@ -370,6 +372,7 @@ function readOne(it,left){
       setTimeout(()=>res({clean}),340);
     };
     T.force=()=>finish(true);
+    if(TEST)wrap.append(testBtn('pass this line',()=>finish(true)));
     if(Mic.ok){
       Mic.handler=({cands,final})=>{
         const b=bestAln(line.tokens,cands);line.apply(b.aln,final);renderHeard(hb,b.words,b.aln,final);
@@ -424,6 +427,7 @@ function choose(cfg){
         const up=()=>{if(timer){clearTimeout(timer);timer=null;if(!locked&&o.state==='live'){m.textContent=Mic.ok?'Read it out loud to choose.':'';if(!Mic.ok)teacherConfirm(()=>commit(o));}}};
         o.el.onpointerup=up;o.el.onpointerleave=()=>{if(timer){clearTimeout(timer);timer=null;}};};
       hold();
+      if(TEST)o.el.onclick=()=>{if(!locked&&o.state==='live')commit(o);};
     });
     const layout=()=>{list.replaceChildren();const live=shuffle(O.filter(o=>o.state==='live')),dead=O.filter(o=>o.state==='dead');live.concat(dead).forEach(o=>list.append(o.el));};
     layout();
@@ -654,6 +658,8 @@ function scan(spots){
     play.replaceChildren(el('div','sm','Case notes'),el('div','hook','Drag to <em>search</em>'.replace(/<[^>]+>/g,'')));
     const sub=el('div','sm','Find what is wrong in this room');sub.style.color='#9aa7d6';play.append(sub);
     const logged=el('div','');logged.style.cssText='display:flex;flex-direction:column;gap:8px;margin-top:6px';play.append(logged);
+    const jump=()=>testBtn('jump to next clue',()=>{const n=spots.find(x=>!x.done);if(n){cx=n.x;cy=n.y;draw();}});
+    if(TEST)play.append(jump());
     let drag=null,reading=false,prog={},raf=0,last=performance.now(),done=0;
     const down=e=>{if(reading)return;drag={x:e.clientX,y:e.clientY};stage.setPointerCapture&&stage.setPointerCapture(e.pointerId);Snd.init();Snd.resume();};
     const move=e=>{if(!drag||reading)return;cx-=(e.clientX-drag.x)/s;cy-=(e.clientY-drag.y)/s;drag={x:e.clientX,y:e.clientY};draw();};
@@ -677,7 +683,7 @@ function scan(spots){
             done++;
             if(done>=spots.length){stage.removeEventListener('pointerdown',down);stage.removeEventListener('pointermove',move);stage.removeEventListener('pointerup',up);stage.removeEventListener('pointercancel',up);ret.style.display='none';panelView=null;document.querySelectorAll('.pin').forEach(p=>p.remove());res();return;}
             reading=false;last=performance.now();
-            play.replaceChildren(el('div','sm','Case notes'),sub,logged);
+            play.replaceChildren(el('div','sm','Case notes'),sub,logged);if(TEST)play.append(jump());
             raf=requestAnimationFrame(tickLoop);return;
           }
         }
