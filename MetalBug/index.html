@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#0d1220">
-<meta name="gate-build" content="20261111-account-recovery-2">
+<meta name="gate-build" content="20261111-save-popup-3">
 <title>The Gate 8: The Empty Room</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Lexend:wght@500;700;800&display=swap" rel="stylesheet">
@@ -177,6 +177,17 @@ html,body{margin:0;height:100%;background:#05070d;color:var(--paper);font-family
 #dots b.on{background:var(--yellow);transform:rotate(45deg) scale(1.3)}
 .go.locked{background:#3a4166;color:#8d97c4;box-shadow:none;font-size:0}
 .go.locked::before{content:'Locked · coming soon';font-size:24px}
+
+.save-overlay{position:fixed;inset:0;z-index:100;background:rgba(4,6,12,.86);backdrop-filter:blur(7px);display:flex;align-items:center;justify-content:center;padding:24px}
+.save-dialog{width:min(100%,410px);max-height:85dvh;overflow:auto;background:var(--paper);color:var(--ink);border:4px solid #000;box-shadow:9px 9px 0 #000;padding:24px;transform:rotate(-1deg)}
+.save-dialog h2{font:400 clamp(34px,10vw,48px)/.95 var(--hd);letter-spacing:.02em;margin:0}
+.save-caption{font:700 15px var(--bd);margin:9px 0 18px;overflow-wrap:anywhere}
+.save-choice{display:flex;flex-direction:column;gap:5px;width:100%;text-align:left;margin:0 0 12px;background:#fff;color:var(--ink);border:2px solid #000;box-shadow:3px 3px #000;padding:12px 15px;cursor:pointer}
+.save-choice:first-of-type{background:var(--yellow)}
+.save-choice strong{font:400 27px/1 var(--hd);letter-spacing:.025em}
+.save-choice span{font:700 12px/1.4 var(--bd)}
+.save-cancel{background:none;border:0;color:var(--ink);font:700 13px var(--bd);padding:8px 0;text-decoration:underline;cursor:pointer}
+.save-dialog button:focus-visible{outline:3px solid var(--orange);outline-offset:3px}
 </style>
 </head>
 <body>
@@ -268,25 +279,49 @@ function progressLabel(progress){
     ' · '+(progress.parts||0)+' parts · '+(progress.earned?.length||0)+' cards';
 }
 function chooseInitialSave(entry,remote,force=false){
-  if(!force&&hasGateProgress(remote))return Promise.resolve(remote);
+  if(!force)return Promise.resolve(remote);
   const backups=storage.get('gate8-sync-backups',[]).filter(snapshot=>snapshot.id===entry.id&&hasGateProgress(snapshot.progress));
   const candidates=hasGateProgress(entry.progress)?[entry.progress]:[];
   for(const snapshot of backups.reverse()){
     if(!candidates.some(progress=>JSON.stringify(progress)===JSON.stringify(snapshot.progress)))candidates.push(snapshot.progress);
   }
-  if(!candidates.length)return Promise.resolve(remote);
-  const parent=document.querySelector('#cloud-status');
-  if(!parent)throw new Error('Return to the title screen to choose your saved progress.');
-  return new Promise(resolve=>{
-    parent.replaceChildren();
-    parent.append(el('div','','Choose the saved progress for '+entry.name+'. Your selection becomes the shared cloud save.'));
-    const finish=progress=>{parent.replaceChildren();resolve(copy(progress));};
-    const cloud=el('button','hear','Use cloud · '+progressLabel(remote));
-    cloud.onclick=()=>finish(remote);parent.append(cloud);
-    candidates.slice(0,3).forEach((progress,index)=>{
-      const recover=el('button','hear','Restore device save '+(index+1)+' · '+progressLabel(progress));
-      recover.onclick=()=>finish(progress);parent.append(recover);
-    });
+  return new Promise((resolve,reject)=>{
+    const previous=document.activeElement;
+    const overlay=el('div','save-overlay');
+    const dialog=el('section','save-dialog');
+    dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');
+    dialog.setAttribute('aria-labelledby','save-dialog-title');
+    const heading=el('h2','','Pick your save');
+    heading.id='save-dialog-title';
+    const caption=el('p','save-caption',entry.name);
+    dialog.append(heading,caption);
+    const finish=(progress,cancel=false)=>{
+      document.removeEventListener('keydown',keyboard);
+      overlay.remove();previous?.focus();
+      if(cancel)reject(new Error('Save selection cancelled. Enter your name to try again.'));
+      else resolve(copy(progress));
+    };
+    function choice(label,progress){
+      const button=el('button','save-choice');
+      button.append(el('strong','',label),el('span','',progressLabel(progress)));
+      button.onclick=()=>finish(progress);dialog.append(button);
+    }
+    choice('Cloud save',remote);
+    candidates.slice(0,3).forEach((progress,index)=>choice(index===0?'This device':'Earlier device save',progress));
+    const cancel=el('button','save-cancel','Cancel');
+    cancel.onclick=()=>finish(null,true);dialog.append(cancel);
+    overlay.append(dialog);document.body.append(overlay);
+    function keyboard(event){
+      if(event.key==='Escape'){event.preventDefault();finish(null,true);}
+      if(event.key==='Tab'){
+        const controls=[...dialog.querySelectorAll('button')];
+        const first=controls[0],last=controls.at(-1);
+        if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+        else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+      }
+    }
+    document.addEventListener('keydown',keyboard);
+    dialog.querySelector('button').focus();
   });
 }
 function applyProgress(progress){
@@ -296,7 +331,7 @@ function applyProgress(progress){
 function cloudFailure(error){
   console.warn('Gate 8:',error.message);
   const status=document.querySelector('#cloud-status');
-  if(status)status.textContent=error.message;
+  if(status){status.hidden=false;status.textContent=error.message;}
 }
 function uploadStudent(entry){
   if(!entry.dirty||cloudReadyFor!==entry.id)return cloudQueue;
@@ -380,7 +415,7 @@ async function syncStudent(chooseSave=false){
     persistRoster();
     renderTray();paintMute();
     const status=document.querySelector('#cloud-status');
-    if(status)status.textContent=entry.name+' · Cloud synced · '+progressLabel(entry.progress);
+    if(status){status.textContent='';status.hidden=true;}
   })();
   cloudLoads.set(id,load);
   try{await load;}finally{cloudLoads.delete(id);}
@@ -1344,22 +1379,8 @@ function title(editName=false){
     }finally{go.disabled=false;}
   };
   const nameArea=el('div','student-name-area');
-  const cloudStatus=el('div','sm','');cloudStatus.id='cloud-status';cloudStatus.setAttribute('role','status');
+  const cloudStatus=el('div','sm','');cloudStatus.id='cloud-status';cloudStatus.setAttribute('role','status');cloudStatus.hidden=true;
   wrap.append(nameArea,cloudStatus,go);
-  if(student&&!editName){
-    const chooseSave=el('button','student-edit','Choose saved progress');
-    chooseSave.style.color='var(--paper)';
-    chooseSave.onclick=async()=>{
-      chooseSave.disabled=true;go.disabled=true;
-      try{
-        if(cloudLoads.has(student.id))await cloudLoads.get(student.id);
-        await syncStudent(true);
-        showGreeting();
-      }catch(error){cloudFailure(error);}
-      finally{chooseSave.disabled=false;go.disabled=false;}
-    };
-    wrap.append(chooseSave);
-  }
   const startGame=go.onclick;
   go.addEventListener('click',e=>{if(curEp!==EP8){e.stopImmediatePropagation();e.preventDefault();}},true);paint();
   function showGreeting(){
@@ -1381,7 +1402,6 @@ function title(editName=false){
   }
   if(student&&!editName){
     showGreeting();
-    cloudStatus.textContent='Checking '+student.name+'’s cloud save…';
     syncStudent().then(()=>{if(document.querySelector('#cloud-status')===cloudStatus)showGreeting();}).catch(cloudFailure);
   }
   else{
@@ -1393,16 +1413,24 @@ function title(editName=false){
     input.enterKeyHint='done';
     form.append(input);
     nameArea.append(form);
-    function confirmName(){
+    let submitting=false;
+    form.onsubmit=async event=>{
+      event.preventDefault();
+      if(submitting)return;
       const name=input.value.trim().replace(/\s+/g,' ');
-      if(!name)return false;
-      selectStudent(name);showGreeting();
-      syncStudent().then(()=>{if(student?.name===name)showGreeting();}).catch(error=>{go.textContent='Retry cloud load';cloudFailure(error);});
-      return true;
-    }
-    form.onsubmit=event=>{event.preventDefault();if(confirmName())go.focus();};
-    input.onblur=()=>{confirmName();};
-    go.onclick=()=>{if(confirmName())startGame();else input.focus();};
+      if(!name){input.focus();return;}
+      submitting=true;input.disabled=true;go.disabled=true;
+      cloudStatus.hidden=true;
+      try{
+        const activeLoad=student&&cloudLoads.get(student.id);
+        if(activeLoad)await activeLoad;
+        selectStudent(name);
+        await syncStudent(true);
+        showGreeting();go.focus();
+      }catch(error){cloudFailure(error);input.disabled=false;input.focus();}
+      finally{submitting=false;go.disabled=false;}
+    };
+    go.onclick=()=>input.focus();
     if(editName)requestAnimationFrame(()=>input.focus());
   }
   play.append(el('div','sm','Read · listen · decide'),wrap);
