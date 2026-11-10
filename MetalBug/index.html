@@ -393,9 +393,9 @@ const ORDINAL={
 };
 const norm=s=>s.toLowerCase().replace(/[’']/g,'').replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(Boolean).map(w=>ORDINAL[w]||NUM[w]||w);
 const HOMO={};[['to','too','two'],['for','four'],['no','know'],['right','write'],['there','their','theyre'],['hear','here'],['one','won'],['new','knew'],['red','read'],['by','buy','bye'],['fur','fir'],['allowed','aloud'],['so','sew'],['would','wood'],['tale','tail'],['hi','high'],['night','knight'],['wow','whoa']].forEach(g=>g.forEach(w=>HOMO[w]=g));
-const SOFT={finn:['fin','finn','phin','fen','finnes'],kip:['kip','keep','kit','kid','kipp','kib','cape','ship'],nara:['nara','nora','narra','narah','naira','narrow','mara','sarah'],vex:['vex','vexx','vets','becks','vecs','bex','vax','box','backs','vegas'],watcher:['watcher','watchers','washer','watch','wash'],toby:['toby','tobey']};
+const STORY_NAMES=new Set(["finn","kip","nara","vex","watcher","toby"]);
 const NOKEY=new Set('would could should you your young touch touches shoulder through thought enough double trouble sure pure eight wire wires fire their tire during cure'.split(' '));
-function mkTok(raw){const n=norm(raw)[0]||'';const base=n.replace(/s$/,'');return{raw,n,base,soft:!!SOFT[base],key:/(ir|ur|igh|ou)/.test(n)&&!NOKEY.has(n)};}
+function mkTok(raw){const n=norm(raw)[0]||'';const base=n.replace(/s$/,'');return{raw,n,base,soft:STORY_NAMES.has(base),key:/(ir|ur|igh|ou)/.test(n)&&!NOKEY.has(n)};}
 const SPEECH_VARIANTS={curly:['curley'],friends:['frenz']};
 function eq(t,h,strict){
   if(t.n===h)return true;
@@ -406,7 +406,11 @@ function eq(t,h,strict){
   // Keep the onset and suffix exact so this does not forgive an omitted word.
   if(/^[b-df-hj-np-tv-z]+[ae]nds$/.test(t.n)&&
      h===t.n.replace(/[ae]nds$/,ending=>ending==='ends'?'ands':'ends'))return true;
-  if(t.soft&&SOFT[t.base].includes(h.replace(/s$/,'')))return true;
+  if(t.soft){
+    const heardName=h.replace(/s$/,'');
+    // A name can be misheard, but a different known character is meaningful.
+    return heardName===t.base||!STORY_NAMES.has(heardName);
+  }
   return !!(SPEECH_VARIANTS[t.n]?.includes(h)||HOMO[t.n]?.includes(h));
 }
 function align(T,H,strict){
