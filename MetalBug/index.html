@@ -24,6 +24,9 @@ html,body{margin:0;height:100%;background:#05070d;color:var(--paper);font-family
 #hud{position:absolute;right:8px;top:8px;z-index:6;display:flex;gap:6px}
 #hud button{width:38px;height:38px;border:2px solid #000;background:rgba(244,234,210,.92);color:var(--ink);padding:0;display:flex;align-items:center;justify-content:center;transform:rotate(-2deg);clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
 #hud button:nth-child(2){transform:rotate(2deg);opacity:.55}
+#hud #home{opacity:1;transform:rotate(-2deg)}
+#hud #home.ask{width:auto;padding:0 10px;background:var(--orange);font:400 18px var(--hd);letter-spacing:.05em;color:#000}
+#app:has(#title) #home,body:has(#title) #home{display:none}
 #hud svg{width:22px;height:22px}
 #fx{position:absolute;inset:0;pointer-events:none;z-index:7;overflow:hidden}
 .pop{position:absolute;left:50%;top:44%;font:400 64px var(--hd);color:var(--yellow);-webkit-text-stroke:3px #000;paint-order:stroke fill;text-shadow:4px 4px 0 #000;letter-spacing:.04em;animation:pop .95s ease-out forwards;white-space:nowrap}
@@ -185,6 +188,7 @@ html,body{margin:0;height:100%;background:#05070d;color:var(--paper);font-family
     <div id="curtain">?</div>
     <div id="cap" class="hide"></div>
     <div id="hud">
+      <button id="home" aria-label="Back to homepage"><svg viewBox="0 0 24 24" fill="none" stroke="#0d1220" stroke-width="2.6" stroke-linecap="square"><path d="M3 12 12 4l9 8M6 10v10h12V10M10 20v-6h4v6"/></svg></button>
       <button id="mute" aria-label="Sound on/off"></button>
       <button id="gear" aria-label="Teacher (hold)"><svg viewBox="0 0 24 24" fill="none" stroke="#0d1220" stroke-width="2.4" stroke-linecap="square"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><path d="M16 4v6M8 14v6"/></svg></button>
     </div>
@@ -1010,6 +1014,10 @@ function skipNow(){
 if(TEST){const sk=document.createElement('button');sk.id='skip';sk.textContent='SKIP ›';sk.setAttribute('aria-label','Test skip');
   sk.style.cssText='width:auto;padding:0 10px;font:400 18px var(--hd);letter-spacing:.05em;background:var(--orange);color:#000';
   sk.onclick=skipNow;$('#hud').prepend(sk);}
+{const hb=$('#home');let t0;hb.onclick=()=>{
+  if(hb.classList.contains('ask')){clearTimeout(t0);hb.classList.remove('ask');hb.innerHTML=hb.dataset.ic;Snd.init();title();return;}
+  hb.dataset.ic=hb.innerHTML;hb.classList.add('ask');hb.textContent='HOME? ✓';
+  t0=setTimeout(()=>{hb.classList.remove('ask');hb.innerHTML=hb.dataset.ic;},2800);};}
 renderTray();title();
 </script>
 </body>
