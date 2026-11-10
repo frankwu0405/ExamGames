@@ -230,8 +230,10 @@ function save(){
   if(!student){storage.set('gate8v2',S);return;}
   S.savedAt=Date.now();
   student.progress=copy(S);
+  student.dirty=true;
+  student.revision=(student.revision||0)+1;
   storage.set('gate8-students',roster);
-  if(cloudReadyFor===student.id){clearTimeout(cloudTimer);cloudTimer=setTimeout(()=>uploadStudent(student),600);}
+  if(cloudReadyFor===student.id){clearTimeout(cloudTimer);const entry=student;cloudTimer=setTimeout(()=>uploadStudent(entry),600);}
 }
 async function gateCloudConfig(){
   if(!cloudConfig){
@@ -247,46 +249,92 @@ function cloudPayload(entry){
   let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);
   return {fields:{d:{stringValue:'j'+btoa(binary)},t:{integerValue:String(entry.progress.savedAt||Date.now())},game:{stringValue:'The Gate 8'}}};
 }
+function persistRoster(){storage.set('gate8-students',roster);}
+function backupProgress(entry){
+  const backups=storage.get('gate8-sync-backups',[]);
+  backups.push({name:entry.name,id:entry.id,at:Date.now(),progress:copy(entry.progress)});
+  storage.set('gate8-sync-backups',backups.slice(-12));
+}
+function applyProgress(progress){
+  for(const key of Object.keys(S))delete S[key];
+  Object.assign(S,fresh(),copy(progress));
+}
+function cloudFailure(error){
+  console.warn('Gate 8:',error.message);
+  const status=document.querySelector('#cloud-status');
+  if(status)status.textContent=error.message;
+}
 function uploadStudent(entry){
+  if(!entry.dirty||cloudReadyFor!==entry.id)return cloudQueue;
   const snapshot=copy(entry);
   cloudQueue=cloudQueue.catch(()=>{}).then(async()=>{
+    if(cloudReadyFor!==entry.id)return;
     const config=await gateCloudConfig();
     const base='https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(config.project)+'/databases/(default)/documents/saves/';
+    const condition=entry.cloudVersion
+      ?'&currentDocument.updateTime='+encodeURIComponent(entry.cloudVersion)
+      :'&currentDocument.exists=false';
     const payload=JSON.stringify(cloudPayload(snapshot));
-    const response=await fetch(base+encodeURIComponent(gateDocument(snapshot.id))+'?key='+encodeURIComponent(config.key),{
+    const response=await fetch(base+encodeURIComponent(gateDocument(snapshot.id))+'?key='+encodeURIComponent(config.key)+condition,{
       method:'PATCH',headers:{'Content-Type':'application/json'},body:payload,keepalive:payload.length<60000
     });
-    if(!response.ok)throw new Error('Cloud save failed ('+response.status+')');
+    if(!response.ok){
+      if(response.status===409||response.status===412||response.status===400){
+        cloudReadyFor='';
+        throw new Error('Cloud progress changed. Return home and press Continue to reload it.');
+      }
+      throw new Error('Cloud save failed ('+response.status+'). Keep this window open and retry.');
+    }
+    const doc=await response.json();
+    if(!doc.updateTime)throw new Error('Cloud save was not confirmed. Keep this window open.');
+    entry.cloudVersion=doc.updateTime;
+    if(entry.revision===snapshot.revision)entry.dirty=false;
+    persistRoster();
   });
-  cloudQueue.catch(error=>console.warn('Gate 8:',error.message));
+  cloudQueue.catch(cloudFailure);
   return cloudQueue;
 }
 async function syncStudent(){
   if(!student)return;
   const entry=student,id=entry.id;
   if(cloudLoads.has(id))return cloudLoads.get(id);
+  clearTimeout(cloudTimer);
   const load=(async()=>{
     await cloudQueue.catch(()=>{});
     const config=await gateCloudConfig();
     const base='https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(config.project)+'/databases/(default)/documents/saves/';
     const response=await fetch(base+encodeURIComponent(gateDocument(id))+'?key='+encodeURIComponent(config.key),{cache:'no-store'});
-    if(response.status!==404&&!response.ok)throw new Error('Cloud load failed ('+response.status+')');
+    if(response.status!==404&&!response.ok)throw new Error('Cloud load failed ('+response.status+').');
+    if(student!==entry)return;
     if(response.ok){
-      const doc=await response.json(), packed=doc.fields?.d?.stringValue;
-      if(!packed?.startsWith('j'))throw new Error('Unknown Gate save format');
+      const doc=await response.json(),packed=doc.fields?.d?.stringValue;
+      if(!packed?.startsWith('j')||!doc.updateTime)throw new Error('Unknown Gate save format.');
       const remote=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(packed.slice(1)),c=>c.charCodeAt(0))));
-      if(!remote||typeof remote!=='object')throw new Error('Invalid Gate save');
-      if(Number(remote.savedAt||0)>Number(entry.progress?.savedAt||0)){
+      if(!remote||typeof remote!=='object')throw new Error('Invalid Gate save.');
+      // A dirty local save is uploadable only against the cloud version it
+      // originally loaded. Device timestamps never decide the winner.
+      if(entry.dirty&&entry.cloudVersion===doc.updateTime){
+        cloudReadyFor=id;
+        await uploadStudent(entry);
+      }else{
+        if(JSON.stringify(entry.progress)!==JSON.stringify(remote))backupProgress(entry);
         entry.progress=Object.assign(fresh(),remote);
-        storage.set('gate8-students',roster);
+        entry.cloudVersion=doc.updateTime;
+        entry.dirty=false;
       }
+    }else{
+      entry.cloudVersion=null;
+      entry.dirty=true;
+      entry.revision=(entry.revision||0)+1;
+      if(!entry.progress.savedAt)entry.progress.savedAt=Date.now();
+      cloudReadyFor=id;
+      await uploadStudent(entry);
     }
-    if(student?.id!==id)return;
-    Object.assign(S,fresh(),copy(entry.progress));
+    if(student!==entry)return;
+    applyProgress(entry.progress);
     cloudReadyFor=id;
+    persistRoster();
     renderTray();paintMute();
-    if(!S.savedAt){S.savedAt=Date.now();entry.progress=copy(S);storage.set('gate8-students',roster);}
-    await uploadStudent(entry);
   })();
   cloudLoads.set(id,load);
   try{await load;}finally{cloudLoads.delete(id);}
@@ -326,13 +374,13 @@ function savedOrder(key,make){
 function selectStudent(name){
   clearTimeout(cloudTimer);if(student&&cloudReadyFor===student.id)uploadStudent(student);
   cloudReadyFor='';
-  const id=name.toLocaleLowerCase().normalize('NFC');
+  const id=name.trim().replace(/\s+/g,' ').toLowerCase().normalize('NFC');
   const existing=roster.students.find(entry=>entry.id===id);
   const progress=existing?.progress??(roster.students.length?fresh():S);
   student=existing??{id,name};
   if(!existing)roster.students.push(student);
   roster.active=id;
-  Object.assign(S,fresh(),copy(progress));
+  applyProgress(progress);
   student.progress=copy(S);
   storage.set('gate8-students',roster);
   renderTray();paintMute();
@@ -817,6 +865,30 @@ function openTeacher(){
   b.append(el('h4','','Words to review'));
   const w=Object.entries(S.stats).filter(e=>e[1].m).sort((a,b)=>b[1].m-a[1].m).slice(0,10);
   b.append(el('p','',w.length?w.map(e=>`${e[0]} (missed ${e[1].m}, read ${e[1].h})`).join(' · '):'No misses recorded yet.'));
+  const backups=storage.get('gate8-sync-backups',[]).filter(entry=>entry.id===student?.id).slice(-5).reverse();
+  if(backups.length){
+    const recovery=el('details','');
+    recovery.append(el('summary','','Recover this browser’s earlier progress'));
+    recovery.append(el('p','','Choose the save you recognize. This restores it to the cloud for this player.'));
+    for(const snapshot of backups){
+      const progress=snapshot.progress;
+      const label='Paragraph '+Math.min((progress.ch||0)+1,5)+' · '+(progress.parts||0)+' parts · '+(progress.earned?.length||0)+' cards · '+new Date(snapshot.at).toLocaleString();
+      recovery.append(mk(label,async()=>{
+        if(!confirm('Restore this saved progress for '+snapshot.name+'?'))return;
+        const entry=student;
+        closeT();title();
+        try{
+          await syncStudent();
+          if(student!==entry)return;
+          backupProgress(entry);
+          applyProgress(progress);save();clearTimeout(cloudTimer);
+          await uploadStudent(entry);
+          title();
+        }catch(error){cloudFailure(error);}
+      }));
+    }
+    b.append(recovery);
+  }
   b.append(mk('Reset cards & progress',()=>{S.earned=[];S.ch=0;S.stats={};S.checkpoint=null;save();renderTray();closeT();title();}));
   $('#teacher').classList.add('open');
 }
@@ -1195,12 +1267,13 @@ function title(editName=false){
       go.textContent=S.checkpoint?'Continue ▸':'Start ▸';
       tl.remove();startChapter(S.ch>=4&&!S.checkpoint?0:S.ch,true);
     }catch(error){
-      go.textContent='Cloud unavailable · retry';
-      console.warn(error.message);
+      go.textContent='Retry cloud load';
+      cloudFailure(error);
     }finally{go.disabled=false;}
   };
   const nameArea=el('div','student-name-area');
-  wrap.append(nameArea,go);
+  const cloudStatus=el('div','sm','');cloudStatus.id='cloud-status';cloudStatus.setAttribute('role','status');
+  wrap.append(nameArea,cloudStatus,go);
   const startGame=go.onclick;
   go.addEventListener('click',e=>{if(curEp!==EP8){e.stopImmediatePropagation();e.preventDefault();}},true);paint();
   function showGreeting(){
@@ -1234,7 +1307,7 @@ function title(editName=false){
       const name=input.value.trim().replace(/\s+/g,' ');
       if(!name)return false;
       selectStudent(name);showGreeting();
-      syncStudent().then(()=>{if(student?.name===name)showGreeting();}).catch(error=>{go.textContent='Cloud unavailable · retry';console.warn(error.message);});
+      syncStudent().then(()=>{if(student?.name===name)showGreeting();}).catch(error=>{go.textContent='Retry cloud load';cloudFailure(error);});
       return true;
     }
     form.onsubmit=event=>{event.preventDefault();if(confirmName())go.focus();};
