@@ -1009,14 +1009,16 @@ $('#mute').onclick=()=>{Snd.init();Snd.resume();Snd.setMuted(!S.muted);paintMute
 paintMute();
 
 /* ---------- card tray ---------- */
+let trayEpisode=8;
 function renderTray(){
   const t=$('#tray');t.replaceChildren();
   CARDS.forEach((c,i)=>{
-    const have=S.earned.includes(c);
+    const have=trayEpisode===8&&S.earned.includes(c);
     if(have){const im=el('img');im.src=CARD[c];im.alt=c;im.style.left=i*30+'px';im.style.transform=`rotate(${[-7,4,-3,8][i]}deg)`;im.onclick=()=>zoomCard(c);t.append(im);}
     else{const s=el('div','slot','?');s.style.left=i*30+'px';s.style.transform=`rotate(${[-7,4,-3,8][i]}deg)`;t.append(s);}
   });
-  t.style.display=S.earned.length?'block':'none';
+  t.style.display=trayEpisode!==8||S.earned.length?'block':'none';
+  t.setAttribute('aria-label',trayEpisode===8?'Gate 8 cards':'Episode '+trayEpisode+' · cards undiscovered');
 }
 function cardEl(c,{idle=false,tilt=true,max=16}={}){
   const w=el('div','tcard'+(idle?' idle':''));w.style.setProperty('--m',`url(${CARD[c]})`);
@@ -1335,6 +1337,7 @@ async function orderCards(cards){
 
 /* ---------- title & chapter router ---------- */
 function title(editName=false){
+  trayEpisode=8;renderTray();
   T.skipChoice=null;T.force=null;
   $('#title')?.remove();
   RUN++;Mic.off();Snd.music(false);Snd.theme(true);setStatic(0);panelView=null;$('#ret').style.display='none';document.querySelectorAll('.pin').forEach(p=>p.remove());
@@ -1360,7 +1363,11 @@ function title(editName=false){
     car.append(...past,s8,s9,s10);
     s8.append(hl,hr);
   }
-  let curEp=EP8;const paint=()=>{if(typeof go!=='undefined')go.classList.toggle('locked',curEp!==EP8);};
+  let curEp=EP8;const paint=()=>{
+    if(typeof go!=='undefined')go.classList.toggle('locked',curEp!==EP8);
+    trayEpisode=curEp===EP8?8:curEp+1;
+    renderTray();
+  };
   if(!TEST)car.addEventListener('scroll',()=>{if(!car.clientWidth)return;const n=Math.round(car.scrollLeft/car.clientWidth);if(n!==curEp){curEp=n;paint();Snd.init();sfx('tick');hl.remove();hr.remove();}},{passive:true});
   stage.append(tl);car.style.scrollBehavior='auto';car.scrollLeft=car.clientWidth*EP8;
   play.replaceChildren();
@@ -1439,6 +1446,7 @@ function title(editName=false){
   micBtn.classList.add('hide');
 }
 function startChapter(i,resume=false){
+  trayEpisode=8;renderTray();
   T.skipChoice=null;T.force=null;
   const t=$('#title');if(t)t.remove();stage.style.touchAction='';
   RUN++;Mic.off();Snd.theme(false);setStatic(0);panelView=null;$('#ret').style.display='none';document.querySelectorAll('.pin').forEach(p=>p.remove());Snd.humOff();
