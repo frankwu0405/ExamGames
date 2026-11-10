@@ -821,6 +821,22 @@ function startChapter(i){
   flows[i]().then(()=>{if(i<3){startChapter(i+1);}else if(i===3){S.ch=4;save();startChapter(4);}}).catch(e=>{if(e!=='cancel')console.error(e);});
 }
 addEventListener('resize',()=>{if(!panelView){measure();cam(lastShot,{dur:0,keepPage:true});}});
+function skipNow(){
+  const vis=b=>b&&b.offsetParent;
+  const go=[...document.querySelectorAll('#play .go')].find(vis);
+  if(go){go.click();return;}
+  const pass=[...document.querySelectorAll('#play .hear')].find(b=>/pass this line/.test(b.textContent));
+  if(pass){pass.click();return;}
+  const opt=document.querySelector('#play .opt:not(.wrong)');
+  if(opt){opt.click();return;}
+  const jump=[...document.querySelectorAll('#play .hear')].find(b=>/jump to next clue/.test(b.textContent));
+  if(jump){jump.click();return;}
+  if(T.force){T.force();return;}
+  if(T.picks){const p=T.picks()[0];if(p)p.go();}
+}
+if(TEST){const sk=document.createElement('button');sk.id='skip';sk.textContent='SKIP ›';sk.setAttribute('aria-label','Test skip');
+  sk.style.cssText='width:auto;padding:0 10px;font:400 18px var(--hd);letter-spacing:.05em;background:var(--orange);color:#000';
+  sk.onclick=skipNow;$('#hud').prepend(sk);}
 renderTray();title();
 </script>
 </body>
