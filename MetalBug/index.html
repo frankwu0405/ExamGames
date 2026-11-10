@@ -522,6 +522,24 @@ function earn(n,anchor){
   document.body.append(c);setTimeout(()=>c.remove(),1000);sfx('coin');
 }
 /* ---------- read one sentence aloud ---------- */
+// Match a spoken chunk against the next unread word. Also allow a fresh
+// start from the beginning without discarding the confirmed words.
+function readingChunk(tokens,candidates,confirmed,strict){
+  let best=null;
+  for(const words of candidates){
+    const spoken=words.filter(word=>word!=='um'&&word!=='uh');
+    for(const start of confirmed?[confirmed,0]:[0]){
+      let end=start,used=0;
+      while(end<tokens.length&&used<spoken.length&&eq(tokens[end],spoken[used],strict)){end++;used++;}
+      if(end<confirmed)continue;
+      const mismatch=end<tokens.length&&used<spoken.length;
+      if(!best||end>best.end||(end===best.end&&best.mismatch&&!mismatch)){
+        best={end,mismatch,words};
+      }
+    }
+  }
+  return best||{end:confirmed,mismatch:false,words:[]};
+}
 function readOne(it,left){
   const run=RUN;
   const key='line:'+it.t;
@@ -534,7 +552,9 @@ function readOne(it,left){
     const line=mountLine(wrap,it.t);const hb=el('div','heard');wrap.append(hb);renderHeard(hb,null);
     const m=msgEl();wrap.append(m);
     const hear=el('button','hear hide','▶ Hear it');hear.onclick=()=>{it.assisted=true;speak(it.t);};wrap.append(hear);
-    let done=false;
+    let done=false, confirmed=0;
+    const missesByWord=new Map();
+    const needsReview=()=>it.assisted||[...missesByWord.values()].some(count=>count>=2);
     const finish=(clean,by)=>{
       if(done)return;done=true;Mic.handler=null;T.force=null;Mic.reset();
       line.allHit();sfx('good');burst(10);m.textContent='';
@@ -542,13 +562,27 @@ function readOne(it,left){
       if((by==='voice'||(TEST&&by==='skip'))&&!it.assisted){const base=line.tokens.some(t=>t.key&&/ir|ur/.test(t.n))?2:1;earn(it.tries===0?base:it.tries===1?1:0,line.box);}
       setTimeout(()=>{if(run===RUN)res({clean});},340);
     };
-    T.force=by=>finish(true,by==='skip'?'skip':'teacher');
+    T.force=by=>finish(by==='skip'||!needsReview(),by==='skip'?'skip':'teacher');
     if(TEST)wrap.append(testBtn('pass this line',()=>finish(true,'skip')));
     if(Mic.ok){
+      m.textContent='Read at your pace. Green words are saved for this line.';
       Mic.handler=({cands,final})=>{
-        const b=bestAln(line.tokens,cands,S.strict);line.apply(b.aln,final);renderHeard(hb,b.words,b.aln,final);
-        if(judge(b.aln)){finish(it.tries<2&&!it.assisted,'voice');return;}
-        if(final){it.tries++;recordWords(line.tokens,b.aln);m.textContent=it.tries<2?'Close — fix the orange word.':'Try it once more, slowly.';if(it.tries>=2)hear.classList.remove('hide');}
+        const chunk=readingChunk(line.tokens,cands,confirmed,S.strict);
+        if(final)confirmed=chunk.end;
+        const t=line.tokens.map((_,i)=>i<chunk.end?'hit':i===chunk.end&&final&&chunk.mismatch?'sub':null);
+        line.apply({t},final);
+        renderHeard(hb,chunk.words);
+        if(chunk.end===line.tokens.length){finish(!needsReview(),'voice');return;}
+        if(!final)return;
+        if(chunk.mismatch){
+          const count=(missesByWord.get(confirmed)||0)+1;
+          missesByWord.set(confirmed,count);it.tries++;
+          recordWords([line.tokens[confirmed]],{t:['sub']});
+          m.textContent='Try again from “'+line.tokens[confirmed].raw+'”';
+          if(count>=2)hear.classList.remove('hide');
+        }else if(confirmed>0){
+          m.textContent='Keep going from “'+line.tokens[confirmed].raw+'”';
+        }
       };
       Mic.on();
     }else{
