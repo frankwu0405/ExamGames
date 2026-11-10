@@ -357,7 +357,14 @@ const sfx=n=>{try{Snd.fx[n]();}catch(e){}};
 
 /* ---------- words, alignment, judging ---------- */
 const NUM={0:'zero',1:'one',2:'two',3:'three',4:'four',5:'five',6:'six',7:'seven',8:'eight',9:'nine',10:'ten'};
-const norm=s=>s.toLowerCase().replace(/[’']/g,'').replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(Boolean).map(w=>NUM[w]||w);
+const ORDINAL={
+  '1st':'first','2nd':'second','3rd':'third','4th':'fourth','5th':'fifth',
+  '6th':'sixth','7th':'seventh','8th':'eighth','9th':'ninth','10th':'tenth',
+  '11th':'eleventh','12th':'twelfth','13th':'thirteenth','14th':'fourteenth',
+  '15th':'fifteenth','16th':'sixteenth','17th':'seventeenth','18th':'eighteenth',
+  '19th':'nineteenth','20th':'twentieth'
+};
+const norm=s=>s.toLowerCase().replace(/[’']/g,'').replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(Boolean).map(w=>ORDINAL[w]||NUM[w]||w);
 const HOMO={};[['to','too','two'],['for','four'],['no','know'],['right','write'],['there','their','theyre'],['hear','here'],['one','won'],['new','knew'],['red','read'],['by','buy','bye'],['fur','fir'],['allowed','aloud'],['so','sew'],['would','wood'],['tale','tail'],['hi','high'],['night','knight'],['wow','whoa']].forEach(g=>g.forEach(w=>HOMO[w]=g));
 const SOFT={finn:['fin','finn','phin','fen','finnes'],kip:['kip','keep','kit','kid','kipp','kib','cape','ship'],nara:['nara','nora','narra','narah','naira','narrow','mara','sarah'],vex:['vex','vexx','vets','becks','vecs','bex','vax','box','backs','vegas'],watcher:['watcher','watchers','washer','watch','wash'],toby:['toby','tobey']};
 const NOKEY=new Set('would could should you your young touch touches shoulder through thought enough double trouble sure pure eight wire wires fire their tire during cure'.split(' '));
