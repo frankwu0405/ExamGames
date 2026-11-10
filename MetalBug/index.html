@@ -224,11 +224,78 @@ const copy=value=>JSON.parse(JSON.stringify(value));
 const roster=storage.get('gate8-students',{active:'',students:[]});
 let student=roster.students.find(entry=>entry.id===roster.active);
 const S=Object.assign(fresh(),student?.progress??(roster.students.length?{}:storage.get('gate8v2',{})));
+let cloudConfig,cloudQueue=Promise.resolve(),cloudTimer,cloudReadyFor='';
+const cloudLoads=new Map();
 function save(){
   if(!student){storage.set('gate8v2',S);return;}
+  S.savedAt=Date.now();
   student.progress=copy(S);
   storage.set('gate8-students',roster);
+  if(cloudReadyFor===student.id){clearTimeout(cloudTimer);cloudTimer=setTimeout(()=>uploadStudent(student),600);}
 }
+async function gateCloudConfig(){
+  if(!cloudConfig){
+    const response=await fetch('../teacher/config.json',{cache:'no-store'});
+    if(!response.ok)throw new Error('Cloud configuration unavailable');
+    cloudConfig=await response.json();
+  }
+  return cloudConfig;
+}
+function gateDocument(id){return 'GATE8-'+encodeURIComponent(id.normalize('NFC'));}
+function cloudPayload(entry){
+  const bytes=new TextEncoder().encode(JSON.stringify({name:entry.name,...entry.progress}));
+  let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);
+  return {fields:{d:{stringValue:'j'+btoa(binary)},t:{integerValue:String(entry.progress.savedAt||Date.now())},game:{stringValue:'The Gate 8'}}};
+}
+function uploadStudent(entry){
+  const snapshot=copy(entry);
+  cloudQueue=cloudQueue.catch(()=>{}).then(async()=>{
+    const config=await gateCloudConfig();
+    const base='https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(config.project)+'/databases/(default)/documents/saves/';
+    const payload=JSON.stringify(cloudPayload(snapshot));
+    const response=await fetch(base+encodeURIComponent(gateDocument(snapshot.id))+'?key='+encodeURIComponent(config.key),{
+      method:'PATCH',headers:{'Content-Type':'application/json'},body:payload,keepalive:payload.length<60000
+    });
+    if(!response.ok)throw new Error('Cloud save failed ('+response.status+')');
+  });
+  cloudQueue.catch(error=>console.warn('Gate 8:',error.message));
+  return cloudQueue;
+}
+async function syncStudent(){
+  if(!student)return;
+  const entry=student,id=entry.id;
+  if(cloudLoads.has(id))return cloudLoads.get(id);
+  const load=(async()=>{
+    await cloudQueue.catch(()=>{});
+    const config=await gateCloudConfig();
+    const base='https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(config.project)+'/databases/(default)/documents/saves/';
+    const response=await fetch(base+encodeURIComponent(gateDocument(id))+'?key='+encodeURIComponent(config.key),{cache:'no-store'});
+    if(response.status!==404&&!response.ok)throw new Error('Cloud load failed ('+response.status+')');
+    if(response.ok){
+      const doc=await response.json(), packed=doc.fields?.d?.stringValue;
+      if(!packed?.startsWith('j'))throw new Error('Unknown Gate save format');
+      const remote=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(packed.slice(1)),c=>c.charCodeAt(0))));
+      if(!remote||typeof remote!=='object')throw new Error('Invalid Gate save');
+      if(Number(remote.savedAt||0)>Number(entry.progress?.savedAt||0)){
+        entry.progress=Object.assign(fresh(),remote);
+        storage.set('gate8-students',roster);
+      }
+    }
+    if(student?.id!==id)return;
+    Object.assign(S,fresh(),copy(entry.progress));
+    cloudReadyFor=id;
+    renderTray();paintMute();
+    if(!S.savedAt){S.savedAt=Date.now();entry.progress=copy(S);storage.set('gate8-students',roster);}
+    await uploadStudent(entry);
+  })();
+  cloudLoads.set(id,load);
+  try{await load;}finally{cloudLoads.delete(id);}
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden'&&student&&cloudReadyFor===student.id){
+    clearTimeout(cloudTimer);uploadStudent(student);
+  }
+});
 let checkpointCursor=0, replayUntil=0;
 function peekStep(key){
   const event=S.checkpoint?.events[checkpointCursor];
@@ -257,14 +324,18 @@ function savedOrder(key,make){
   return value;
 }
 function selectStudent(name){
-  const id=name.toLocaleLowerCase();
+  clearTimeout(cloudTimer);if(student&&cloudReadyFor===student.id)uploadStudent(student);
+  cloudReadyFor='';
+  const id=name.toLocaleLowerCase().normalize('NFC');
   const existing=roster.students.find(entry=>entry.id===id);
   const progress=existing?.progress??(roster.students.length?fresh():S);
   student=existing??{id,name};
   if(!existing)roster.students.push(student);
   roster.active=id;
   Object.assign(S,fresh(),copy(progress));
-  save();renderTray();paintMute();
+  student.progress=copy(S);
+  storage.set('gate8-students',roster);
+  renderTray();paintMute();
 }
 
 /* ---------- comic geometry: [page, x, y, w, h] inside each real panel ---------- */
@@ -1116,7 +1187,18 @@ function title(editName=false){
   play.replaceChildren();
   const go=el('button','go',S.checkpoint?.chapter===S.ch?(S.ch===4?'Continue · finale ▸':`Continue · paragraph ${S.ch+1} ▸`):S.ch>0&&S.ch<4?`Continue · paragraph ${S.ch+1} ▸`:'Start ▸');
   const wrap=el('div','');wrap.style.cssText='display:flex;flex-direction:column;gap:10px;margin-top:auto';
-  go.onclick=()=>{Snd.init();Snd.resume();tl.remove();startChapter(S.ch>=4&&!S.checkpoint?0:S.ch,true);};
+  go.onclick=async()=>{
+    if(go.disabled)return;
+    Snd.init();Snd.resume();go.disabled=true;go.textContent='Loading progress…';
+    try{
+      await syncStudent();
+      go.textContent=S.checkpoint?'Continue ▸':'Start ▸';
+      tl.remove();startChapter(S.ch>=4&&!S.checkpoint?0:S.ch,true);
+    }catch(error){
+      go.textContent='Cloud unavailable · retry';
+      console.warn(error.message);
+    }finally{go.disabled=false;}
+  };
   const nameArea=el('div','student-name-area');
   wrap.append(nameArea,go);
   const startGame=go.onclick;
@@ -1151,7 +1233,9 @@ function title(editName=false){
     function confirmName(){
       const name=input.value.trim().replace(/\s+/g,' ');
       if(!name)return false;
-      selectStudent(name);showGreeting();return true;
+      selectStudent(name);showGreeting();
+      syncStudent().then(()=>{if(student?.name===name)showGreeting();}).catch(error=>{go.textContent='Cloud unavailable · retry';console.warn(error.message);});
+      return true;
     }
     form.onsubmit=event=>{event.preventDefault();if(confirmName())go.focus();};
     input.onblur=()=>{confirmName();};
