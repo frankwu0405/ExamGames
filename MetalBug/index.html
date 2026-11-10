@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#0d1220">
-<title>Gate 8 · Follow the Red Dot</title>
+<title>The Gate 8: The Empty Room</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Lexend:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
@@ -145,7 +145,7 @@ html,body{margin:0;height:100%;background:#05070d;color:var(--paper);font-family
 <script>
 'use strict';
 /* =========================================================
-   GATE 8 · FOLLOW THE RED DOT
+   The Gate 8: The Empty Room
    Static page. Browser speech recognition + WebAudio only.
    ========================================================= */
 const IW=2576, IH=1438;
@@ -801,7 +801,7 @@ function title(){
   RUN++;Mic.off();setStatic(0);panelView=null;$('#ret').style.display='none';document.querySelectorAll('.pin').forEach(p=>p.remove());
   stageH(56,false);cam('title',{dur:0});cap(null);$('#curtain').classList.add('up');
   const tl=el('div','');tl.id='title';tl.style.cssText='position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;justify-content:flex-end;pointer-events:none;background:linear-gradient(0deg,rgba(13,18,32,.95),transparent 55%)';
-  const t=el('div','ttl','GATE 8');t.append(el('em','','THE RED DOT'));tl.append(t);stage.append(tl);
+  const t=el('div','ttl','The Gate 8:');t.append(el('em','','The Empty Room'));tl.append(t);stage.append(tl);
   play.replaceChildren();
   const go=el('button','go',S.ch>0&&S.ch<5?`Continue · paragraph ${Math.min(S.ch+1,4)} ▸`:'Start ▸');
   const wrap=el('div','');wrap.style.cssText='display:flex;flex-direction:column;gap:10px;margin-top:auto';
