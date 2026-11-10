@@ -180,18 +180,26 @@ function readGate(s,r,item){
    if(listening)return;
    activeTone?.stop();
    const session=new Voice();listening=session;session.lang='en-US';session.maxAlternatives=3;
-   mic.disabled=true;status.textContent='Listening…';
+   session.interimResults=true;
+   session.continuous=false;
+   mic.disabled=true;status.textContent='Starting mic…';
+   session.onstart=()=>{if(listening===session)status.textContent='Listening…';};
    session.onresult=e=>{
     if(listening!==session)return;
-    const results=Array.from(e.results[0],result=>normalized(result.transcript));
+    const result=e.results[e.resultIndex];
+    const results=Array.from(result,alternative=>normalized(alternative.transcript));
     if(results.some(text=>answers.includes(text))){advance(s,r);return;}
-    fail(item,status,'I heard “'+e.results[0][0].transcript+'.” Try again.');
+    if(result.isFinal){
+     fail(item,status,'I heard “'+result[0].transcript+'.” Try again.');
+    }else{
+     status.textContent='Hearing “'+result[0].transcript+'”…';
+    }
    };
    session.onerror=()=>{if(listening===session)status.textContent='Try the mic again, or read to your teacher.';};
    session.onend=()=>{
     if(listening!==session)return;
     listening=null;mic.disabled=false;
-    if(status.textContent==='Listening…')status.textContent='Try again.';
+    if(status.textContent==='Listening…'||status.textContent==='Starting mic…'||status.textContent.startsWith('Hearing '))status.textContent='Try again.';
    };
    try{session.start();}catch{listening=null;mic.disabled=false;status.textContent='Read this to your teacher.';}
   },undefined,true);
