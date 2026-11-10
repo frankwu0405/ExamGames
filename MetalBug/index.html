@@ -14,7 +14,7 @@ svg{display:block;width:100%;aspect-ratio:1.52}#badge{position:absolute;top:9px;
 h2{font-size:clamp(1.45rem,5vw,2rem);line-height:1.13;margin:0 0 10px}p{margin:8px 0}.word{font-size:1.65rem;letter-spacing:.02em}.word b{color:#6330bb;background:#e9dcff;border-radius:5px;padding:0 2px}.cards{display:flex;gap:9px;margin:13px 0;align-items:flex-start}.cards img{width:min(43%,165px);height:auto;border-radius:12px;box-shadow:2px 3px #241735}.hint{font-size:1rem}details{margin-top:19px;font-size:.95rem}
 .sound{font-size:.82rem;min-height:36px;padding:4px 9px}.signal{display:inline-block;background:#f6d2ff;border:2px solid #241735;border-radius:10px;padding:4px 10px;font-weight:900;transform:rotate(-3deg);margin:0 0 8px}.choices button{text-align:left}.impact{animation:pop .45s ease}@keyframes pop{50%{transform:scale(1.025);box-shadow:5px 6px #241735,0 0 26px #fff098}}@media(prefers-reduced-motion:reduce){.impact{animation:none}}
 body{background:#101827;color:#fff5dc}main{max-width:1100px;padding:12px}h1{color:#fff5dc;font-size:2rem;letter-spacing:-.04em}.screen{border-color:#66d9ed;box-shadow:0 0 28px #27c5dd30;border-radius:22px}.bubble{background:#fff5dc;color:#241735;max-width:650px;margin:18px auto}.bubble:before{display:none}nav button{color:#241735}header a{color:#b8f0fa}#explore{position:absolute;inset:0;pointer-events:none}#explore button{position:absolute;pointer-events:auto;border-radius:50%;width:64px;height:64px;padding:0;background:#ffd068;box-shadow:0 0 0 8px #ffd06838;color:#241735;font-size:1.6rem;transform:translate(-50%,-50%)}#explore button.done{background:#9ae6ce;box-shadow:none}#missionbar{display:flex;justify-content:space-between;padding:13px 0;font-weight:850;color:#a9e8ef}#energy{letter-spacing:.2em;color:#ffd068}#dock{display:flex;gap:8px;overflow:auto;padding:12px 0}#dock img{width:75px;border-radius:9px}#dock .empty{border:2px dashed #7b8b9f;border-radius:10px;width:65px;height:95px;display:grid;place-items:center;color:#7b8b9f}details{color:#b8cbdc}.bubble details{color:#4e3c68}#badge{color:#241735}@media(min-width:760px){main{display:grid;grid-template-columns:1fr 330px;gap:14px}header,h1,nav,#missionbar,#dock,main>details{grid-column:1/-1}.bubble{margin:0;width:100%}.screen{align-self:start}}
-</style></head><body><main>
+.transmission{font-size:clamp(1.45rem,4vw,2rem);line-height:1.65;font-weight:800}.transmission span{display:inline-block;margin-right:.28em;border-radius:5px}.transmission .matched{background:#a8eed3;color:#142e26}.transcript{min-height:1.7em;color:#4e3c68;overflow-wrap:anywhere}</style></head><body><main>
 <header><a href="../">← Exam Games</a><button id="sound" class="sound" aria-pressed="false">Sound off</button></header>
 <h1>THE WATCHER SIGNAL</h1><div id="missionbar"><span id="objective"></span><span id="energy"></span></div><nav id="chapters" aria-label="Story sections"></nav>
 <div class="screen"><svg id="camera" role="img" aria-label="Story comic" viewBox="0 0 900 592"><image id="page" width="2752" height="1536"/></svg><span id="badge"></span><div id="explore"></div></div>
@@ -109,17 +109,17 @@ function load(i,focus=true){
 }
 
 const rounds=[
- {reward:['dirty','circle'], title:'Repair Kip’s bug', order:['The bug goes dark.','Kip taps the bug.','The bug flies up.'],
+ {reward:['dirty','circle'], title:'Repair Kip’s bug', order:['The bug goes dark.','Kip taps the bug three times.','The bug flies in a circle.'],
   proof:['Kip taps the bug three times.','Kip opens his box of tools.','Finn takes the bug out.'], ask:'Which line tells you how many times to tap?',
   words:['d[ir]ty','c[ir]cle','t[ur]ns'], read:'It turns in a happy circle.', say:['it turns in a happy circle','turns in a happy circle'], action:'Tap the bug'},
  {reward:[],title:'Catch the message',pair:['Finn’s face','Kip’s face','Nara’s face'],ask:'Whose face do you see in the message?',
-  proof:['This little bug can talk to the Watcher ships.','The bug lands on Finn’s shoulder.','Nara looks at Kip’s map.'], clue:'What makes the bug important?',
+  proof:['This little bug can talk to the Watcher ships.','The bug lands on Finn’s shoulder.','Nara looks at Kip’s map.'], clue:'Which part of the message tells the team what the bug can do?',
   words:['l[igh]t','[ou]t','c[ir]cle'],read:'The light goes out.',say:['the light goes out','light goes out'],action:'Play the message'},
- {reward:['purple','curly'],title:'Search the workshop',order:['They find a purple door.','Kip pushes it open.','They see an empty space.'],
+ {reward:['purple','curly'],title:'Search the workshop',order:['They find the purple door.','Kip opens the workshop.','They discover where the missing machine stood.'],
   proof:['“Vex took it.”','Kip pushes the door open.','Curly wires hang down.'],ask:'Which line explains the empty space?',
   words:['p[ur]ple','c[ur]ly','t[ur]n'],read:'Long, curly wires hang down.',say:['long curly wires hang down','curly wires hang down'],action:'Open the door'},
  {reward:[],title:'Send Finn’s signal',pair:['Help the man.','Hide in the shed.','Fix the bug.'],ask:'What does Finn decide to do?',
-  proof:['“Now it is our turn to help him.”','Finn looks at the drawing for a long time.','The man put the red dot on my map.'],clue:'Which line tells you Finn’s plan?',
+  proof:['“Now it is our turn to help him.”','Finn looks at the drawing for a long time.','The man put the red dot on my map.'],clue:'Which line would you transmit to tell the team what Finn plans to do?',
   words:['t[ur]n','l[igh]t','c[ur]ly'],read:'Now it is our turn to help him.',say:['now it is our turn to help him','it is our turn to help him'],action:'Send the signal'}
 ];
 const earned=new Set();
@@ -168,12 +168,30 @@ function normalized(text){
  return text.toLowerCase().replace(/[^a-z ]/g,'').trim().replace(/ +/g,' ');
 }
 function readGate(s,r,item){
- const sentence=item==='line';
- heading(sentence?'Read the whole line':'Blend it aloud');
- tag(replay?'Repair round':sentence?'Story signal':'Signal '+(item+1)+' / '+r.words.length);
+ const line=radioLines[chapter][item];
+ heading('Transmit the full sentence');
+ tag(replay?'REPLAY':'RADIO LINE '+(item+1)+' / 6');
  const content=el('div','');content.className='word';
- const answers=sentence?r.say:[wordTile(r.words[item],content)];
- if(sentence)content.textContent=r.read;
+ content.className='word transmission';
+ const answers=[normalized(line)];
+ const tokens=line.split(' ').map(word=>{
+  const tile=el('span','',content);
+  word.split(/(ir|ur|igh|ou)/gi).forEach((part,index)=>{
+   if(index%2)el('b',part,tile);else tile.append(part);
+  });
+  return tile;
+ });
+ const target=answers[0].split(' ');
+ const transcript=el('p','');transcript.className='transcript';
+ let accepted=false;
+ function accept(){
+  if(accepted)return;
+  accepted=true;stopVoice();
+  tokens.forEach(token=>token.classList.add('matched'));
+  status.textContent='✓ Signal received';
+  const panel=$('bubble').firstElementChild;
+  setTimeout(()=>{if($('bubble').firstElementChild===panel)advance(s,r);},330);
+ }
  const status=el('p','');status.className='hint';status.setAttribute('role','status');
  if(Voice){
   const mic=button('🎙 Read aloud',()=>{
@@ -182,13 +200,19 @@ function readGate(s,r,item){
    const session=new Voice();listening=session;session.lang='en-US';session.maxAlternatives=3;
    session.interimResults=true;
    session.continuous=false;
-   mic.disabled=true;status.textContent='Starting mic…';
+   mic.disabled=true;transcript.textContent='';tokens.forEach(token=>token.classList.remove('matched'));status.textContent='Starting mic…';
    session.onstart=()=>{if(listening===session)status.textContent='Listening…';};
    session.onresult=e=>{
     if(listening!==session)return;
     const result=e.results[e.resultIndex];
     const results=Array.from(result,alternative=>normalized(alternative.transcript));
-    if(results.some(text=>answers.includes(text))){advance(s,r);return;}
+    const heard=result[0].transcript;
+    transcript.textContent='Radio heard: “'+heard+'”';
+    const spoken=normalized(heard).split(' ');
+    let prefix=0;
+    while(prefix<target.length&&spoken[prefix]===target[prefix])prefix++;
+    tokens.forEach((token,index)=>token.classList.toggle('matched',index<prefix));
+    if(answers.includes(results[0])){accept();return;}
     if(result.isFinal){
      fail(item,status,'I heard “'+result[0].transcript+'.” Try again.');
     }else{
@@ -206,7 +230,7 @@ function readGate(s,r,item){
  }
  const teacher=el('details','');
  el('summary',Voice?'Teacher check':'Read to your teacher',teacher);
- button('I heard the reading ✓',()=>advance(s,r),teacher);
+ button('I heard the full sentence ✓',accept,teacher);
 }
 function readyAction(s,r){
  heading(r.title);
@@ -249,11 +273,12 @@ function finish(){
 }
 
 const locations=[
- [{x:22,y:28,icon:'⌕',title:'Finn’s pocket',tasks:['order']},{x:25,y:76,icon:'⚒',title:'Kip’s tools',tasks:['proof',0]},{x:57,y:76,icon:'ϟ',title:'The broken bug',tasks:[1,2,'line']}],
- [{x:15,y:21,icon:'ϟ',title:'The projector',tasks:[0,1]},{x:78,y:22,icon:'⌕',title:'The face',tasks:['choice','proof']},{x:76,y:77,icon:'◎',title:'Kip’s map',tasks:[2,'line']}],
- [{x:35,y:25,icon:'⚿',title:'The purple door',tasks:['order',0]},{x:38,y:60,icon:'ϟ',title:'The hanging wires',tasks:[1,2]},{x:50,y:77,icon:'⌕',title:'The empty space',tasks:['proof','line']}],
- [{x:27,y:24,icon:'⌕',title:'The drawing',tasks:['proof',0]},{x:28,y:77,icon:'ϟ',title:'Finn’s decision',tasks:['choice',1]},{x:80,y:74,icon:'◎',title:'The tower',tasks:[2,'line']}]
+ [{x:22,y:28,icon:'⌕',title:'Finn’s pocket',tasks:['order',0,1]},{x:25,y:76,icon:'⚒',title:'Kip’s tools',tasks:['proof',2,3]},{x:57,y:76,icon:'ϟ',title:'The broken bug',tasks:[4,5]}],
+ [{x:15,y:21,icon:'ϟ',title:'The projector',tasks:[0,1]},{x:78,y:22,icon:'⌕',title:'The face',tasks:['choice','proof',2,3]},{x:76,y:77,icon:'◎',title:'Kip’s map',tasks:[4,5]}],
+ [{x:35,y:25,icon:'⚿',title:'The purple door',tasks:['order',0,1]},{x:38,y:60,icon:'ϟ',title:'The hanging wires',tasks:[2,3]},{x:50,y:77,icon:'⌕',title:'The empty space',tasks:['proof',4,5]}],
+ [{x:27,y:24,icon:'⌕',title:'The drawing',tasks:['proof',0,1]},{x:28,y:77,icon:'ϟ',title:'Finn’s decision',tasks:['choice',2,3]},{x:80,y:74,icon:'◎',title:'The tower',tasks:[4,5]}]
 ];
+const radioLines=[["Finn hides in a dirty shed.","His pocket starts to buzz.","Kip turns the bug over.","Kip taps the bug three times.","The bug flies out of Kip’s hands.","It turns in a happy circle."],["A bright light shines from the bug.","The bug shows a man with Finn’s face.","The bug can talk to the Watcher ships.","Kip must keep the bug close.","The light goes out.","The bug lands on Finn’s shoulder."],["They find a small purple door.","The purple door leads into a workshop.","Long, curly wires hang down.","Kip turns to look at the curly wires.","The empty space is where the machine was.","Vex took the machine out of the workshop."],["Finn looks at the drawing on the wall.","The man put a red dot on the map.","Finn turns to his friends.","The man helped them find the workshop.","It is our turn to help him.","A red light shines in the tower."]];
 const discovered=[new Set(),new Set(),new Set(),new Set()];
 let activeLocation=0;
 const oldLoad=load;
@@ -265,7 +290,11 @@ load=function(i,focus=true){
   const b=button(j===0?'Shed':j===1?'Message':j===2?'Workshop':'Tower',()=>load(j),$('chapters'));
   b.disabled=j>0&&discovered[j-1].size<3;b.setAttribute('aria-current',String(j===i));
  });
- explore(focus);
+ if(discovered[i].size){explore(focus);return;}
+ $('explore').replaceChildren();look(sections[i].shots[0],true);dock();
+ $('badge').textContent='INCOMING MISSION';$('objective').textContent=rounds[i].title;$('energy').textContent='○ ○ ○';
+ heading(rounds[i].title,focus);el('p','Read paragraph '+(i+1)+' together. Then open the radio channel.');
+ button('Open the channel →',()=>explore(),undefined,true);
 };
 function dock(){
  $('dock').replaceChildren();
@@ -281,7 +310,7 @@ function explore(focus=true){
  $('badge').textContent='Explore';
  $('explore').replaceChildren();dock();
  heading(discovered[chapter].size===3?'Signal charged!':'Where will you look?',focus);
- el('p',discovered[chapter].size===3?'The bug is ready.':'Find three glowing clues.');
+ el('p',discovered[chapter].size===3?'The bug is ready.':'Choose a signal on the comic. Read both transmissions to bring it online.');
  locations[chapter].forEach((location,i)=>{
   const b=button(discovered[chapter].has(i)?'✓':location.icon,()=>{
    if(discovered[chapter].has(i)){look([location.x/100*2752,location.y/100*1536,850,630]);heading(location.title);button('Back to the room',()=>explore(),undefined,true);return;}
@@ -303,7 +332,7 @@ advance=function(s,r){
  if(!queue.length&&missed.length){queue=shuffle(missed);missed=[];replay=true;}
  if(queue.length){drill(s,r);return;}
  discovered[chapter].add(activeLocation);tone(450,950,.35);
- heading('Clue recovered!');tag('ϟ '+discovered[chapter].size+' / 3');
+ heading('Channel online!');tag('ϟ '+discovered[chapter].size+' / 3');
  el('p',locations[chapter][activeLocation].title);
  button('Explore more →',()=>explore(),undefined,true);
 };
