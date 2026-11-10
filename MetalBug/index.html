@@ -269,17 +269,20 @@ function applyView(tx,ty,s,clip,dur){
   world.style.transform=`translate(${tx}px,${ty}px) scale(${s})`;
   world.style.clipPath=`inset(${clip[1]}px ${IW-clip[0]-clip[2]}px ${IH-clip[1]-clip[3]}px ${clip[0]}px)`;
 }
+const TI=38; /* top inset: frame starts just under the HUD, overlapping it slightly */
 function cam(key,o={}){
   const dur=o.dur==null?1100:o.dur;
   const sh=typeof key==='string'?SHOT[key]:key; if(typeof key==='string')lastShot=key;
   const [pg,x,y,w,h]=sh;
-  const pad=12, s=Math.min((ST.W-pad*2)/w,(ST.H-pad*2)/h);
-  const tx=(ST.W-w*s)/2-x*s, ty=(ST.H-h*s)/2-y*s;
+  const pad=12, s=Math.min((ST.W-pad*2)/w,(ST.H-TI-pad)/h);
+  const fy=TI+(ST.H-TI-h*s)/2;
+  const tx=(ST.W-w*s)/2-x*s, ty=fy-y*s;
+  $('#tmask')?.remove();
   const swap=pg!==curPg&&!o.keepPage;
   if(swap){applyView(tx,ty,s,[x,y,w,h],0);void world.offsetWidth;pgs.forEach((p,i)=>p.style.opacity=i===pg?1:0);curPg=pg;}
   else applyView(tx,ty,s,[x,y,w,h],dur);
   bez.style.transition=swap||!dur?'none':`all ${dur}ms cubic-bezier(.65,.02,.2,1)`;
-  bez.style.left=(ST.W-w*s)/2+'px';bez.style.top=(ST.H-h*s)/2+'px';bez.style.width=w*s+'px';bez.style.height=h*s+'px';
+  bez.style.left=(ST.W-w*s)/2+'px';bez.style.top=fy+'px';bez.style.width=w*s+'px';bez.style.height=h*s+'px';
   return s;
 }
 function fxLayer(){return $('#fx');}
@@ -796,13 +799,14 @@ async function ch3(){
 function scan(spots){
   return new Promise(res=>{
     stageH(60);
-    const s=Math.max(ST.W/560,ST.H/600);
-    const vw=ST.W/s,vh=ST.H/s;
+    const s=Math.max(ST.W/560,(ST.H-TI)/600);
+    const vw=ST.W/s,vh=(ST.H-TI)/s;
+    if(!$('#tmask')){const m=el('div','');m.id='tmask';m.style.cssText=`position:absolute;left:0;right:0;top:0;height:${TI}px;background:#04060c;z-index:2;pointer-events:none`;stage.append(m);}
     let cx=300+vw/2,cy=PANEL3[1]+PANEL3[3]/2;
     const clamp=()=>{cx=Math.max(PANEL3[0]+60,Math.min(PANEL3[0]+PANEL3[2]-60,cx));cy=Math.max(PANEL3[1]+40,Math.min(PANEL3[1]+PANEL3[3]-40,cy));};
-    const draw=()=>{clamp();applyView(ST.W/2-cx*s,ST.H/2-cy*s,s,PANEL3,0);bez.style.transition='none';bez.style.left='0px';bez.style.top='0px';bez.style.width=ST.W+'px';bez.style.height=ST.H+'px';};
+    const draw=()=>{clamp();applyView(ST.W/2-cx*s,(TI+ST.H)/2-cy*s,s,PANEL3,0);bez.style.transition='none';bez.style.left='0px';bez.style.top=TI+'px';bez.style.width=ST.W+'px';bez.style.height=(ST.H-TI)+'px';};
     panelView=true;pgs.forEach((p,i)=>p.style.opacity=i===2?1:0);curPg=2;draw();
-    const ret=$('#ret'),retp=$('#retp');ret.style.display='block';
+    const ret=$('#ret'),retp=$('#retp');ret.style.display='block';ret.style.top=(TI+ST.H)/2+'px';
     play.replaceChildren(el('div','sm','Case notes'),el('div','hook','Drag to <em>search</em>'.replace(/<[^>]+>/g,'')));
     const sub=el('div','sm','Find what is wrong in this room');sub.style.color='#9aa7d6';play.append(sub);
     const logged=el('div','');logged.style.cssText='display:flex;flex-direction:column;gap:8px;margin-top:6px';play.append(logged);
@@ -829,7 +833,7 @@ function scan(spots){
             cancelAnimationFrame(raf);
             await inspect(near);
             done++;
-            if(done>=spots.length){stage.removeEventListener('pointerdown',down);stage.removeEventListener('pointermove',move);stage.removeEventListener('pointerup',up);stage.removeEventListener('pointercancel',up);ret.style.display='none';panelView=null;document.querySelectorAll('.pin').forEach(p=>p.remove());res();return;}
+            if(done>=spots.length){stage.removeEventListener('pointerdown',down);stage.removeEventListener('pointermove',move);stage.removeEventListener('pointerup',up);stage.removeEventListener('pointercancel',up);ret.style.display='none';ret.style.top='';$('#tmask')?.remove();panelView=null;document.querySelectorAll('.pin').forEach(p=>p.remove());res();return;}
             reading=false;last=performance.now();
             play.replaceChildren(el('div','sm','Case notes'),sub,logged);if(TEST)play.append(jump());
             raf=requestAnimationFrame(tickLoop);return;
