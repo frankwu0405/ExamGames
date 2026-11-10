@@ -971,11 +971,16 @@ function title(editName=false){
   const s8=el('div','slide');s8.append(t);
   const s9=lockSlide('09',3,[1548,676,948,688],'linear-gradient(180deg,rgba(90,10,25,.5),rgba(5,7,13,.92))','Something is watching');
   const s10=lockSlide('10',1,[1492,52,1008,568],'linear-gradient(180deg,rgba(10,70,70,.5),rgba(5,7,13,.92))','Transmission incoming');
-  car.append(...past,s8,s9,s10);
-  const EP8=past.length;
-  const hl=el('div','swh l','‹'),hr=el('div','swh r','›');s8.append(hl,hr);
+  const EP8=TEST?0:past.length;
+  const hl=el('div','swh l','‹'),hr=el('div','swh r','›');
+  if(TEST){
+    car.append(s8);
+  }else{
+    car.append(...past,s8,s9,s10);
+    s8.append(hl,hr);
+  }
   let curEp=EP8;const paint=()=>{if(typeof go!=='undefined')go.classList.toggle('locked',curEp!==EP8);};
-  car.addEventListener('scroll',()=>{const n=Math.round(car.scrollLeft/car.clientWidth);if(n!==curEp){curEp=n;paint();Snd.init();sfx('tick');hl.remove();hr.remove();}},{passive:true});
+  if(!TEST)car.addEventListener('scroll',()=>{if(!car.clientWidth)return;const n=Math.round(car.scrollLeft/car.clientWidth);if(n!==curEp){curEp=n;paint();Snd.init();sfx('tick');hl.remove();hr.remove();}},{passive:true});
   stage.append(tl);car.style.scrollBehavior='auto';car.scrollLeft=car.clientWidth*EP8;
   play.replaceChildren();
   const go=el('button','go',S.ch>0&&S.ch<5?`Continue · paragraph ${Math.min(S.ch+1,4)} ▸`:'Start ▸');
