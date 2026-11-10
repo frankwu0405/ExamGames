@@ -625,12 +625,12 @@ function choose(cfg){
     const list=el('div','opts'+(cfg.opts.length>4?' many':''));play.append(list);
     const hb=el('div','heard');const m=msgEl();play.append(m,hb);renderHeard(hb,null);
     const key='choice:'+cfg.opts.map(o=>o.t).join('|');
-    const O=cfg.opts.map(o=>Object.assign({state:'live'},o));
+    const O=cfg.opts.map(o=>Object.assign({state:'live',confirmed:0},o));
     O.forEach(o=>{
       o.el=el('div','opt');o.line=mountLine(o.el,o.t);
       let timer=null;
       const hold=()=>{o.el.onpointerdown=()=>{timer=setTimeout(()=>{timer=null;if(!locked&&o.state==='live')commit(o);},900);};
-        const up=()=>{if(timer){clearTimeout(timer);timer=null;if(!locked&&o.state==='live'){m.textContent=Mic.ok?'Read it out loud to choose.':'';if(!Mic.ok)teacherConfirm(()=>commit(o));}}};
+        const up=()=>{if(timer){clearTimeout(timer);timer=null;if(!locked&&o.state==='live'){m.textContent=Mic.ok?'Read an answer aloud, one word or phrase at a time.':'';if(!Mic.ok)teacherConfirm(()=>commit(o));}}};
         o.el.onpointerup=up;o.el.onpointerleave=()=>{if(timer){clearTimeout(timer);timer=null;}};};
       hold();
       if(TEST)o.el.onclick=()=>{if(!locked&&o.state==='live')commit(o);};
@@ -646,6 +646,7 @@ function choose(cfg){
     async function commit(o,by){
       if(locked)return;locked=true;Mic.reset();renderHeard(hb,null);
       if(by!=='resume')saveStep(key,o.t);
+      for(const option of O){option.confirmed=0;option.line.apply(null,false);}
       try{
         if(o.ok){
           got++;o.state='done';o.line.allHit();o.el.classList.add('right');sfx('good');burst(10);m.textContent='';
@@ -671,15 +672,32 @@ function choose(cfg){
     if(Mic.ok){
       Mic.handler=({cands,final})=>{
         if(locked)return;
-        const live=O.filter(o=>o.state==='live');
-        const sc=live.map(o=>{const b=bestAln(o.line.tokens,cands,S.strict);return{o,b,cover:b.aln.hits/o.line.tokens.length,ok:judge(b.aln)};});
-        const top=Math.max(0,...sc.map(s=>s.cover));
-        sc.forEach(s=>s.o.line.apply(top>=.3&&s.cover===top?s.b.aln:null,final&&s.cover===top));
-        const lead=sc.find(s=>s.cover===top);
-        renderHeard(hb,lead&&lead.b.words,lead&&lead.b.aln,final);
-        const acc=sc.filter(s=>s.ok).sort((a,b)=>b.b.aln.hits-a.b.aln.hits);
-        if(acc.length&&(acc.length===1||acc[0].b.aln.hits>acc[1].b.aln.hits)){recordWords(acc[0].o.line.tokens,acc[0].b.aln);commit(acc[0].o,'voice');return;}
-        if(final)m.textContent=top<.3?'Read one whole line out loud.':'Read one line all the way through.';
+        const matches=O.filter(o=>o.state==='live').map(option=>({
+          option, chunk:readingChunk(option.line.tokens,cands,option.confirmed,S.strict)
+        }));
+        const advancing=matches.filter(({option,chunk})=>chunk.end>option.confirmed);
+        const furthest=Math.max(0,...advancing.map(({chunk})=>chunk.end));
+        const leaders=advancing.filter(({chunk})=>chunk.end===furthest);
+        const lead=leaders[0]||matches.find(({chunk})=>chunk.words.length);
+        for(const {option,chunk} of matches){
+          const active=leaders.some(candidate=>candidate.option===option);
+          const count=active?chunk.end:furthest?0:option.confirmed;
+          if(final)option.confirmed=count;
+          option.line.apply({t:option.line.tokens.map((_,i)=>i<count?'hit':null)},false);
+        }
+        renderHeard(hb,lead?.chunk.words);
+        if(leaders.length===1){
+          const {option,chunk}=leaders[0];
+          if(chunk.end===option.line.tokens.length){
+            recordWords(option.line.tokens,{t:option.line.tokens.map(()=> 'hit')});
+            commit(option,'voice');return;
+          }
+        }
+        if(final)m.textContent=furthest
+          ?'Keep reading the answer you want.'
+          :matches.some(({option})=>option.confirmed>0)
+            ?'Try the next word again, or start your answer over.'
+            :'Read an answer aloud, one word or phrase at a time.';
       };
       Mic.on();
     }
