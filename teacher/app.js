@@ -18,6 +18,7 @@ svg.innerHTML='<svg viewBox="0 0 260 180" width="100%" height="100%" xmlns="http
 function hide(record){if(prefs.hidden.includes(record.id))return;prefs.hidden.push(record.id);persist();render();toast(record.name+' hidden from your classroom.',()=>{prefs.hidden=prefs.hidden.filter(id=>id!==record.id);persist();render();});}
 function restore(record){prefs.hidden=prefs.hidden.filter(id=>id!==record.id);persist();render();toast(record.name+' restored.');}
 function render(){
+ renderGates();
  const active=state.records.filter(r=>!prefs.hidden.includes(r.id)),summary=state.world==='all'?active:active.filter(r=>r.world===state.world);
  $('#stat-students').textContent=state.loading&&!state.records.length?'—':summary.length;
  $('#stat-worlds').textContent=state.loading&&!state.records.length?'—':new Set(summary.map(r=>r.world)).size;
@@ -36,7 +37,7 @@ function render(){
  const host=$('#records');host.replaceChildren();
  if(!rows.length){
   const label=state.loading?'Loading your classroom…':state.showHidden?'No hidden accounts.':state.records.length?'No matching students.':'Your student worlds will appear here.';
-  const description=state.loading?'Reading saved progress from the three worlds.':state.showHidden?'Accounts you hide are kept safely. You can restore them here.':state.records.length?'Try clearing the search or choosing another island.':'Connect the verified account list or import a saved-data export. No students are excluded automatically.';
+  const description=state.loading?'Reading saved progress from the three worlds.':state.showHidden?'Accounts you hide are kept safely. You can restore them here.':state.records.length?'Try clearing the search or choosing another island.':'Open a game in this browser, add a cloud save code in Manage accounts, or import a saved-data export.';
   host.append(el('div',{class:'empty'},el('div',{class:'empty-icon'},'◈'),el('h3',{},label),el('p',{},description),!state.loading&&!state.records.length?el('div',{class:'actions'},el('button',{class:'button primary',onclick:loadRecords},'Try again'),el('button',{class:'button',onclick:accountManager},'Manage accounts')):null));return;
  }
  if(prefs.view==='list'){renderTable(host,rows);return;}
@@ -53,22 +54,79 @@ function render(){
 function renderTable(host,rows){const table=el('table',{class:'record-table'},el('thead',{},el('tr',{},...['STUDENT','WORLD','MASTERED','BUILT / COLLECTED','REVIEW','LAST SAVED',''].map(x=>el('th',{},x))))),body=el('tbody');
  for(const r of rows){const w=WORLDS.find(w=>w.id===r.world),m=metrics(r);body.append(el('tr',{style:{'--world':w.color}},el('td',{},el('b',{},r.name),el('div',{class:'save-code'},r.id)),el('td',{},el('span',{class:'world-tag'},w.label)),el('td',{},m?String(m.mastered):'—',m?el('span',{class:'table-sub'},m.tried+' items tried'):null),el('td',{},m?String(m.built):'—',el('span',{class:'table-sub'},w.build)),el('td',{},m?.review?el('span',{class:'review-badge'},m.review+' to review'):m?'None':'—'),el('td',{},relative(r.updated)),el('td',{},el('button',{onclick:()=>inspect(r)},'Open world'),el('button',{onclick:()=>state.showHidden?restore(r):hide(r),'aria-label':(state.showHidden?'Restore ':'Hide as test: ')+r.name+' ('+w.label+')'},state.showHidden?'Restore':'Hide'))));}
  table.append(body);host.append(el('div',{class:'table-wrap'},table));}
+function browserSave(key,fallback=null){
+ try{return JSON.parse(localStorage.getItem(key))??fallback;}catch{return fallback;}
+}
+function islandBrowserRecords(){
+ return WORLDS.flatMap(world=>{
+  const save=browserSave(world.key);
+  if(!save||typeof save!=='object'||Array.isArray(save))return [];
+  const code=typeof save.cloudCode==='string'?save.cloudCode.trim().toUpperCase():'';
+  const id=code.startsWith(world.prefix)&&code.length>world.prefix.length?code:'local-'+world.id;
+  const name=String(save.name|| (id===code?code.slice(world.prefix.length):world.label));
+  return [{id,world:world.id,name,state:save,updated:Number(save.savedAt)||0,local:true}];
+ });
+}
+function mergeIslandRecords(local,cloud){
+ const records=new Map(local.map(record=>[record.id,record]));
+ for(const record of cloud){
+  const fallback=records.get(record.id);
+  if(!fallback||(record.state&&(!fallback.updated||record.updated>=fallback.updated)))records.set(record.id,record);
+  else if(record.error||record.fetchError)records.set(record.id,{...fallback,fetchError:record.error||record.fetchError});
+ }
+ return [...records.values()];
+}
+function gateProfiles(){
+ const roster=browserSave('gate8-students');
+ if(Array.isArray(roster?.students)&&roster.students.length){
+  return roster.students.filter(entry=>entry?.progress&&typeof entry.name==='string');
+ }
+ const legacy=browserSave('gate8v2');
+ return legacy&&((legacy.ch>0)||legacy.earned?.length||Object.keys(legacy.stats||{}).length)
+  ?[{name:'Unnamed player',progress:legacy}]:[];
+}
+function renderGates(){
+ const host=$('#gate-records');
+ if(!host)return;
+ const profiles=gateProfiles();
+ host.replaceChildren();
+ if(!profiles.length){
+  host.append(el('p',{class:'muted'},'No Gate 8 progress is saved in this browser yet. Open the episode and enter a player name to begin.'));
+  return;
+ }
+ for(const {name,progress} of profiles){
+  const stats=Object.entries(progress.stats||{}).filter(([,result])=>result?.m>0).sort((a,b)=>b[1].m-a[1].m);
+  const stage=progress.ch>=4?'Cards finale':'Paragraph '+(Math.max(0,Number(progress.ch)||0)+1);
+  const cards=Array.isArray(progress.earned)?progress.earned:[];
+  const details=el('details',{},el('summary',{},el('b',{},name),el('span',{},stage+' · '+cards.length+'/4 cards · '+stats.length+' to review')));
+  if(cards.length)details.append(el('p',{},'Cards: '+cards.map(human).join(', ')));
+  details.append(el('p',{},stats.length?stats.map(([word,result])=>word+' (missed '+result.m+', read '+(result.h||0)+')').join(' · '):'No misses recorded yet.'));
+  host.append(details);
+ }
+}
 let config;
 async function loadRecords(){
- if(state.loading)return;state.loading=true;$('#refresh').disabled=true;$('#connection').classList.remove('error');$('#connection-text').textContent='Refreshing student saves…';render();
+ if(state.loading)return;
+ const local=islandBrowserRecords();
+ state.records=mergeIslandRecords(local,state.records.filter(record=>!record.local));
+ state.loading=true;$('#refresh').disabled=true;$('#connection').classList.remove('error');$('#connection-text').textContent='Refreshing student saves…';render();
  try{
-  config ||= await (await fetch('./config.json')).json();
+  const configResponse=config?null:await fetch('./config.json');
+  if(configResponse&&!configResponse.ok)throw new Error('Dashboard configuration unavailable');
+  config ||= await configResponse.json();
   $('.private-pill').textContent=config.private===false?'Browser-only account list':'Private';
-  const registry=await (await fetch('./accounts.json',{cache:'no-store'})).json();
-  const ids=[...new Set([...(registry.accounts||[]),...(prefs.added||[])])];state.roster=ids;
+  const registryResponse=await fetch('./accounts.json',{cache:'no-store'});
+  if(!registryResponse.ok)throw new Error('Account list unavailable');
+  const registry=await registryResponse.json();
+  const ids=[...new Set([...(registry.accounts||[]),...(prefs.added||[]),...local.map(r=>r.id).filter(id=>worldFor(id))])];state.roster=ids;
   const base=`https://firestore.googleapis.com/v1/projects/${config.project}/databases/(default)/documents/saves`;
   const results=await Promise.all(ids.map(async id=>{try{const response=await fetch(`${base}/${encodeURIComponent(id)}?key=${encodeURIComponent(config.key)}`,{signal:AbortSignal.timeout(18000)});if(!response.ok)throw new Error(response.status===404?'Save not found':response.status===403?'Read permission needed':'Cloud unavailable');const record=await decodeDoc(await response.json());return record||{id,world:worldFor(id)?.id,name:id.replace(/^[^-]+-/,''),state:null,error:'Unknown save format'};}catch(e){const previous=state.records.find(r=>r.id===id);return previous?{...previous,fetchError:e.message}:{id,world:worldFor(id)?.id,name:id.replace(/^[^-]+-/,''),state:null,error:e.message};}}));
-  state.records=results.filter(r=>r.world);state.errors=state.records.filter(r=>r.error||r.fetchError);state.imported=false;
+  state.records=mergeIslandRecords(local,results.filter(r=>r.world));state.errors=state.records.filter(r=>r.error||r.fetchError);state.imported=false;
   $('#connection').classList.toggle('error',state.errors.length>0);
-  $('#connection-text').textContent=state.errors.length?`${state.records.length-state.errors.length} saves refreshed · ${state.errors.length} need attention`:state.records.length?`${state.records.length} saves connected`:'Add your account list to get started';
+  $('#connection-text').textContent=state.errors.length?`${state.records.length-state.errors.length} saves refreshed · ${state.errors.length} need attention`:state.records.length?local.length?`${state.records.length} saves available · includes this browser`:`${state.records.length} cloud saves connected`:'Play on this browser or add cloud save codes';
   $('#updated-time').textContent='Updated '+new Date().toLocaleTimeString('en',{hour:'numeric',minute:'2-digit'});
   $('#roster-status').textContent=config.private===false?'Account codes stay in this browser. Student saves are read-only.':`Account list checked ${registry.checked}. All accounts are included until you hide them.`;
- }catch(e){$('#connection').classList.add('error');$('#connection-text').textContent='Could not connect. Your exclusions and previously loaded view are kept.';toast('Could not refresh: '+e.message);}
+ }catch(e){$('#connection').classList.add('error');$('#connection-text').textContent='Cloud refresh unavailable. Browser saves are still shown.';toast('Could not refresh: '+e.message);}
  finally{state.loading=false;$('#refresh').disabled=false;render();}
 }
 function closeModal(){const root=$('#modal-root');root.replaceChildren();state.modal=null;document.body.style.overflow='';closeModal.focus?.focus();}
