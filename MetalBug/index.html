@@ -400,6 +400,12 @@ const SPEECH_VARIANTS={curly:['curley'],friends:['frenz']};
 function eq(t,h,strict){
   if(t.n===h)return true;
   if(strict)return false;
+  // A voiced gl/gr onset can be transcribed as cl/cr. Keep the long-o
+  // rhyme and final s sound, including the alternate -ose spelling.
+  if(/^g[lr]ows$/.test(t.n)){
+    const onset='c'+t.n[1];
+    if(h===onset+'ows'||h===onset+'ose')return true;
+  }
   // A transcript can spell a reduced final /ndz/ cluster as “nz”.
   if(t.n.endsWith('nds')&&h===t.n.slice(0,-2)+'z')return true;
   // Recognizers sometimes swap the short e and a before the same -nds ending.
