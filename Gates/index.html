@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#121421">
+<title>The Gates | Episode Archive</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 76% 0%,#30274c,transparent 52%),#121421;color:#fff5dc;font:1rem system-ui,sans-serif}
+main{width:min(100% - 32px,820px);margin:auto;padding:22px 0 50px}
+a{color:inherit}
+a:focus-visible{outline:3px solid #ffd35b;outline-offset:5px}
+.back{font-weight:700}
+header{padding:46px 0 24px}
+.kicker{color:#ffd35b;font-weight:900;letter-spacing:.15em;text-transform:uppercase;font-size:.78rem}
+h1{font-size:clamp(3.7rem,12vw,7rem);line-height:.9;letter-spacing:-.07em;margin:8px 0 14px;text-transform:uppercase}
+header p{color:#ddd8ec}
+.episode{display:grid;grid-template-columns:1.2fr 1fr;text-decoration:none;border:3px solid #ffcf58;box-shadow:7px 7px #06070c;background:#24233a}
+.art{min-height:210px;background:linear-gradient(0deg,#0a0d17a6,transparent 50%),url('../MetalBug/assets/p1.jpg') 35% 48%/cover;position:relative}
+.art span{position:absolute;bottom:14px;left:14px;background:#ffd35b;color:#1d192b;padding:7px 11px;font-weight:900;transform:rotate(-3deg)}
+.copy{padding:22px;display:grid;align-content:center;gap:8px}
+h2,p{margin:0}
+h2{font-size:clamp(1.7rem,5vw,2.7rem);line-height:1}
+.action{color:#ffd35b;font-weight:850;margin-top:10px}
+.episode:hover .action{text-decoration:underline}
+@media(max-width:560px){.episode{grid-template-columns:1fr}.art{min-height:180px}header{padding-top:32px}}
+</style>
+</head>
+<body>
+<main>
+<a class="back" href="../">← Exam Games</a>
+<header><div class="kicker">Episode archive</div><h1>The Gates</h1><p>Pick an episode to enter the story.</p></header>
+<a class="episode" href="../MetalBug/">
+  <div class="art" aria-hidden="true"><span>GATE 08</span></div>
+  <div class="copy"><div class="kicker">Episode 08</div><h2>Follow the Red Dot</h2><span class="action">Play episode →</span></div>
+</a>
+</main>
+</body>
+</html>
