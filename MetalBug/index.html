@@ -402,6 +402,10 @@ function eq(t,h,strict){
   if(strict)return false;
   // A transcript can spell a reduced final /ndz/ cluster as “nz”.
   if(t.n.endsWith('nds')&&h===t.n.slice(0,-2)+'z')return true;
+  // Recognizers sometimes swap the short e and a before the same -nds ending.
+  // Keep the onset and suffix exact so this does not forgive an omitted word.
+  if(/^[b-df-hj-np-tv-z]+[ae]nds$/.test(t.n)&&
+     h===t.n.replace(/[ae]nds$/,ending=>ending==='ends'?'ands':'ends'))return true;
   if(t.soft&&SOFT[t.base].includes(h.replace(/s$/,'')))return true;
   return !!(SPEECH_VARIANTS[t.n]?.includes(h)||HOMO[t.n]?.includes(h));
 }
