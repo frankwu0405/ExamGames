@@ -958,18 +958,19 @@ function title(editName=false){
   stage.style.touchAction='pan-x';
   const car=el('div','');car.id='car';tl.append(car);
   const W=ST.W,Hh=ST.H;
-  const sil=(pg,x,y,w,h,tint)=>{const d=el('div','sil');const sc=Math.max(W/w,Hh/h);d.style.background=`url(assets/p${pg}.jpg) no-repeat`;d.style.backgroundSize=`${IW*sc}px ${IH*sc}px`;d.style.backgroundPosition=`${-(x+w/2)*sc+W/2}px ${-(y+h/2)*sc+Hh/2}px`;return[d,Object.assign(el('div','tint'),{})].map((n,i)=>{if(i)n.style.background=tint;return n;});};
+  const sil=(pg,x,y,w,h,tint)=>{const d=el('div','sil');if(typeof pg==='string'){d.style.background=`url(${pg}) center 35%/cover no-repeat`;d.style.filter='brightness(.62) contrast(1.9) saturate(.1) blur(1.2px)';d.style.opacity='1';const t=el('div','tint');t.style.background=tint;return[d,t];}const sc=Math.max(W/w,Hh/h);d.style.background=`url(assets/p${pg}.jpg) no-repeat`;d.style.backgroundSize=`${IW*sc}px ${IH*sc}px`;d.style.backgroundPosition=`${-(x+w/2)*sc+W/2}px ${-(y+h/2)*sc+Hh/2}px`;return[d,Object.assign(el('div','tint'),{})].map((n,i)=>{if(i)n.style.background=tint;return n;});};
   const lockSlide=(num,pg,rect,tint,sig)=>{const sl=el('div','slide lock');const L=sil(pg,...rect,tint);sl.append(...L);const g1=L[0].cloneNode();g1.className='sil g';const g2=L[0].cloneNode();g2.className='sil g b';sl.append(g1,g2,el('div','noise'),el('div','scan'),el('div','roll'));sl.append(el('div','q','?'),el('div','ep','EPISODE '+num),el('div','nm','???'),el('div','sg',sig));return sl;};
-  const s7=lockSlide('07',2,[1960,724,536,640],'linear-gradient(180deg,rgba(20,30,70,.55),rgba(5,7,13,.9))','Signal lost');
+  const T=(r,g,b,a=.45)=>`linear-gradient(180deg,rgba(${r},${g},${b},${a}),rgba(5,7,13,.78) 85%)`;
+  const past=[['01','assets/ep1.jpg',[],T(60,30,10),'Archive sealed'],['02','assets/ep2.jpg',[],T(60,10,50),'Memory fragment'],['03','assets/ep3.jpg',[],T(50,20,80),'Frequency unknown'],['04','assets/ep4.jpg',[],T(10,60,60),'File corrupted'],['05','assets/ep5.jpg',[],T(80,40,10),'Echo only'],['06','assets/ep6.jpg',[],T(90,10,25),'Signal weak'],['07','assets/ep7.jpg',[],T(20,30,70,.55),'Signal lost']].map(([n,pg,r,t,sg])=>lockSlide(n,pg,r,t,sg));
   const s8=el('div','slide');s8.append(t);
   const s9=lockSlide('09',3,[1548,676,948,688],'linear-gradient(180deg,rgba(90,10,25,.5),rgba(5,7,13,.92))','Something is watching');
   const s10=lockSlide('10',1,[1492,52,1008,568],'linear-gradient(180deg,rgba(10,70,70,.5),rgba(5,7,13,.92))','Transmission incoming');
-  car.append(s7,s8,s9,s10);
-  const dots=el('div','');dots.id='dots';[0,1,2,3].forEach(()=>dots.append(el('b')));tl.append(dots);
+  car.append(...past,s8,s9,s10);
+  const EP8=past.length;
   const hl=el('div','swh l','‹'),hr=el('div','swh r','›');s8.append(hl,hr);
-  let curEp=1;const paint=()=>{[...dots.children].forEach((d,i)=>d.classList.toggle('on',i===curEp));if(typeof go!=='undefined')go.classList.toggle('locked',curEp!==1);};
+  let curEp=EP8;const paint=()=>{if(typeof go!=='undefined')go.classList.toggle('locked',curEp!==EP8);};
   car.addEventListener('scroll',()=>{const n=Math.round(car.scrollLeft/car.clientWidth);if(n!==curEp){curEp=n;paint();Snd.init();sfx('tick');hl.remove();hr.remove();}},{passive:true});
-  stage.append(tl);car.style.scrollBehavior='auto';car.scrollLeft=car.clientWidth;
+  stage.append(tl);car.style.scrollBehavior='auto';car.scrollLeft=car.clientWidth*EP8;
   play.replaceChildren();
   const go=el('button','go',S.ch>0&&S.ch<5?`Continue · paragraph ${Math.min(S.ch+1,4)} ▸`:'Start ▸');
   const wrap=el('div','');wrap.style.cssText='display:flex;flex-direction:column;gap:10px;margin-top:auto';
@@ -977,7 +978,7 @@ function title(editName=false){
   const nameArea=el('div','student-name-area');
   wrap.append(nameArea,go);
   const startGame=go.onclick;
-  go.addEventListener('click',e=>{if(curEp!==1){e.stopImmediatePropagation();e.preventDefault();}},true);paint();
+  go.addEventListener('click',e=>{if(curEp!==EP8){e.stopImmediatePropagation();e.preventDefault();}},true);paint();
   function showGreeting(){
     const greeting=el('div','student-greeting','Welcome, ');
     const player=el('button','student-name-link',student.name);
