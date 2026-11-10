@@ -124,7 +124,9 @@ html,body{margin:0;height:100%;background:#05070d;color:var(--paper);font-family
 .student-input{display:block;width:100%;min-height:44px;border:0;border-radius:0;appearance:none;background:#fff;color:var(--ink);padding:9px 18px;font:700 16px var(--bd);clip-path:polygon(0 0,100% 0,calc(100% - 14px) 100%,0 100%)}
 .student-input::placeholder{color:#85858e;opacity:1}
 .student-input:focus-visible{outline:2px solid var(--yellow);outline-offset:-4px}
-.student-greeting{color:#fff;font:700 clamp(16px,4vw,22px)/1.2 var(--bd);overflow-wrap:anywhere}
+.student-greeting{color:#fff;font:700 clamp(24px,6vw,34px)/1.2 var(--bd);overflow-wrap:anywhere}
+.student-name-link{display:inline;appearance:none;border:0;border-radius:0;background:none;box-shadow:none;color:inherit;font:inherit;padding:0;white-space:normal;overflow-wrap:anywhere;max-width:100%;text-align:left;text-decoration:underline dotted;text-decoration-thickness:.075em;text-underline-offset:.19em;cursor:pointer}
+.student-name-link:focus-visible{outline:2px solid var(--yellow);outline-offset:4px}
 </style>
 </head>
 <body>
@@ -847,7 +849,13 @@ function title(editName=false){
   wrap.append(nameArea,go);
   const startGame=go.onclick;
   function showGreeting(){
-    nameArea.replaceChildren(el('div','student-greeting','Welcome, '+student.name+'!'));
+    const greeting=el('div','student-greeting','Welcome, ');
+    const player=el('button','student-name-link',student.name);
+    player.type='button';
+    player.setAttribute('aria-label','Change player, currently '+student.name);
+    player.onclick=()=>title(true);
+    greeting.append(player,'!');
+    nameArea.replaceChildren(greeting);
     go.textContent=S.ch>0&&S.ch<5?`Continue · paragraph ${Math.min(S.ch+1,4)} ▸`:'Start ▸';
     go.onclick=startGame;
     if(S.ch>0&&S.ch<5&&!wrap.querySelector('.alt')){
