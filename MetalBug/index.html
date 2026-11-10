@@ -362,7 +362,7 @@ const HOMO={};[['to','too','two'],['for','four'],['no','know'],['right','write']
 const SOFT={finn:['fin','finn','phin','fen','finnes'],kip:['kip','keep','kit','kid','kipp','kib','cape','ship'],nara:['nara','nora','narra','narah','naira','narrow','mara','sarah'],vex:['vex','vexx','vets','becks','vecs','bex','vax','box','backs','vegas'],watcher:['watcher','watchers','washer','watch','wash'],toby:['toby','tobey']};
 const NOKEY=new Set('would could should you your young touch touches shoulder through thought enough double trouble sure pure eight wire wires fire their tire during cure'.split(' '));
 function mkTok(raw){const n=norm(raw)[0]||'';const base=n.replace(/s$/,'');return{raw,n,base,soft:!!SOFT[base],key:/(ir|ur|igh|ou)/.test(n)&&!NOKEY.has(n)};}
-const SPEECH_VARIANTS={curly:['curley']};
+const SPEECH_VARIANTS={curly:['curley'],friends:['frenz']};
 function eq(t,h,strict){
   if(t.n===h)return true;
   if(strict)return false;
