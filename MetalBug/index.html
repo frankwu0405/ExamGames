@@ -380,11 +380,14 @@ function align(T,H){
   return{t,h,hits:t.filter(x=>x==='hit').length};
 }
 function bestAln(T,cands){let best=null;for(const w of cands){const a=align(T,w);const sc=a.hits-.05*a.h.filter(x=>x==='extra').length;if(!best||sc>best.sc)best={aln:a,words:w,sc};}return best||{aln:align(T,[]),words:[],sc:0};}
-function judge(T,aln,strict){
+function judge(T,aln,strict,{final=false,practice=false}={}){
   const bad=[];aln.t.forEach((s,i)=>{if(s!=='hit')bad.push(i);});
   if(!bad.length)return true;
-  if(strict||bad.length>1||T.length<5)return false;
-  const k=T[bad[0]];return!k.key&&(k.fn||k.soft);
+  if(strict||!final||bad.length>1)return false;
+  const token=T[bad[0]];
+  if(token.key)return false;
+  if(practice)return T.length>=4;
+  return T.length>=5&&(token.fn||token.soft);
 }
 function recordWords(T,aln){T.forEach((t,i)=>{if(!t.key)return;const r=S.stats[t.n]||(S.stats[t.n]={h:0,m:0});if(aln.t[i]==='hit')r.h++;else r.m++;});save();}
 
@@ -496,7 +499,7 @@ function readOne(it,left){
     if(Mic.ok){
       Mic.handler=({cands,final})=>{
         const b=bestAln(line.tokens,cands);line.apply(b.aln,final);renderHeard(hb,b.words,b.aln,final);
-        if(judge(line.tokens,b.aln,S.strict)){finish(it.tries<2&&!it.assisted,'voice');return;}
+        if(judge(line.tokens,b.aln,S.strict,{final,practice:true})){finish(it.tries<2&&!it.assisted,'voice');return;}
         if(final){it.tries++;recordWords(line.tokens,b.aln);m.textContent=it.tries<2?'Close — fix the orange word.':'Try it once more, slowly.';if(it.tries>=2)hear.classList.remove('hide');}
       };
       Mic.on();
@@ -579,7 +582,7 @@ function choose(cfg){
       Mic.handler=({cands,final})=>{
         if(locked)return;
         const live=O.filter(o=>o.state==='live');
-        const sc=live.map(o=>{const b=bestAln(o.line.tokens,cands);return{o,b,cover:b.aln.hits/o.line.tokens.length,ok:judge(o.line.tokens,b.aln,S.strict)};});
+        const sc=live.map(o=>{const b=bestAln(o.line.tokens,cands);return{o,b,cover:b.aln.hits/o.line.tokens.length,ok:judge(o.line.tokens,b.aln,S.strict,{final})};});
         const top=Math.max(0,...sc.map(s=>s.cover));
         sc.forEach(s=>s.o.line.apply(top>=.3&&s.cover===top?s.b.aln:null,final&&s.cover===top));
         const lead=sc.find(s=>s.cover===top);
@@ -620,7 +623,7 @@ function openTeacher(){
   if(!T.force&&!T.picks&&!T.note)b.append(el('p','','Nothing waiting. Long-press the slider icon any time.'));
   b.append(el('h4','','Mic'));
   b.append(el('p','',Mic.ok?'Speech recognition is available. The page shows what the device heard; it can mishear names (Kip, Nara, Vex are forgiven) and short words. No audio is saved.':'This browser has no speech recognition. Use Chrome (Android) or Safari 14.5+. Until then, a teacher ✓ button appears under each line.'));
-  b.append(mk(S.strict?'Strict: every word ✓ (on)':'Strict: every word (off — one missed short word is forgiven)',()=>{S.strict=!S.strict;save();openTeacher();}));
+  b.append(mk(S.strict?'Strict: every word ✓ (on)':'Forgiving mode · allows one non-phonics mismatch in practice',()=>{S.strict=!S.strict;save();openTeacher();}));
   b.append(el('h4','','Paragraph notes'));
   const n=NOTES[Math.min(S.ch,3)];b.append(el('p','','Turn: '+n[0]));b.append(el('p','','Ask: '+n[1]));
   b.append(el('h4','','Jump to'));
