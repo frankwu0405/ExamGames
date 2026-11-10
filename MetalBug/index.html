@@ -119,6 +119,17 @@ html,body{margin:0;height:100%;background:#05070d;color:var(--paper);font-family
 #title{position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;justify-content:flex-end;padding:0 0 4px}
 .ttl{font:400 clamp(50px,16vw,104px)/.94 var(--hd);color:var(--paper);-webkit-text-stroke:4px #000;paint-order:stroke fill;text-shadow:6px 6px 0 #000;font-kerning:normal;letter-spacing:.008em;white-space:nowrap;transform:rotate(-3deg);margin:0 0 8px 6px}
 .ttl em{display:block;font-style:normal;color:var(--red);font-size:.57em;letter-spacing:.035em;margin-left:.22em}
+
+.student-badge{background:#ffe0a1;color:#151425;border:3px solid #090910;box-shadow:4px 4px #090910;padding:8px 12px;transform:rotate(-1deg)}
+.student-tag{display:block;font:400 19px/1 var(--hd);letter-spacing:.09em}
+.student-form{display:grid;grid-template-columns:minmax(0,1fr) 46px;gap:6px}
+.student-form label{grid-column:1/-1}
+.student-input,.student-confirm{min-height:44px;border:2px solid #10101b;color:#161422;font:700 16px var(--bd)}
+.student-input{min-width:0;background:#fff7e5;padding:6px 9px}
+.student-confirm{background:#ffcf55;box-shadow:2px 2px #10101b}
+.student-greeting{font:400 clamp(24px,7vw,38px)/1.05 var(--hd);margin:4px 0;overflow-wrap:anywhere}
+.student-edit{color:#191529;background:none;border:0;padding:4px 0;text-decoration:underline;font:700 13px var(--bd)}
+.go:disabled{opacity:.5;cursor:default}
 </style>
 </head>
 <body>
@@ -157,9 +168,30 @@ const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(M
 let RUN=0;
 const sleep=ms=>{const t=RUN;return new Promise((res,rej)=>setTimeout(()=>t===RUN?res():rej('cancel'),ms));};
 window.addEventListener('unhandledrejection',e=>e.preventDefault());
-const store={get(){try{return JSON.parse(localStorage.getItem('gate8v2')||'{}');}catch(e){return{};}},set(o){try{localStorage.setItem('gate8v2',JSON.stringify(o));}catch(e){}}};
-const S=Object.assign({ch:0,earned:[],stats:{},strict:false,muted:false},store.get());
-const save=()=>store.set({ch:S.ch,earned:S.earned,stats:S.stats,strict:S.strict,muted:S.muted});
+const storage={
+  get(key,fallback){try{return JSON.parse(localStorage.getItem(key))??fallback;}catch{return fallback;}},
+  set(key,value){try{localStorage.setItem(key,JSON.stringify(value));}catch{}}
+};
+const fresh=()=>({ch:0,earned:[],stats:{},strict:false,muted:false});
+const copy=value=>JSON.parse(JSON.stringify(value));
+const roster=storage.get('gate8-students',{active:'',students:[]});
+let student=roster.students.find(entry=>entry.id===roster.active);
+const S=Object.assign(fresh(),student?.progress??(roster.students.length?{}:storage.get('gate8v2',{})));
+function save(){
+  if(!student){storage.set('gate8v2',S);return;}
+  student.progress=copy(S);
+  storage.set('gate8-students',roster);
+}
+function selectStudent(name){
+  const id=name.toLocaleLowerCase();
+  const existing=roster.students.find(entry=>entry.id===id);
+  const progress=existing?.progress??(roster.students.length?fresh():S);
+  student=existing??{id,name};
+  if(!existing)roster.students.push(student);
+  roster.active=id;
+  Object.assign(S,fresh(),copy(progress));
+  save();renderTray();paintMute();
+}
 
 /* ---------- comic geometry: [page, x, y, w, h] inside each real panel ---------- */
 const SHOT={
@@ -479,6 +511,15 @@ function openTeacher(){
   const b=$('#tbody');b.replaceChildren();
   b.append(el('h3','','Teacher'));
   const mk=(t,f,pri)=>{const x=el('button',pri?'pri':'',t);x.onclick=f;return x;};
+  b.append(el('h4','','Student progress'));
+  b.append(el('p','',student?'Playing as '+student.name:'Enter a student name on the title screen.'));
+  for(const entry of roster.students){
+    const p=entry.progress;
+    const chapter=p.ch>=4?'Cards finale':'Paragraph '+(p.ch+1);
+    const misses=Object.entries(p.stats).filter(([,stat])=>stat.m).sort((a,b)=>b[1].m-a[1].m).slice(0,3);
+    b.append(el('p','',entry.name+' · '+chapter+' · '+p.earned.length+'/4 cards'+(misses.length?' · Review: '+misses.map(([word])=>word).join(', '):'')));
+  }
+  b.append(mk('Switch student',()=>{closeT();title(true);}));
   b.append(el('h4','','Right now'));
   if(T.force)b.append(mk('Count this line ✓',()=>{closeT();T.force&&T.force();},1));
   if(T.picks){b.append(el('p','','He read this line (tap it to select it for him):'));T.picks().forEach(p=>b.append(mk(p.label,()=>{closeT();p.go();})));}
@@ -797,7 +838,8 @@ async function orderCards(cards){
 }
 
 /* ---------- title & chapter router ---------- */
-function title(){
+function title(editName=false){
+  $('#title')?.remove();
   RUN++;Mic.off();setStatic(0);panelView=null;$('#ret').style.display='none';document.querySelectorAll('.pin').forEach(p=>p.remove());
   stageH(56,false);cam('title',{dur:0});cap(null);$('#curtain').classList.add('up');
   const tl=el('div','');tl.id='title';tl.style.cssText='position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;justify-content:flex-end;pointer-events:none;background:linear-gradient(0deg,rgba(13,18,32,.95),transparent 55%)';
@@ -806,8 +848,37 @@ function title(){
   const go=el('button','go',S.ch>0&&S.ch<5?`Continue · paragraph ${Math.min(S.ch+1,4)} ▸`:'Start ▸');
   const wrap=el('div','');wrap.style.cssText='display:flex;flex-direction:column;gap:10px;margin-top:auto';
   go.onclick=()=>{Snd.init();Snd.resume();tl.remove();startChapter(S.ch>=4?0:S.ch);};
-  wrap.append(go);
-  if(S.ch>0&&S.ch<5){const n=el('button','go alt','From the start');n.style.fontSize='22px';n.onclick=()=>{Snd.init();Snd.resume();tl.remove();S.ch=0;startChapter(0);};wrap.append(n);}
+  const badge=el('div','student-badge');
+  if(student&&!editName){
+    badge.append(el('div','student-tag','PLAYER IDENTIFIED'),el('div','student-greeting','Welcome, '+student.name+'!'));
+    const edit=el('button','student-edit','Change player');
+    edit.onclick=()=>title(true);badge.append(edit);
+  }else{
+    go.disabled=true;
+    const form=el('form','student-form');
+    const label=el('label','student-tag','WHO’S PLAYING?');
+    label.htmlFor='student-name';
+    const input=el('input','student-input');
+    input.id='student-name';input.placeholder='Enter your name';input.maxLength=32;
+    input.required=true;input.autocomplete='off';input.autocapitalize='words';
+    const confirm=el('button','student-confirm','✓');
+    confirm.type='submit';confirm.setAttribute('aria-label','Confirm player name');
+    form.append(label,input,confirm);
+    form.onsubmit=event=>{
+      event.preventDefault();
+      const name=input.value.trim().replace(/\s+/g,' ');
+      if(!name){input.focus();return;}
+      selectStudent(name);title();$('#play .go')?.focus();
+    };
+    badge.append(form);
+    if(student){
+      const cancel=el('button','student-edit','Keep '+student.name);
+      cancel.onclick=()=>title();badge.append(cancel);
+    }
+    if(editName)requestAnimationFrame(()=>input.focus());
+  }
+  wrap.append(badge,go);
+  if(student&&!editName&&S.ch>0&&S.ch<5){const n=el('button','go alt','From the start');n.style.fontSize='22px';n.onclick=()=>{Snd.init();Snd.resume();tl.remove();S.ch=0;startChapter(0);};wrap.append(n);}
   play.append(el('div','sm','Read · listen · decide'),wrap);
   Snd.music(false);
   if(!Mic.ok){const w=el('div','sm','No speech recognition here — teacher mode');w.style.color='#ffb061';play.insertBefore(w,wrap);}
