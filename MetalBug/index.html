@@ -456,7 +456,7 @@ function renderHeard(box,words,aln,final){
 const msgEl=()=>{const m=el('div','msg');m.setAttribute('role','status');return m;};
 
 /* ---------- teacher hooks ---------- */
-const T={force:null,picks:null,note:null};
+const T={force:null,picks:null,skipChoice:null,note:null};
 function teacherConfirm(yes){
   const bar=el('div','');bar.style.cssText='display:flex;gap:8px;align-items:center;background:var(--paper);color:var(--ink);padding:8px 10px;border:3px solid #000;font:700 14px var(--bd)';
   bar.append('Teacher: did he read the whole line?');
@@ -488,11 +488,11 @@ function readOne(it,left){
     const finish=(clean,by)=>{
       if(done)return;done=true;Mic.handler=null;T.force=null;Mic.reset();
       line.allHit();sfx('good');burst(10);m.textContent='';
-      if(by==='voice'&&!it.assisted){const base=line.tokens.some(t=>t.key&&/ir|ur/.test(t.n))?2:1;earn(it.tries===0?base:it.tries===1?1:0,line.box);}
+      if((by==='voice'||(TEST&&by==='skip'))&&!it.assisted){const base=line.tokens.some(t=>t.key&&/ir|ur/.test(t.n))?2:1;earn(it.tries===0?base:it.tries===1?1:0,line.box);}
       setTimeout(()=>res({clean}),340);
     };
-    T.force=()=>finish(true,'teacher');
-    if(TEST)wrap.append(testBtn('pass this line',()=>finish(true,'teacher')));
+    T.force=by=>finish(true,by==='skip'?'skip':'teacher');
+    if(TEST)wrap.append(testBtn('pass this line',()=>finish(true,'skip')));
     if(Mic.ok){
       Mic.handler=({cands,final})=>{
         const b=bestAln(line.tokens,cands);line.apply(b.aln,final);renderHeard(hb,b.words,b.aln,final);
@@ -552,13 +552,17 @@ function choose(cfg){
     const layout=()=>{list.replaceChildren();const live=shuffle(O.filter(o=>o.state==='live')),dead=O.filter(o=>o.state==='dead');live.concat(dead).forEach(o=>list.append(o.el));};
     layout();
     T.picks=()=>O.filter(o=>o.state==='live').map(o=>({label:o.t,go:()=>commit(o)}));
-    const finish=()=>{Mic.handler=null;T.picks=null;T.force=null;Mic.reset();res({wrong,assisted:hinted});};
+    if(TEST)T.skipChoice=()=>{
+      const correct=O.find(o=>o.ok&&o.state==='live');
+      if(correct)commit(correct,'skip');
+    };
+    const finish=()=>{Mic.handler=null;T.picks=null;T.skipChoice=null;T.force=null;Mic.reset();res({wrong,assisted:hinted});};
     async function commit(o,by){
       if(locked)return;locked=true;Mic.reset();renderHeard(hb,null);
       try{
         if(o.ok){
           got++;o.state='done';o.line.allHit();o.el.classList.add('right');sfx('good');burst(10);m.textContent='';
-          if(by==='voice'&&!hinted)earn(wrong===0?2:1,o.el);
+          if((by==='voice'||(TEST&&by==='skip'))&&!hinted)earn(wrong===0?2:1,o.el);
           if(cfg.good)await cfg.good(o,got);
           if(got>=need){finish();return;}
           list.removeChild(o.el);
@@ -950,6 +954,7 @@ async function orderCards(cards){
 
 /* ---------- title & chapter router ---------- */
 function title(editName=false){
+  T.skipChoice=null;T.force=null;
   $('#title')?.remove();
   RUN++;Mic.off();Snd.music(false);Snd.theme(true);setStatic(0);panelView=null;$('#ret').style.display='none';document.querySelectorAll('.pin').forEach(p=>p.remove());
   stageH(56,false);cam('title',{dur:0});cap(null);$('#curtain').classList.add('up');
@@ -1023,6 +1028,7 @@ function title(editName=false){
   micBtn.classList.add('hide');
 }
 function startChapter(i){
+  T.skipChoice=null;T.force=null;
   const t=$('#title');if(t)t.remove();stage.style.touchAction='';
   RUN++;Mic.off();Snd.theme(false);setStatic(0);panelView=null;$('#ret').style.display='none';document.querySelectorAll('.pin').forEach(p=>p.remove());Snd.humOff();
   S.ch=i;save();
@@ -1031,17 +1037,14 @@ function startChapter(i){
 }
 addEventListener('resize',()=>{if(!panelView){measure();cam(lastShot,{dur:0,keepPage:true});}});
 function skipNow(){
-  const vis=b=>b&&b.offsetParent;
-  const go=[...document.querySelectorAll('#play .go')].find(vis);
-  if(go){go.click();return;}
+  if(T.skipChoice){T.skipChoice();return;}
   const pass=[...document.querySelectorAll('#play .hear')].find(b=>/pass this line/.test(b.textContent));
   if(pass){pass.click();return;}
-  const opt=document.querySelector('#play .opt:not(.wrong)');
-  if(opt){opt.click();return;}
+  if(T.force){T.force('skip');return;}
+  const go=[...document.querySelectorAll('#play .go')].find(b=>b.offsetParent&&!b.disabled);
+  if(go){go.click();return;}
   const jump=[...document.querySelectorAll('#play .hear')].find(b=>/jump to next clue/.test(b.textContent));
-  if(jump){jump.click();return;}
-  if(T.force){T.force();return;}
-  if(T.picks){const p=T.picks()[0];if(p)p.go();}
+  if(jump)jump.click();
 }
 if(TEST){const sk=document.createElement('button');sk.id='skip';sk.textContent='SKIP ›';sk.setAttribute('aria-label','Test skip');
   sk.style.cssText='width:auto;padding:0 10px;font:400 18px var(--hd);letter-spacing:.05em;background:var(--orange);color:#000';
