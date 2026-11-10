@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#0d1220">
-<meta name="gate-build" content="20261111-refresh-1">
+<meta name="gate-build" content="20261111-account-recovery-2">
 <title>The Gate 8: The Empty Room</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Lexend:wght@500;700;800&display=swap" rel="stylesheet">
@@ -256,6 +256,39 @@ function backupProgress(entry){
   backups.push({name:entry.name,id:entry.id,at:Date.now(),progress:copy(entry.progress)});
   storage.set('gate8-sync-backups',backups.slice(-12));
 }
+function hasGateProgress(progress){
+  return !!progress&&(
+    Number(progress.ch)>0||Number(progress.parts)>0||
+    (progress.earned?.length||0)>0||Object.keys(progress.stats||{}).length>0||
+    (progress.checkpoint?.events?.length||0)>0
+  );
+}
+function progressLabel(progress){
+  return (progress.ch>=4?'Finale':'Paragraph '+(Number(progress.ch||0)+1))+
+    ' · '+(progress.parts||0)+' parts · '+(progress.earned?.length||0)+' cards';
+}
+function chooseInitialSave(entry,remote,force=false){
+  if(!force&&hasGateProgress(remote))return Promise.resolve(remote);
+  const backups=storage.get('gate8-sync-backups',[]).filter(snapshot=>snapshot.id===entry.id&&hasGateProgress(snapshot.progress));
+  const candidates=hasGateProgress(entry.progress)?[entry.progress]:[];
+  for(const snapshot of backups.reverse()){
+    if(!candidates.some(progress=>JSON.stringify(progress)===JSON.stringify(snapshot.progress)))candidates.push(snapshot.progress);
+  }
+  if(!candidates.length)return Promise.resolve(remote);
+  const parent=document.querySelector('#cloud-status');
+  if(!parent)throw new Error('Return to the title screen to choose your saved progress.');
+  return new Promise(resolve=>{
+    parent.replaceChildren();
+    parent.append(el('div','','Choose the saved progress for '+entry.name+'. Your selection becomes the shared cloud save.'));
+    const finish=progress=>{parent.replaceChildren();resolve(copy(progress));};
+    const cloud=el('button','hear','Use cloud · '+progressLabel(remote));
+    cloud.onclick=()=>finish(remote);parent.append(cloud);
+    candidates.slice(0,3).forEach((progress,index)=>{
+      const recover=el('button','hear','Restore device save '+(index+1)+' · '+progressLabel(progress));
+      recover.onclick=()=>finish(progress);parent.append(recover);
+    });
+  });
+}
 function applyProgress(progress){
   for(const key of Object.keys(S))delete S[key];
   Object.assign(S,fresh(),copy(progress));
@@ -295,7 +328,7 @@ function uploadStudent(entry){
   cloudQueue.catch(cloudFailure);
   return cloudQueue;
 }
-async function syncStudent(){
+async function syncStudent(chooseSave=false){
   if(!student)return;
   const entry=student,id=entry.id;
   if(cloudLoads.has(id))return cloudLoads.get(id);
@@ -314,7 +347,17 @@ async function syncStudent(){
       if(!remote||typeof remote!=='object')throw new Error('Invalid Gate save.');
       // A dirty local save is uploadable only against the cloud version it
       // originally loaded. Device timestamps never decide the winner.
-      if(entry.dirty&&entry.cloudVersion===doc.updateTime){
+      const selected=await chooseInitialSave(entry,remote,chooseSave);
+      if(student!==entry)return;
+      if(JSON.stringify(selected)!==JSON.stringify(remote)){
+        backupProgress(entry);
+        entry.progress=Object.assign(fresh(),selected);
+        entry.cloudVersion=doc.updateTime;
+        entry.revision=(entry.revision||0)+1;
+        entry.dirty=true;
+        cloudReadyFor=id;
+        await uploadStudent(entry);
+      }else if(entry.dirty&&entry.cloudVersion===doc.updateTime){
         cloudReadyFor=id;
         await uploadStudent(entry);
       }else{
@@ -336,6 +379,8 @@ async function syncStudent(){
     cloudReadyFor=id;
     persistRoster();
     renderTray();paintMute();
+    const status=document.querySelector('#cloud-status');
+    if(status)status.textContent=entry.name+' · Cloud synced · '+progressLabel(entry.progress);
   })();
   cloudLoads.set(id,load);
   try{await load;}finally{cloudLoads.delete(id);}
@@ -1301,6 +1346,20 @@ function title(editName=false){
   const nameArea=el('div','student-name-area');
   const cloudStatus=el('div','sm','');cloudStatus.id='cloud-status';cloudStatus.setAttribute('role','status');
   wrap.append(nameArea,cloudStatus,go);
+  if(student&&!editName){
+    const chooseSave=el('button','student-edit','Choose saved progress');
+    chooseSave.style.color='var(--paper)';
+    chooseSave.onclick=async()=>{
+      chooseSave.disabled=true;go.disabled=true;
+      try{
+        if(cloudLoads.has(student.id))await cloudLoads.get(student.id);
+        await syncStudent(true);
+        showGreeting();
+      }catch(error){cloudFailure(error);}
+      finally{chooseSave.disabled=false;go.disabled=false;}
+    };
+    wrap.append(chooseSave);
+  }
   const startGame=go.onclick;
   go.addEventListener('click',e=>{if(curEp!==EP8){e.stopImmediatePropagation();e.preventDefault();}},true);paint();
   function showGreeting(){
@@ -1320,7 +1379,11 @@ function title(editName=false){
       wrap.append(restart);
     }
   }
-  if(student&&!editName)showGreeting();
+  if(student&&!editName){
+    showGreeting();
+    cloudStatus.textContent='Checking '+student.name+'’s cloud save…';
+    syncStudent().then(()=>{if(document.querySelector('#cloud-status')===cloudStatus)showGreeting();}).catch(cloudFailure);
+  }
   else{
     const form=el('form','student-form');
     const input=el('input','student-input');
