@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#0d1220">
-<meta name="gate-build" content="20261111-save-popup-3">
+<meta name="gate-build" content="20261111-classroom-reading-4">
 <title>The Gate 8: The Empty Room</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Lexend:wght@500;700;800&display=swap" rel="stylesheet">
@@ -188,6 +188,14 @@ html,body{margin:0;height:100%;background:#05070d;color:var(--paper);font-family
 .save-choice span{font:700 12px/1.4 var(--bd)}
 .save-cancel{background:none;border:0;color:var(--ink);font:700 13px var(--bd);padding:8px 0;text-decoration:underline;cursor:pointer}
 .save-dialog button:focus-visible{outline:3px solid var(--orange);outline-offset:3px}
+
+.listen-state{font:800 13px/1.35 var(--bd);letter-spacing:.03em;color:#ffd35b;min-height:20px}
+.listen-state[data-state="on"]{color:#8eebb5}
+.reading-controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.reading-controls .hear{font-size:13px;padding:9px 10px;margin:0}
+.opt.selected-answer{outline:3px solid var(--yellow);outline-offset:3px}
+.line [role="button"]{cursor:pointer}
+.line [role="button"]:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
 </style>
 </head>
 <body>
@@ -642,40 +650,92 @@ function recordWords(T,aln){T.forEach((t,i)=>{if(!t.key)return;const r=S.stats[t
 
 /* ---------- microphone ---------- */
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-const Mic={ok:!!SR,want:false,rec:null,running:false,handler:null,fails:0,ignoreUntil:0,state:'off'};
+const Mic={ok:!!SR,want:false,rec:null,running:false,handler:null,state:'off',retryTimer:null};
 const micBtn=$('#mic');
-function micUI(s){Mic.state=s;micBtn.classList.toggle('on',s==='on');micBtn.classList.toggle('bad',s==='denied');}
-function startRec(){
-  if(!SR||!Mic.want||Mic.running)return;
-  const r=new SR();r.lang='en-US';r.interimResults=true;r.continuous=false;r.maxAlternatives=3;
-  Mic.rec=r;Mic.running=true;let got=false;
-  r.onstart=()=>micUI('on');
-  r.onresult=e=>{
-    if(Mic.rec!==r||performance.now()<Mic.ignoreUntil||!Mic.handler)return;
-    got=true;Mic.fails=0;
-    const n=e.results.length,prim=[];for(let i=0;i<n;i++)prim.push(e.results[i][0].transcript);
-    const last=e.results[n-1],cands=[norm(prim.join(' '))];
-    for(let j=1;j<last.length;j++)cands.push(norm(prim.slice(0,n-1).concat(last[j].transcript).join(' ')));
-    Mic.handler({cands,final:last.isFinal});
-  };
-  r.onerror=e=>{if(e.error==='not-allowed'||e.error==='service-not-allowed'){Mic.want=false;micUI('denied');}};
-  r.onend=()=>{
-    if(Mic.rec===r){Mic.rec=null;Mic.running=false;}
-    if(!Mic.want){if(Mic.state!=='denied')micUI('off');return;}
-    if(!got&&++Mic.fails>=3){Mic.want=false;micUI('off');return;}
-    setTimeout(startRec,100);
-  };
-  try{r.start();}catch(e){Mic.running=false;Mic.rec=null;micUI('off');}
+function micUI(state){
+  Mic.state=state;
+  micBtn.classList.toggle('on',state==='on');
+  micBtn.classList.toggle('bad',state==='denied');
+  micBtn.setAttribute('aria-label',state==='on'?'Pause microphone':'Resume microphone');
+  const labels={on:'● Speak now',starting:'◌ Connecting mic…',reconnecting:'◌ Reconnecting…',example:'▶ Listen to the example',denied:'Mic blocked · use teacher check',off:'Mic paused · tap the microphone'};
+  document.querySelectorAll('.listen-state').forEach(node=>{node.textContent=Mic.ok?(labels[state]||labels.off):'Read to your teacher';node.dataset.state=state;});
 }
-Mic.on=()=>{if(!SR)return;micBtn.classList.remove('hide');Mic.want=true;Mic.fails=0;startRec();};
-Mic.off=()=>{micBtn.classList.add('hide');Mic.want=false;Mic.handler=null;try{Mic.rec&&Mic.rec.abort();}catch(e){}micUI('off');};
-Mic.reset=()=>{Mic.ignoreUntil=performance.now()+260;try{Mic.rec&&Mic.rec.abort();}catch(e){}};
-micBtn.onclick=()=>{Snd.init();Snd.resume();if(Mic.want&&Mic.state==='on'){Mic.want=false;try{Mic.rec&&Mic.rec.abort();}catch(e){}micUI('off');}else Mic.on();};
+function listenStatus(parent){
+  const status=el('div','listen-state');
+  status.setAttribute('role','status');parent.append(status);micUI(Mic.state);
+  return status;
+}
+function scheduleMic(){
+  clearTimeout(Mic.retryTimer);
+  if(Mic.want&&Mic.handler&&!document.hidden){
+    micUI('reconnecting');
+    Mic.retryTimer=setTimeout(startRec,150);
+  }
+}
+function startRec(){
+  if(!SR||!Mic.want||!Mic.handler||Mic.running||document.hidden)return;
+  const r=new SR();r.lang='en-US';r.interimResults=true;r.continuous=true;r.maxAlternatives=3;
+  Mic.rec=r;Mic.running=true;micUI('starting');
+  r.onstart=r.onaudiostart=()=>{if(Mic.rec===r)micUI('on');};
+  r.onresult=event=>{
+    if(Mic.rec!==r||!Mic.handler)return;
+    // Continuous recognition contains earlier final results. Deliver only
+    // the changed result, so a repaired word is not blocked by old speech.
+    const handler=Mic.handler;
+    for(let index=event.resultIndex;index<event.results.length;index++){
+      if(Mic.rec!==r||Mic.handler!==handler)return;
+      const result=event.results[index];
+      const cands=Array.from(result,alternative=>norm(alternative.transcript));
+      handler({cands,final:result.isFinal});
+    }
+  };
+  r.onerror=event=>{
+    if(Mic.rec!==r)return;
+    if(['not-allowed','service-not-allowed','audio-capture'].includes(event.error)){
+      Mic.want=false;micUI('denied');
+    }else if(event.error!=='no-speech'&&event.error!=='aborted'){
+      Mic.want=false;micUI('off');
+    }
+  };
+  r.onend=()=>{
+    if(Mic.rec!==r)return;
+    Mic.rec=null;Mic.running=false;
+    if(Mic.want)scheduleMic();else if(Mic.state!=='denied')micUI('off');
+  };
+  try{r.start();}catch{
+    Mic.rec=null;Mic.running=false;Mic.want=false;micUI('off');
+  }
+}
+function stopRecognition(){
+  clearTimeout(Mic.retryTimer);
+  const rec=Mic.rec;Mic.rec=null;Mic.running=false;
+  try{rec?.abort();}catch{}
+}
+Mic.on=()=>{
+  if(!SR){micUI('off');return;}
+  micBtn.classList.remove('hide');Mic.want=true;
+  startRec();
+};
+Mic.off=()=>{micBtn.classList.add('hide');Mic.want=false;Mic.handler=null;stopRecognition();micUI('off');};
+Mic.reset=()=>{stopRecognition();if(Mic.want&&Mic.handler)scheduleMic();else micUI('off');};
+micBtn.onclick=()=>{
+  Snd.init();Snd.resume();
+  if(Mic.want){Mic.want=false;stopRecognition();micUI('off');}else Mic.on();
+};
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){stopRecognition();if(Mic.want)micUI('reconnecting');}
+  else if(Mic.want&&Mic.handler)startRec();
+});
 function speak(text,done){
   if(!window.speechSynthesis){done&&done();return;}
-  const wasOn=Mic.want;Mic.want=false;try{Mic.rec&&Mic.rec.abort();}catch(e){}
+  const wasOn=Mic.want,run=RUN,handler=Mic.handler;
+  Mic.want=false;stopRecognition();micUI('example');
   const u=new SpeechSynthesisUtterance(text);u.rate=.82;u.lang='en-US';
-  u.onend=u.onerror=()=>{if(wasOn)Mic.on();done&&done();};
+  let finished=false;
+  u.onend=u.onerror=()=>{
+    if(finished)return;finished=true;
+    if(run===RUN&&Mic.handler===handler){if(wasOn)Mic.on();done&&done();}
+  };
   speechSynthesis.cancel();speechSynthesis.speak(u);
 }
 
@@ -730,69 +790,83 @@ function earn(n,anchor){
 /* ---------- read one sentence aloud ---------- */
 // Match a spoken chunk against the next unread word. Also allow a fresh
 // start from the beginning without discarding the confirmed words.
-function readingChunk(tokens,candidates,confirmed,strict){
+function readingEvidence(tokens,candidates,confirmed,strict){
+  const first=tokens.findIndex((_,index)=>!confirmed.has(index));
+  if(first<0)return {hits:new Set(confirmed),words:[],aln:{t:tokens.map(()=> 'hit'),h:[]}};
   let best=null;
   for(const words of candidates){
     const spoken=words.filter(word=>word!=='um'&&word!=='uh');
-    for(const start of confirmed?[confirmed,0]:[0]){
-      let end=start,used=0;
-      while(end<tokens.length&&used<spoken.length&&eq(tokens[end],spoken[used],strict)){end++;used++;}
-      if(end<confirmed)continue;
-      const mismatch=end<tokens.length&&used<spoken.length;
-      if(!best||end>best.end||(end===best.end&&best.mismatch&&!mismatch)){
-        best={end,mismatch,words};
+    for(const start of first?[first,0]:[0]){
+      const aln=align(tokens.slice(start),spoken,strict);
+      const hits=new Set(confirmed);
+      aln.t.forEach((state,index)=>{if(state==='hit')hits.add(start+index);});
+      const added=hits.size-confirmed.size;
+      const score=added*100+aln.hits-aln.h.filter(state=>state==='extra').length*.1;
+      if(!best||score>best.score){
+        best={hits,words:spoken,aln,score};
       }
     }
   }
-  return best||{end:confirmed,mismatch:false,words:[]};
+  return best||{hits:new Set(confirmed),words:[],aln:{t:[],h:[]},score:0};
 }
+let practiceAgain=[];
 function readOne(it,left){
-  const run=RUN;
-  const key='line:'+it.t;
-  const previous=takeStep(key);
+  const run=RUN,key='line:'+it.t,previous=takeStep(key);
   if(previous)return Promise.resolve(previous.value);
   return new Promise(res=>{
     play.replaceChildren();
-    const top=el('div','sm',left>0?`${left} more after this`:'last one');play.append(top);
-    const wrap=el('div','');wrap.style.cssText='margin:auto 0;display:flex;flex-direction:column;gap:14px';play.append(wrap);
-    const line=mountLine(wrap,it.t);const hb=el('div','heard');wrap.append(hb);renderHeard(hb,null);
-    const m=msgEl();wrap.append(m);
-    const hear=el('button','hear hide','▶ Hear it');hear.onclick=()=>{it.assisted=true;speak(it.t);};wrap.append(hear);
-    let done=false, confirmed=0;
-    const missesByWord=new Map();
-    const needsReview=()=>it.assisted||[...missesByWord.values()].some(count=>count>=2);
+    play.append(el('div','sm',left>0?left+' more after this':'last one'));
+    const wrap=el('div','');
+    wrap.style.cssText='margin:auto 0;display:flex;flex-direction:column;gap:12px';play.append(wrap);
+    listenStatus(wrap);
+    const line=mountLine(wrap,it.t),hb=el('div','heard');wrap.append(hb);renderHeard(hb,null);
+    const message=msgEl();wrap.append(message);
+    message.textContent='Green words stay. You can pause.';
+    let done=false,confirmed=new Set();
     const finish=(clean,by)=>{
-      if(done)return;done=true;Mic.handler=null;T.force=null;Mic.reset();
-      line.allHit();sfx('good');burst(10);m.textContent='';
+      if(done||run!==RUN)return;
+      done=true;Mic.handler=null;T.force=null;Mic.reset();
+      line.allHit();sfx('good');burst(10);message.textContent='';
       saveStep(key,{clean});
-      if((by==='voice'||(TEST&&by==='skip'))&&!it.assisted){const base=line.tokens.some(t=>t.key&&/ir|ur/.test(t.n))?2:1;earn(it.tries===0?base:it.tries===1?1:0,line.box);}
+      recordWords(line.tokens,{t:line.tokens.map(token=>clean||!token.key?'hit':'sub')});
+      const base=line.tokens.some(token=>token.key&&/ir|ur/.test(token.n))?2:1;
+      earn(base,line.box);
       setTimeout(()=>{if(run===RUN)res({clean});},340);
     };
-    T.force=by=>finish(by==='skip'||!needsReview(),by==='skip'?'skip':'teacher');
+    function paint(hits){
+      line.apply({t:line.tokens.map((_,index)=>hits.has(index)?'hit':null)},false);
+    }
+    line.tokens.forEach((token,index)=>{
+      token.el.setAttribute('role','button');token.el.tabIndex=0;
+      token.el.setAttribute('aria-label','Teacher confirm '+token.raw);
+      const confirmWord=()=>{
+        if(done)return;
+        confirmed.add(index);paint(confirmed);
+        if(confirmed.size===line.tokens.length)finish(true,'teacher');
+      };
+      token.el.onclick=confirmWord;
+      token.el.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();confirmWord();}};
+    });
+    const controls=el('div','reading-controls');
+    const check=el('button','hear','✓ Read correctly');check.onclick=()=>finish(true,'teacher');
+    const review=el('button','hear','↺ Practise again');review.onclick=()=>finish(false,'teacher');
+    const hear=el('button','hear','▶ Hear it');hear.onclick=()=>speak(it.t);
+    controls.append(check,review,hear);wrap.append(controls);
+    T.force=by=>finish(true,by==='skip'?'skip':'teacher');
     if(TEST)wrap.append(testBtn('pass this line',()=>finish(true,'skip')));
     if(Mic.ok){
-      m.textContent='Read at your pace. Green words are saved for this line.';
       Mic.handler=({cands,final})=>{
-        const chunk=readingChunk(line.tokens,cands,confirmed,S.strict);
-        if(final)confirmed=chunk.end;
-        const t=line.tokens.map((_,i)=>i<chunk.end?'hit':i===chunk.end&&final&&chunk.mismatch?'sub':null);
-        line.apply({t},final);
-        renderHeard(hb,chunk.words);
-        if(chunk.end===line.tokens.length){finish(!needsReview(),'voice');return;}
-        if(!final)return;
-        if(chunk.mismatch){
-          const count=(missesByWord.get(confirmed)||0)+1;
-          missesByWord.set(confirmed,count);it.tries++;
-          recordWords([line.tokens[confirmed]],{t:['sub']});
-          m.textContent='Try again from “'+line.tokens[confirmed].raw+'”';
-          if(count>=2)hear.classList.remove('hide');
-        }else if(confirmed>0){
-          m.textContent='Keep going from “'+line.tokens[confirmed].raw+'”';
+        if(done||run!==RUN)return;
+        const evidence=readingEvidence(line.tokens,cands,confirmed,S.strict);
+        paint(evidence.hits);renderHeard(hb,evidence.words,evidence.aln,final);
+        if(final)confirmed=evidence.hits;
+        if(evidence.hits.size===line.tokens.length){finish(true,'voice');return;}
+        if(final){
+          const remaining=line.tokens.filter((_,index)=>!confirmed.has(index)).map(token=>token.raw);
+          message.textContent=remaining.length===1?'One word left: '+remaining[0]:'Keep going. You can return to any unlit word.';
         }
       };
       Mic.on();
-    }else{
-      const ok=el('button','go','Teacher ✓ he read it');ok.onclick=()=>finish(true);wrap.append(ok);
     }
   });
 }
@@ -811,7 +885,8 @@ async function sprint(bank,shots,n=10){
   let pool=shuffle(bank);const must=MUST[S.ch]||[];
   const picked=[];must.forEach(w=>{const f=pool.find(s=>s.toLowerCase().includes(w)&&!picked.includes(s));if(f)picked.push(f);});
   pool.forEach(s=>{if(picked.length<n&&!picked.includes(s))picked.push(s);});
-  const q=savedOrder('sprint order',()=>shuffle(picked)).map(t=>({t,tries:0,assisted:false,again:0}));
+  const extraPractice=practiceAgain.splice(0);
+  const q=savedOrder('sprint order',()=>[...extraPractice,...shuffle(picked)]).map(t=>({t,tries:0,assisted:false,again:0}));
   let done=0,si=0;
   while(q.length){
     const it=q.shift();const r=await readOne(it,q.length);done++;
@@ -823,89 +898,99 @@ async function sprint(bank,shots,n=10){
 
 /* ---------- choose by reading aloud ---------- */
 function choose(cfg){
+  const run=RUN;
   return new Promise(res=>{
-    const need=cfg.need||1;let got=0,wrong=0,locked=false,hinted=false;
-    play.replaceChildren();
+    const need=cfg.need||1;let got=0,wrong=0,locked=false,hinted=false,selected=null,resolved=false;
+    Mic.off();play.replaceChildren();
     if(cfg.head)play.append(cfg.head);
     if(cfg.ask)play.append(el('div','ask',cfg.ask));
     const list=el('div','opts'+(cfg.opts.length>4?' many':''));play.append(list);
-    const hb=el('div','heard');const m=msgEl();play.append(m,hb);renderHeard(hb,null);
-    const key='choice:'+cfg.opts.map(o=>o.t).join('|');
-    const O=cfg.opts.map(o=>Object.assign({state:'live',confirmed:0},o));
-    O.forEach(o=>{
-      o.el=el('div','opt');o.line=mountLine(o.el,o.t);
-      let timer=null;
-      const hold=()=>{o.el.onpointerdown=()=>{timer=setTimeout(()=>{timer=null;if(!locked&&o.state==='live')commit(o);},900);};
-        const up=()=>{if(timer){clearTimeout(timer);timer=null;if(!locked&&o.state==='live'){m.textContent=Mic.ok?'Read an answer aloud, one word or phrase at a time.':'';if(!Mic.ok)teacherConfirm(()=>commit(o));}}};
-        o.el.onpointerup=up;o.el.onpointerleave=()=>{if(timer){clearTimeout(timer);timer=null;}};};
-      hold();
-      if(TEST)o.el.onclick=()=>{if(!locked&&o.state==='live')commit(o);};
+    listenStatus(play);
+    const hb=el('div','heard'),message=msgEl();play.append(message,hb);renderHeard(hb,null);
+    message.textContent='Tap an answer, then read it.';
+    const key='choice:'+cfg.opts.map(option=>option.t).join('|');
+    const options=cfg.opts.map(option=>Object.assign({state:'live',confirmed:new Set()},option));
+    function paint(option,hits){
+      option.line.apply({t:option.line.tokens.map((_,index)=>hits.has(index)?'hit':null)},false);
+    }
+    function listen(option){
+      if(locked||resolved||option.state!=='live')return;
+      selected=option;
+      options.forEach(candidate=>{
+        candidate.el.classList.toggle('selected-answer',candidate===option);
+        candidate.el.setAttribute('aria-pressed',String(candidate===option));
+      });
+      message.textContent='Read at your pace. Green words stay.';
+      Mic.handler=({cands,final})=>{
+        if(locked||resolved||selected!==option||run!==RUN)return;
+        const evidence=readingEvidence(option.line.tokens,cands,option.confirmed,S.strict);
+        paint(option,evidence.hits);renderHeard(hb,evidence.words,evidence.aln,final);
+        if(final)option.confirmed=evidence.hits;
+        if(evidence.hits.size===option.line.tokens.length){commit(option,'voice');return;}
+        if(final)message.textContent='Keep going, or reread an unlit word.';
+      };
+      Mic.reset();Mic.on();
+    }
+    options.forEach(option=>{
+      option.el=el('div','opt');option.line=mountLine(option.el,option.t);
+      option.el.setAttribute('role','button');option.el.tabIndex=0;option.el.setAttribute('aria-pressed','false');
+      option.el.onclick=()=>{if(TEST)commit(option,'skip');else listen(option);};
+      option.el.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();listen(option);}};
     });
-    const layout=()=>{list.replaceChildren();const live=shuffle(O.filter(o=>o.state==='live')),dead=O.filter(o=>o.state==='dead');live.concat(dead).forEach(o=>list.append(o.el));};
+    function layout(){
+      list.replaceChildren(...shuffle(options.filter(option=>option.state==='live')).map(option=>option.el),
+        ...options.filter(option=>option.state==='dead').map(option=>option.el));
+    }
     layout();
-    T.picks=()=>O.filter(o=>o.state==='live').map(o=>({label:o.t,go:()=>commit(o)}));
-    if(TEST)T.skipChoice=()=>{
-      const correct=O.find(o=>o.ok&&o.state==='live');
-      if(correct)commit(correct,'skip');
-    };
-    const finish=()=>{Mic.handler=null;T.picks=null;T.skipChoice=null;T.force=null;Mic.reset();res({wrong,assisted:hinted});};
-    async function commit(o,by){
-      if(locked)return;locked=true;Mic.reset();renderHeard(hb,null);
-      if(by!=='resume')saveStep(key,o.t);
-      for(const option of O){option.confirmed=0;option.line.apply(null,false);}
+    const controls=el('div','reading-controls');
+    const check=el('button','hear','✓ Read correctly');
+    const review=el('button','hear','↺ Practise again');
+    check.onclick=()=>{if(selected)commit(selected,'teacher');else message.textContent='Tap the answer he read.';};
+    review.onclick=()=>{if(selected)commit(selected,'review');else message.textContent='Tap the answer to practise.';};
+    controls.append(check,review);play.append(controls);
+    T.picks=()=>options.filter(option=>option.state==='live').map(option=>({label:option.t,go:()=>commit(option,'teacher')}));
+    if(TEST)T.skipChoice=()=>{const correct=options.find(option=>option.ok&&option.state==='live');if(correct)commit(correct,'skip');};
+    function finish(){
+      resolved=true;Mic.off();T.picks=null;T.skipChoice=null;T.force=null;
+      res({wrong,assisted:hinted});
+    }
+    async function commit(option,by){
+      if(locked||resolved||run!==RUN||option.state!=='live')return;
+      locked=true;Mic.off();selected=null;renderHeard(hb,null);
+      if(by!=='resume')saveStep(key,{text:option.t,review:by==='review'});
       try{
-        if(o.ok){
-          got++;o.state='done';o.line.allHit();o.el.classList.add('right');sfx('good');burst(10);m.textContent='';
-          if((by==='voice'||(TEST&&by==='skip'))&&!hinted)earn(wrong===0?2:1,o.el);
-          if(cfg.good)await cfg.good(o,got);
+        if(option.ok){
+          got++;option.state='done';option.line.allHit();option.el.classList.add('right');
+          if(by==='review')practiceAgain.push(option.t);
+          if(by!=='resume'){
+            recordWords(option.line.tokens,{t:option.line.tokens.map(token=>by==='review'&&token.key?'sub':'hit')});
+            earn(wrong===0?2:1,option.el);
+          }
+          sfx('good');burst(10);message.textContent='';
+          if(cfg.good)await cfg.good(option,got);
+          if(run!==RUN)return;
           if(got>=need){finish();return;}
-          list.removeChild(o.el);
+          option.el.remove();
         }else{
-          wrong++;o.state='dead';o.el.classList.add('wrong');o.line.apply(null,false);sfx('bad');shake();m.textContent=o.why||'Not quite.';
-          if(cfg.bad)await cfg.bad(o,wrong);
-          if(wrong>=2&&!hinted&&cfg.hint){hinted=true;cam(cfg.hint);m.textContent='Look again at the picture.';}
+          wrong++;option.state='dead';option.el.classList.add('wrong');
+          sfx('bad');shake();message.textContent=option.why||'Check the story.';
+          if(cfg.bad)await cfg.bad(option,wrong);
+          if(run!==RUN)return;
+          if(wrong>=2&&!hinted&&cfg.hint){hinted=true;cam(cfg.hint);}
           layout();
         }
-      }catch(e){return;}
-      locked=false;Mic.reset();
+      }catch(error){if(error!=='cancel')console.warn(error);return;}
+      locked=false;
       resumeChoice();
     }
     function resumeChoice(){
       const event=takeStep(key);
-      const option=event&&O.find(o=>o.state==='live'&&o.t===event.value);
-      if(option)commit(option,'resume');
-    }
-    if(Mic.ok){
-      Mic.handler=({cands,final})=>{
-        if(locked)return;
-        const matches=O.filter(o=>o.state==='live').map(option=>({
-          option, chunk:readingChunk(option.line.tokens,cands,option.confirmed,S.strict)
-        }));
-        const advancing=matches.filter(({option,chunk})=>chunk.end>option.confirmed);
-        const furthest=Math.max(0,...advancing.map(({chunk})=>chunk.end));
-        const leaders=advancing.filter(({chunk})=>chunk.end===furthest);
-        const lead=leaders[0]||matches.find(({chunk})=>chunk.words.length);
-        for(const {option,chunk} of matches){
-          const active=leaders.some(candidate=>candidate.option===option);
-          const count=active?chunk.end:furthest?0:option.confirmed;
-          if(final)option.confirmed=count;
-          option.line.apply({t:option.line.tokens.map((_,i)=>i<count?'hit':null)},false);
-        }
-        renderHeard(hb,lead?.chunk.words);
-        if(leaders.length===1){
-          const {option,chunk}=leaders[0];
-          if(chunk.end===option.line.tokens.length){
-            recordWords(option.line.tokens,{t:option.line.tokens.map(()=> 'hit')});
-            commit(option,'voice');return;
-          }
-        }
-        if(final)m.textContent=furthest
-          ?'Keep reading the answer you want.'
-          :matches.some(({option})=>option.confirmed>0)
-            ?'Try the next word again, or start your answer over.'
-            :'Read an answer aloud, one word or phrase at a time.';
-      };
-      Mic.on();
+      const text=typeof event?.value==='string'?event.value:event?.value?.text;
+      const option=event&&options.find(candidate=>candidate.state==='live'&&candidate.t===text);
+      if(option){
+        if(event.value?.review&&option.ok)practiceAgain.push(option.t);
+        commit(option,'resume');
+      }
     }
     resumeChoice();
   });
@@ -1447,7 +1532,7 @@ function title(editName=false){
 }
 function startChapter(i,resume=false){
   trayEpisode=8;renderTray();
-  T.skipChoice=null;T.force=null;
+  T.skipChoice=null;T.force=null;practiceAgain=[];
   const t=$('#title');if(t)t.remove();stage.style.touchAction='';
   RUN++;Mic.off();Snd.theme(false);setStatic(0);panelView=null;$('#ret').style.display='none';document.querySelectorAll('.pin').forEach(p=>p.remove());Snd.humOff();
   if(!resume||S.checkpoint?.chapter!==i||!Array.isArray(S.checkpoint.events))S.checkpoint={chapter:i,events:[]};
