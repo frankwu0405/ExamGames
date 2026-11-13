@@ -81,7 +81,7 @@ export const hideStory = () => panel.classList.add('hidden');
 export const storyText = () => current;
 
 // ---------------------------------------------------------------- task card + Toby's hints
-function task(prompt, ...body) {
+export function task(prompt, ...body) {
   taskEl.innerHTML = ''; taskEl.classList.remove('hidden'); document.body.classList.remove('cine');
   const p = h('div', { class: 'task-prompt' }, h('button', { class: 'hear small', onclick: () => say(prompt, { force: true }) }, '🔊'), h('span', {}, prompt));
   taskEl.append(p, ...body.filter(Boolean)); say(prompt, { queue: true });
@@ -102,7 +102,7 @@ export const tobyHide = () => tobyEl.classList.add('hidden');
 const TOBY_SVG = `<svg viewBox="0 0 100 100"><ellipse cx="22" cy="44" rx="13" ry="24" fill="#8A5A2E" stroke="#2E2A4F" stroke-width="4" transform="rotate(18 22 44)"/><ellipse cx="78" cy="44" rx="13" ry="24" fill="#8A5A2E" stroke="#2E2A4F" stroke-width="4" transform="rotate(-18 78 44)"/><circle cx="50" cy="50" r="32" fill="#C98A4B" stroke="#2E2A4F" stroke-width="4"/><ellipse cx="50" cy="64" rx="17" ry="13" fill="#E7B985" stroke="#2E2A4F" stroke-width="3"/><circle cx="38" cy="45" r="5" fill="#2E2A4F"/><circle cx="62" cy="45" r="5" fill="#2E2A4F"/><ellipse cx="50" cy="58" rx="6" ry="4.5" fill="#2E2A4F"/></svg>`;
 
 // A hint ladder: 1) Toby's clue  2) a stronger clue  3) Toby shows the answer. She is never stuck.
-function ladder(hints, word) {
+export function ladder(hints, word) {
   let wrong = 0; if (MODE.captain) hints = hints.slice(0, 1);
   return {
     get first() { return wrong === 0; },
@@ -113,7 +113,7 @@ function ladder(hints, word) {
     },
   };
 }
-async function win(el) { sfx('good'); tobyHide(); if (el) el.classList.add('right'); await wait(700); }
+export async function win(el) { sfx('good'); tobyHide(); if (el) el.classList.add('right'); await wait(700); }
 
 // ---------------------------------------------------------------- activity: put the right word (or ending) in the gap
 export function chooseWord({ prompt, sentence, tiles, answer, hints = [], base = '', note }) {
@@ -293,6 +293,10 @@ export const CARDS = {
   kind: { ep: 6, line: 'He gives them a kind smile and hands them bowls of hot soup.', tip: 'kind = nice and caring to others', more: ['Be {_} to your little brother.', 'The {_} nurse gave Toby a pat.'] },
   greedy: { ep: 6, line: 'He is a greedy beast!', tip: 'greedy = always wanting more for yourself', more: ['The {_} pirate wanted every gem.', 'Don’t be {_}. Share your snack!'] },
   treasure: { ep: 6, line: 'I am sailing back to the cave to take all the treasure!', tip: 'treasure = gold, gems and other precious things', more: ['The pirates buried the {_} on the island.', 'Mia found a box of {_}.'] },
+  pocket: { ep: 7, line: 'A bright, warm light begins to shine from the pocket on Leo’s shorts.', tip: 'pocket = a little bag sewn into your clothes', more: ['I keep my coins in my {_}.', 'Leo put his hand in his {_}.'] },
+  beam: { ep: 7, line: 'The little stone shoots a straight, glowing beam of blue light.', tip: 'beam = a long, straight line of light', more: ['A {_} of sunlight came through the window.', 'The flashlight made a bright {_}.'] },
+  paddle: { ep: 7, line: 'He uses his paddle to turn the boat as fast as he can.', tip: 'paddle = a short oar you use to move a boat', more: ['Dip the {_} into the water.', 'Mia dropped her {_} in the boat.'] },
+  trail: { ep: 7, line: 'A shiny fin cuts through the sea, leaving a long trail in the water.', tip: 'trail = a line or mark left behind by something moving', more: ['The snail left a shiny {_}.', 'We followed the {_} into the woods.'] },
   flush: { ep: 2, line: 'The water helped them flush out of the dark cave.', tip: 'flush = wash out fast with water', more: ['The rain will {_} the mud off the rocks.', 'The waves {_} the sand away.'] },
 };
 export const cardSrc = w => CARD_IMG[w] || `cave-cards/ep${CARDS[w].ep}/${w}.webp`;
@@ -354,7 +358,7 @@ export function openBinder(onClose) {
   const ov = h('div', { class: 'binder', onclick: e => { if (e.target === ov) close(); } },
     h('div', { class: 'binder-page' }, h('button', { class: 'btn ghost close', onclick: () => close() }, '✕'),
       h('h2', {}, 'My Word Cards'), h('div', { class: 'binder-sub' }, due.length ? `✨ ${due.length} card${due.length > 1 ? 's' : ''} ready to polish. Polish cards to make them Silver, then Gold!` : 'Cards go Bronze → Silver → Gold when you polish them on later days.'),
-      ...[...new Set(Object.values(CARDS).map(c => c.ep))].filter(ep => ep <= (window.__maxEp || 99)).flatMap(ep => [h('h3', { class: 'binder-ep' }, ep === 1 ? 'Episode 1 · The Cave' : ep === 3 ? 'Episode 3 · Leo’s Side' : ep === 4 ? 'Episode 4 · The Lost Island' : ep === 5 ? 'Episode 5 · Guard of the Stones' : ep === 6 ? 'Episode 6 · The Old Man' : `Episode ${ep} · The Cave ${ep}`),
+      ...[...new Set(Object.values(CARDS).map(c => c.ep))].filter(ep => ep <= (window.__maxEp || 99)).flatMap(ep => [h('h3', { class: 'binder-ep' }, ep === 1 ? 'Episode 1 · The Cave' : ep === 3 ? 'Episode 3 · Leo’s Side' : ep === 4 ? 'Episode 4 · The Lost Island' : ep === 5 ? 'Episode 5 · Guard of the Stones' : ep === 6 ? 'Episode 6 · The Old Man' : ep === 7 ? 'Episode 7 · Out of the Fog' : `Episode ${ep} · The Cave ${ep}`),
         h('div', { class: 'binder-grid' }, ...Object.entries(CARDS).filter(([w, c]) => c.ep === ep).map(([w, c]) => { const el = cardEl(w, c, S.cards[w]);
         if (S.cards[w]) el.onclick = () => { if (isDue(S.cards[w])) { ov.remove(); polish(w, () => openBinder(onClose)); } else say(`${w}. ${c.line}`, { force: true }); }; return el; }))])));
   const close = () => { ov.remove(); onClose && onClose(); };

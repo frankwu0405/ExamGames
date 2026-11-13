@@ -218,6 +218,8 @@ function animate(c, kind) {
     if (s === 'hug') { c.AL.rotation.x = c.AR.rotation.x = -1.5; c.AL.rotation.z = 0.35; c.AR.rotation.z = -0.35; c.L.rotation.x = 0.4 + Math.sin(t * 7) * 0.35; c.R.rotation.x = 0.4 - Math.sin(t * 7) * 0.35; }
     if (s === 'hide') { c.AR.rotation.x = c.AL.rotation.x = 0.75; c.AR.rotation.z = -0.35; c.AL.rotation.z = 0.35; }
     if (s === 'sit') { c.L.rotation.x = c.R.rotation.x = -1.4; }
+    if (s === 'shade') { c.AR.rotation.x = -2.6; c.AR.rotation.z = -0.55; c.AL.rotation.z = -0.25; }   // a hand up over the eyes, peering into the distance
+    if (s === 'row') { const r = Math.sin(t * 4.2 + c.t0); c.AR.rotation.x = c.AL.rotation.x = -0.75 + r * 0.55; c.AR.rotation.z = 0.1; c.AL.rotation.z = -0.1; c.g.rotation.x = r * 0.08; }
     if (c.holding) { c.AR.rotation.x = c.AL.rotation.x = -1.15; c.AR.rotation.z = -0.22; c.AL.rotation.z = 0.22; }   // both hands forward round something held in front (a bowl)
     c.head.rotation.z = s === 'idle' ? Math.sin(t * 1.5 + c.t0) * 0.05 : 0;
     c.head.position.y = (c.headY || 1.32) + (run ? Math.abs(Math.sin(k)) * 0.04 : 0);

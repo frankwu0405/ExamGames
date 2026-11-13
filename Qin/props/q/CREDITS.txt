@@ -1,0 +1,4 @@
+Extra CC0 props for The Cave (Episode 7+):
+- paddle.glb: Kenney Pirate Kit "paddle" (CC0), via pmndrs market-assets (github.com/pmndrs/market-assets), Draco removed.
+- gem-blue.glb: Quaternius "Ultimate Platformer Pack" Gem_Blue (CC0), via github.com/trebeljahr/quaternius-showcase.
+- swordfish.glb: Quaternius "Cute Fish Pack" Swordfish (CC0), via github.com/trebeljahr/quaternius-showcase.

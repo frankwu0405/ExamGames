@@ -51,15 +51,18 @@ export const STOPS = [
   { n: 16, name: 'The Gray Shore', ep: 6, p: [77, 0.6, -9] },
   { n: 17, name: 'The Old Man’s Fire', ep: 6, p: [80, 0.6, -12] },
   { n: 18, name: 'The Stolen Boat', ep: 6, p: [83, 0.6, -8.2] },
-  { n: 19, name: 'Out of the Fog', ep: 7, p: [85, 0.3, 3] },
-  { n: 20, name: 'The Chase', ep: 8, p: [77, 0.3, 11] },
-  { n: 21, name: "Varn's Story", ep: 9, p: [89, 0.6, 13] },
+  { n: 19, name: 'Into the Fog', ep: 7, p: [86, 0.3, -4.5] },
+  { n: 20, name: 'The Blue Beam', ep: 7, p: [88.5, 0.3, 0.5] },
+  { n: 21, name: 'The Sharp Rock', ep: 7, p: [88, 0.3, 6] },
+  { n: 22, name: 'The Swarm', ep: 8, p: [84, 0.3, 10] },
+  { n: 23, name: 'Mia’s Secret', ep: 8, p: [79, 0.3, 12] },
+  { n: 24, name: 'The Crash', ep: 8, p: [75, 0.3, 10] },
 ];
 // the route, drawn episode by episode (Leo's side is told as a memory, so it runs alongside the main tunnel; the angry wave is a long throw)
 // legs that bend round something: from the island's sea-side beach they sail round the south of the island, then home
 const VIA = { '11-12': [[60, 0.5, -2.5], [56, 0.5, -6.5], [48, 0.5, -8.6]] };
-export const ROUTE = [[1, 2, 3], [3, 4, 5, 6], [2, 7, 8, 9, 6], [6, 10, 11, 12], [12, 13, 14, 15], [15, 'wave', 16, 17, 18], [18, 19, 20, 21]];
-export const EPISODES = { 1: { title: 'The Cave', stops: [1, 2, 3] }, 2: { title: 'The Cave 2', stops: [4, 5, 6] }, 3: { title: 'The Cave 3: Leo’s Side', stops: [7, 8, 9] }, 4: { title: 'The Cave 4: The Lost Island', stops: [10, 11, 12] }, 5: { title: 'The Cave 5: Guard of the Stones', stops: [13, 14, 15] }, 6: { title: 'The Cave 6: The Old Man', stops: [16, 17, 18] } };
+export const ROUTE = [[1, 2, 3], [3, 4, 5, 6], [2, 7, 8, 9, 6], [6, 10, 11, 12], [12, 13, 14, 15], [15, 'wave', 16, 17, 18], [18, 19, 20, 21], [21, 22, 23, 24]];
+export const EPISODES = { 1: { title: 'The Cave', stops: [1, 2, 3] }, 2: { title: 'The Cave 2', stops: [4, 5, 6] }, 3: { title: 'The Cave 3: Leo’s Side', stops: [7, 8, 9] }, 4: { title: 'The Cave 4: The Lost Island', stops: [10, 11, 12] }, 5: { title: 'The Cave 5: Guard of the Stones', stops: [13, 14, 15] }, 6: { title: 'The Cave 6: The Old Man', stops: [16, 17, 18] }, 7: { title: 'The Cave 7: Out of the Fog', stops: [19, 20, 21] }, 8: { title: 'The Cave 8: The Chase', stops: [22, 23, 24] } };
 export const MAX_EP = 6;
 export function buildMap(S, onPick) {
   const w = newWorld({ sky: 0xBFE6F7, ambientI: 1.5, sunI: 1.55, sunPos: [-14, 30, 18], fog: [0xCFEAF5, 80, 170] }); const b = builder(w); setSeed(11);

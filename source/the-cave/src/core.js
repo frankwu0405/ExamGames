@@ -34,8 +34,17 @@ function noise(t0, dur, { vol = 0.25, f = 1200, q = 1, to = null } = {}) {
   if (to) bp.frequency.exponentialRampToValueAtTime(to, t0 + dur);
   const g = AC.createGain(); g.gain.value = vol; s.connect(bp); bp.connect(g); g.connect(master); s.start(t0);
 }
+// While the microphone is listening, every sound is held: the master volume fades to silence and new effects are not started,
+// so music, effects and read-aloud can never be heard (or transcribed) by the mic. Released the moment the mic closes.
+let held = false;
+export function audioHold(on) {
+  held = !!on; if (!AC) return; const t = AC.currentTime; master.gain.cancelScheduledValues(t);
+  if (on) { master.gain.setTargetAtTime(0.0001, t, 0.05); }
+  else { if (AC.state !== 'running') AC.resume(); master.gain.setValueAtTime(Math.max(0.0001, master.gain.value), t); master.gain.setTargetAtTime(0.55, t + 0.05, 0.12); }
+}
+export const audioHeld = () => held;
 export function sfx(name) {
-  if (!AC || !S.settings.sfx) return; const t = AC.currentTime;
+  if (!AC || !S.settings.sfx || held) return; const t = AC.currentTime;
   switch (name) {
     case 'tap': tone(660, t, 0.06, { type: 'triangle', vol: 0.12 }); break;
     case 'pop': tone(420, t, 0.09, { vol: 0.25, to: 900 }); break;
@@ -52,6 +61,10 @@ export function sfx(name) {
     case 'chime': [1319, 1568, 1976].forEach((f, i) => tone(f, t + i * 0.06, 0.6, { vol: 0.06 })); break;
     case 'glow': tone(523, t, 1.2, { vol: 0.07, to: 1046, attack: 0.3 }); tone(784, t + 0.1, 1.2, { vol: 0.05, attack: 0.3 }); break;
     case 'card': [784, 988, 1175, 1568].forEach((f, i) => tone(f, t + i * 0.09, 0.5, { type: 'triangle', vol: 0.12 })); break;
+    case 'splash': noise(t, 0.35, { vol: 0.32, f: 1600, to: 500, q: 0.7 }); noise(t + 0.05, 0.25, { vol: 0.15, f: 3200, q: 1 }); break;
+    case 'lap': [0, 0.55, 1.2].forEach((d, i) => noise(t + d, 0.6, { vol: 0.12 - i * 0.02, f: 520, to: 260, q: 0.9 })); break;
+    case 'scrape': noise(t, 1.3, { vol: 0.45, f: 260, to: 140, q: 2.5 }); tone(70, t, 1.2, { type: 'sawtooth', vol: 0.08, to: 55 }); noise(t + 0.2, 0.9, { vol: 0.2, f: 2400, q: 6 }); break;
+    case 'beam': tone(660, t, 0.9, { vol: 0.08, to: 1760, attack: 0.05 }); [1319, 1760, 2093].forEach((f, i) => tone(f, t + 0.15 + i * 0.07, 0.8, { vol: 0.05 })); noise(t, 0.5, { vol: 0.08, f: 3000, to: 6000, q: 1 }); break;
     case 'fall': tone(700, t, 1.6, { vol: 0.12, to: 120 }); noise(t, 1.6, { vol: 0.2, f: 600, to: 200 }); break;
   }
 }
@@ -80,7 +93,7 @@ let speakToken = 0;
 let lastSpeech = Promise.resolve();
 // queue: wait for whatever is being read now, then read this (unless something new interrupted in between)
 export function say(text, { force, onWord, queue = false } = {}) {
-  if (!window.speechSynthesis || !text || (!force && !S.settings.read)) return Promise.resolve();
+  if (!window.speechSynthesis || !text || held || (!force && !S.settings.read)) return Promise.resolve();
   const my = queue ? speakToken : ++speakToken;
   const run = () => new Promise(res => {
     if (my !== speakToken) return res();

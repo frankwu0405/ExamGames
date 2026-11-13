@@ -1,6 +1,6 @@
 {
 const api = window.__caveApi;
-const { THREE, stop16, stop17, stop18, sumUp6, buildGrayShore, save, audioInit, sfx, say, h, wait, englishVoices, setVoice, currentVoice, hush, setCam, flyCam, pickAt, stopFollow, newWorld, buildMap, STOPS, setCamRef, EPISODES, MAX_EP, mountUI, hideStory, hideTask, MODE, ownedCount, cardTotal, CARDS, cardSrc, playMusic, setMusic, cloudsIn, cloudsCovered, cloudsOut, stop1, stop2, stop3, sumUp, stop4, stop5, stop6, sumUp2, stop7, stop8, stop9, sumUp3, stop10, stop11, stop12, sumUp4, stop13, stop14, stop15, sumUp5, debugVarn, buildBeach, makeCast, makeVarn, buildCliff, buildShelf, buildCrack } = api;
+const { THREE, stop19, stop20, stop21, sumUp7, stop16, stop17, stop18, sumUp6, buildGrayShore, save, audioInit, sfx, say, h, wait, englishVoices, setVoice, currentVoice, hush, setCam, flyCam, pickAt, stopFollow, newWorld, buildMap, STOPS, setCamRef, EPISODES, MAX_EP, mountUI, hideStory, hideTask, MODE, ownedCount, cardTotal, CARDS, cardSrc, playMusic, setMusic, cloudsIn, cloudsCovered, cloudsOut, stop1, stop2, stop3, sumUp, stop4, stop5, stop6, sumUp2, stop7, stop8, stop9, sumUp3, stop10, stop11, stop12, sumUp4, stop13, stop14, stop15, sumUp5, debugVarn, buildBeach, makeCast, makeVarn, buildCliff, buildShelf, buildCrack } = api;
 let S, camera, renderer;
 const load = () => { api.load(); S = api.S(); };
 const init = (...args) => { api.init(...args); camera = api.camera(); renderer = api.renderer(); };
@@ -552,8 +552,8 @@ function openPolishGame(words, demo, onReturn) {
 // The Cave — Leo, Mia and Toby's voyage. Title → journey map → stops.
 window.__maxEp = MAX_EP;
 
-const PLAY = { 1: stop1, 2: stop2, 3: stop3, 4: stop4, 5: stop5, 6: stop6, 7: stop7, 8: stop8, 9: stop9, 10: stop10, 11: stop11, 12: stop12, 13: stop13, 14: stop14, 15: stop15, 16: stop16, 17: stop17, 18: stop18 };
-const SUMUP = { 1: sumUp, 2: sumUp2, 3: sumUp3, 4: sumUp4, 5: sumUp5, 6: sumUp6 };
+const PLAY = { 1: stop1, 2: stop2, 3: stop3, 4: stop4, 5: stop5, 6: stop6, 7: stop7, 8: stop8, 9: stop9, 10: stop10, 11: stop11, 12: stop12, 13: stop13, 14: stop14, 15: stop15, 16: stop16, 17: stop17, 18: stop18, 19: stop19, 20: stop20, 21: stop21 };
+const SUMUP = { 1: sumUp, 2: sumUp2, 3: sumUp3, 4: sumUp4, 5: sumUp5, 6: sumUp6, 7: sumUp7 };
 let hud, cleanupMap = () => {}, mapVersion = 0, playing = false, leaving = false;
 
 // A page replacement safely cancels every pending story/activity callback.
