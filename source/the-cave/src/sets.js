@@ -63,7 +63,7 @@ export const STOPS = [
 const VIA = { '11-12': [[60, 0.5, -2.5], [56, 0.5, -6.5], [48, 0.5, -8.6]] };
 export const ROUTE = [[1, 2, 3], [3, 4, 5, 6], [2, 7, 8, 9, 6], [6, 10, 11, 12], [12, 13, 14, 15], [15, 'wave', 16, 17, 18], [18, 19, 20, 21], [21, 22, 23, 24]];
 export const EPISODES = { 1: { title: 'The Cave', stops: [1, 2, 3] }, 2: { title: 'The Cave 2', stops: [4, 5, 6] }, 3: { title: 'The Cave 3: Leo’s Side', stops: [7, 8, 9] }, 4: { title: 'The Cave 4: The Lost Island', stops: [10, 11, 12] }, 5: { title: 'The Cave 5: Guard of the Stones', stops: [13, 14, 15] }, 6: { title: 'The Cave 6: The Old Man', stops: [16, 17, 18] }, 7: { title: 'The Cave 7: Out of the Fog', stops: [19, 20, 21] }, 8: { title: 'The Cave 8: The Chase', stops: [22, 23, 24] } };
-export const MAX_EP = 6;
+export const MAX_EP = 7;
 export function buildMap(S, onPick) {
   const w = newWorld({ sky: 0xBFE6F7, ambientI: 1.5, sunI: 1.55, sunPos: [-14, 30, 18], fog: [0xCFEAF5, 80, 170] }); const b = builder(w); setSeed(11);
   const coastX = z => -16.5 + 5.6 * Math.exp(-(((z - 10) / 5.5) ** 2)) + 0.7 * Math.sin(z * 0.37) + 0.35 * Math.sin(z * 1.1 + 1);
@@ -139,7 +139,7 @@ export function buildMap(S, onPick) {
   // fog over places not yet open
   const fogMat = toon(0xF4F7FB, { transparent: true, opacity: 0.82 }); const lockedX = MAX_EP >= 5 ? 68 : MAX_EP >= 4 ? 20 : 26;
   // (with Ep6 open, the gray shore's south side clears; the fog stays over what comes next)
-  for (let i = 0; i < 46; i++) { const x = lockedX + rnd() * 30, z = MAX_EP >= 6 ? -1 + rnd() * 19 : -18 + rnd() * 36; const m = new THREE.Mesh(new THREE.SphereGeometry(1.0 + rnd() * 1.3, 10, 8), fogMat); m.position.set(x, 1.2 + rnd() * 1.2, z); m.scale.y = 0.55; w.add(m); const ph = rnd() * 6; onTick(t => { m.position.y = 1.4 + Math.sin(t * 0.4 + ph) * 0.25; }); }
+  for (let i = 0; i < 46; i++) { const x = lockedX + rnd() * 30, z = MAX_EP >= 7 ? 8 + rnd() * 10 : MAX_EP >= 6 ? -1 + rnd() * 19 : -18 + rnd() * 36; const m = new THREE.Mesh(new THREE.SphereGeometry(1.0 + rnd() * 1.3, 10, 8), fogMat); m.position.set(x, 1.2 + rnd() * 1.2, z); m.scale.y = 0.55; w.add(m); const ph = rnd() * 6; onTick(t => { m.position.y = 1.4 + Math.sin(t * 0.4 + ph) * 0.25; }); }
   // markers
   const reached = Math.max(1, ...Object.keys(S.stops).filter(k => S.stops[k].done).map(k => +k + 1)); const markers = [];
   STOPS.forEach(s => {
