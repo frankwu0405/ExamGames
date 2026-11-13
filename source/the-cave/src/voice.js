@@ -2,7 +2,7 @@
 // The microphone is open ONLY while she is answering. Before it opens, read-aloud stops and every sound is held (core audioHold);
 // the moment she answers, skips or taps instead, the mic is closed, the sound comes back, and only then the "good" sound plays.
 // No mic, no permission, or she would rather tap: the same task is done by tapping, so she is never stuck.
-import { S, save, sfx, say, hush, h, wait, audioHold, shake } from './core.js';
+import { S, save, sfx, say, hush, h, wait, audioHold, shake, miss } from './core.js';
 import { task, hideTask, ladder, win, toby, tobyHide } from './ui.js';
 
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -28,7 +28,7 @@ function startRec(state) {
   if (!SR || !Mic.want || Mic.rec || document.hidden) return;
   const r = new SR(); r.lang = 'en-US'; r.interimResults = true; r.continuous = true; r.maxAlternatives = 3; Mic.rec = r; state('starting');
   r.onstart = r.onaudiostart = () => { if (Mic.rec === r) state('on'); };
-  r.onresult = e => { if (Mic.rec !== r || !Mic.handler) return; for (let i = e.resultIndex; i < e.results.length; i++) { const res = e.results[i]; Mic.handler(Array.from(res, a => norm(a.transcript)), res.isFinal); } };
+  r.onresult = e => { if (Mic.rec !== r || !Mic.handler) return; for (let i = e.resultIndex; i < e.results.length; i++) { const res = e.results[i]; Mic.handler(Array.from(res, a => norm(a.transcript)), res.isFinal, i); } };
   r.onerror = e => { if (Mic.rec !== r) return; if (['not-allowed', 'service-not-allowed', 'audio-capture'].includes(e.error)) { denied = true; Mic.want = false; state('denied'); } };
   r.onend = () => { if (Mic.rec !== r) return; Mic.rec = null; if (Mic.want) { state('starting'); clearTimeout(Mic.retry); Mic.retry = setTimeout(() => startRec(state), 160); } else state('off'); };
   try { r.start(); } catch (e) { Mic.rec = null; Mic.want = false; state('off'); }
@@ -51,7 +51,7 @@ export function speakIt({ prompt, line, mode = 'read', need = null, key = [], hi
     const status = h('div', { class: 'mic-state' }), heard = h('div', { class: 'mic-heard' });
     const state = st => { orb.dataset.state = st; status.textContent = { on: mode === 'shout' ? 'Listening… say it loud!' : 'Listening… read it out loud!', starting: 'Getting the microphone ready…', denied: 'The microphone is blocked. Tap instead!', off: 'Microphone off. Tap 🎤 to try again, or tap instead.' }[st] || ''; if (st === 'denied') tapMode(); };
     const paint = () => tokens.forEach((t, i) => t.el.classList.toggle('lit', lit.has(i)));
-    const finish = async by => { if (done) return; done = true; clearTimeout(idleT); closeMic(); tokens.forEach(t => t.el.classList.add('lit')); lineEl.classList.add('ok'); await wait(260); await win(); hideTask(); res({ first: L.first, by }); };
+    const finish = async by => { if (done) return; done = true; clearTimeout(idleT); clearTimeout(tapLater); closeMic(); tokens.forEach(t => t.el.classList.add('lit')); lineEl.classList.add('ok'); await wait(260); await win(); hideTask(); res({ first: L.first, by }); };
     const listen = () => { if (done || !micOn()) return state(micOn() ? 'off' : 'denied');
       clearTimeout(idleT); idleT = setTimeout(() => { closeMic(); state('off'); }, idle);   // never left listening: it closes itself if nothing comes
       openMic((cands, final) => { if (done) return;
@@ -60,12 +60,12 @@ export function speakIt({ prompt, line, mode = 'read', need = null, key = [], hi
         if (mode === 'shout') { if (needIdx.every(i => best.l.has(i))) { lit = best.l; paint(); return finish('voice'); } if (final) { tries++; nudge(); } return; }
         lit = best.l; paint();
         if (needIdx.every(i => lit.has(i))) return finish('voice');
-        if (final) { tries++; const left = tokens.filter((_, i) => !lit.has(i)); if (tries >= 2 && left.length <= Math.max(1, Math.floor(tokens.length * 0.15)) && !left.some(t => t.key)) return finish('voice'); nudge(left); }
+        if (final) { tries++; const left = tokens.filter((_, i) => !lit.has(i)); if (tokens.length >= 10 && tries >= 3 && left.length <= 1 && !left.some(t => t.key || t.n.length > 4)) return finish('voice'); nudge(left); }
       }, state); };
-    const nudge = left => { if (mode === 'shout') toby(tries > 1 ? 'Say it louder: “' + line + '”' : 'Try again — say “' + line + '”!'); else if (left && left.length) toby(left.length === 1 ? 'One word left: ' + left[0].raw : 'Keep going! Read the gray words.'); };
+    const nudge = left => { if (tries >= 2) tapBtn.classList.remove('hidden'); if (mode === 'shout') toby(tries > 1 ? 'Say it louder: “' + line + '”' : 'Try again — say “' + line + '”!'); else if (left && left.length) toby(left.length === 1 ? 'One word left: ' + left[0].raw : 'Keep going! Read the gray words.'); };
     orb.onclick = () => { if (done) return; if (Mic.want) { closeMic(); state('off'); } else { if (!micOn()) { setMic(true); } listen(); } };
     const hearIt = h('button', { class: 'hear voice-hear', onclick: async () => { const was = Mic.want; closeMic(); state('off'); await say(line, { force: true }); if (was && !done) listen(); } }, '▶ Hear it');
-    const tapBtn = h('button', { class: 'hear voice-tap', onclick: () => tapMode() }, '👆 Tap instead');
+    const tapBtn = h('button', { class: 'hear voice-tap hidden', onclick: () => tapMode() }, '👆 Tap instead'); const tapLater = setTimeout(() => tapBtn.classList.remove('hidden'), 25000);
     let tapping = false;
     function tapMode() { if (tapping || done) return; tapping = true; closeMic(); clearTimeout(idleT); orb.classList.add('hidden'); tapBtn.classList.add('hidden');
       if (mode === 'shout') { status.textContent = 'Tap the words to say them!'; lineEl.classList.add('tapme'); lineEl.onclick = () => { sfx('tap'); finish('tap'); }; return; }
@@ -76,5 +76,56 @@ export function speakIt({ prompt, line, mode = 'read', need = null, key = [], hi
     // let the prompt be read first, then open the mic (never both at once)
     if (micOn()) { status.textContent = 'Get ready…'; Promise.race([say(prompt, { queue: true }), wait(6000)]).then(() => { if (!tapping && !done) listen(); }); }
     else tapMode();
+  });
+}
+
+// ---- a spoken answer: the question is asked, NO choices are shown, and she says the answer.
+// accept: phrases (any one of them heard counts), e.g. ['gem', 'stone', 'crystal']. reply(heard) can add a line from Toby after a right answer.
+// After a miss Toby gives a hint and finishes saying it before the mic opens again.
+// After two misses a "Show me choices" button appears and runs fallback() (the tap version). No mic: the fallback runs straight away.
+export function sayAnswer({ prompt, sub = '', accept, hints = [], word, fallback, any = false, reply = null, idle = 40000 }) {
+  if (!micOn()) return fallback();
+  return new Promise(res => {
+    const L = ladder(hints, word); let done = false, tries = 0, idleT = null;
+    const acc = accept.map(a => norm(a));
+    const found = words => any ? (words.length ? words : null) : acc.find(a => words.some((_, k) => a.every((w, j) => words[k + j] && same(w, words[k + j], false))));
+    const orb = h('button', { class: 'mic-orb', 'aria-label': 'Microphone' }, h('span', { class: 'mic-ico' }, '🎤'));
+    const status = h('div', { class: 'mic-state' }), heard = h('div', { class: 'mic-heard' });
+    const state = st => { orb.dataset.state = st; status.textContent = { on: 'Listening… say your answer!', starting: 'Getting the microphone ready…', denied: 'The microphone is blocked.', off: 'Tap 🎤 to answer again.' }[st] || ''; if (st === 'denied') choices(); };
+    const choicesBtn = h('button', { class: 'hear voice-tap hidden', onclick: () => choices() }, '👀 Show me choices');
+    const finish = async (by, said) => { if (done) return; done = true; clearTimeout(idleT); closeMic(); heard.textContent = '“' + said.join(' ') + '”'; heard.classList.add('ok'); await win(); hideTask(); if (reply) { toby(reply(said)); await wait(2400); tobyHide(); } res({ first: L.first, by, said }); };
+    async function choices() { if (done) return; done = true; clearTimeout(idleT); closeMic(); hideTask(); res(Object.assign({ by: 'tap' }, await fallback())); }
+    const listen = () => { if (done) return; if (!micOn()) return state('denied'); clearTimeout(idleT); idleT = setTimeout(() => { closeMic(); state('off'); }, idle);
+      openMic((cands, final) => { if (done) return; let hit = null, best = cands[0] || []; for (const words of cands) { if (found(words)) { hit = words; break; } }
+        heard.textContent = (hit || best).join(' ');
+        if (hit && (final || !any)) return finish('voice', hit);
+        if (final && best.length) { tries++; if (tries >= 2) choicesBtn.classList.remove('hidden'); closeMic(); state('off'); sfx('whine'); if (word) miss(word);
+          const hint = hints[Math.min(tries, hints.length) - 1] || 'Try again!'; toby(hint); setTimeout(() => { if (!done) listen(); }, 1400 + hint.length * 65); } }, state); };
+    orb.onclick = () => { if (done) return; if (Mic.want) { closeMic(); state('off'); } else { if (!micOn()) setMic(true); listen(); } };
+    window.__solve = () => finish('test', acc[0] || ['test']);
+    task(prompt, sub ? h('div', { class: 'task-sentence say-sub' }, sub) : null, h('div', { class: 'mic-row' }, orb, h('div', { class: 'mic-col' }, status, heard)), h('div', { class: 'voice-btns' }, choicesBtn));
+    status.textContent = 'Get ready…'; Promise.race([say(prompt + (sub ? ' ' + sub.replace(/_+/g, 'blank') : ''), { queue: true }), wait(7000)]).then(() => { if (!done) listen(); });
+  });
+}
+
+
+// ---- a chant: say the word again and again, and every time it is heard something happens (a paddle stroke…).
+// The count goes up on interim results too, so it reacts the moment she says it. Tap version: tap the big word button.
+export function chant({ prompt, word, count = 6, onBeat = () => {}, idle = 45000 }) {
+  return new Promise(res => {
+    let n = 0, done = false, idleT = null; const per = new Map(), target = norm(word)[0];
+    const meter = h('div', { class: 'chant-meter' }, ...Array.from({ length: count }, () => h('i'))), big = h('button', { class: 'chant-word' }, word.toUpperCase() + '!');
+    const orb = h('button', { class: 'mic-orb', 'aria-label': 'Microphone' }, h('span', { class: 'mic-ico' }, '🎤')), status = h('div', { class: 'mic-state' });
+    const state = st => { orb.dataset.state = st; status.textContent = { on: 'Keep saying it: ' + word + '! ' + word + '!', starting: 'Getting the microphone ready…', denied: 'Microphone blocked: tap the word instead!', off: 'Tap 🎤 and keep going!' }[st] || ''; };
+    const step = async () => { if (done) return; n++; meter.children[n - 1] && meter.children[n - 1].classList.add('on'); big.animate([{ transform: 'scale(1.18)' }, { transform: 'scale(1)' }], { duration: 260 }); onBeat(n);
+      if (n >= count) { done = true; clearTimeout(idleT); closeMic(); await win(); hideTask(); res({ first: true }); } };
+    big.onclick = () => { if (Mic.want && micOn() && !denied) return; sfx('tap'); step(); };   // (taps count only while the mic is not in use)
+    const listen = () => { if (done || !micOn()) { state(micOn() ? 'off' : 'denied'); return; } clearTimeout(idleT); idleT = setTimeout(() => { closeMic(); state('off'); }, idle);
+      openMic((cands, final, i) => { if (done) return; let c = 0; for (const words of cands) c = Math.max(c, words.filter(w => same(target, w, false) || (target === 'paddle' && /^(pad|paddle|paddles|patel|petal|battle|paddy)$/.test(w))).length);
+        const was = per.get(i) || 0; if (c > was) { per.set(i, c); for (let k = 0; k < c - was; k++) step(); } }, state); };
+    orb.onclick = () => { if (done) return; if (Mic.want) { closeMic(); state('off'); } else { if (!micOn()) setMic(true); listen(); } };
+    window.__solve = () => { while (!done) step(); };
+    task(prompt, meter, big, h('div', { class: 'mic-row' }, orb, h('div', { class: 'mic-col' }, status)));
+    if (micOn()) { status.textContent = 'Get ready…'; Promise.race([say(prompt, { queue: true }), wait(6000)]).then(() => { if (!done) listen(); }); } else state('denied');
   });
 }
