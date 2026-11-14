@@ -874,6 +874,21 @@ kbd{display:inline-block;min-width:26px;padding:3px 7px;margin:0 2px;border-radi
 .more-pop.hidden{display:none}
 .more-pop .dock-btn{flex-direction:row;width:auto;min-width:170px;height:auto;gap:10px;padding:8px 14px;justify-content:flex-start}
 .more-pop .dock-btn small{font-size:17px}
+
+/* ===== flight v3: jobs, lock-on, brain gate ===== */
+.r-mark.cur{transform:translate(-50%,-50%) scale(1.25)}.r-mark.cur small{background:#ffd23f;color:#141b3d}
+.r-paint{display:none;position:absolute;width:34px;height:34px;margin:-17px 0 0 -17px;border:3px solid #ffe14a;transform:rotate(45deg);box-shadow:0 0 12px #ffe14a;animation:rlock .35s infinite alternate}
+.r-cross.charged{border-color:#ffe14a;box-shadow:0 0 18px #ffe14a,inset 0 0 10px #ffe14a88}
+.r-brain{position:absolute;left:50%;top:70px;transform:translateX(-50%);max-width:min(80vw,640px);padding:10px 18px;border-radius:18px;background:#fffffff2;color:#141b3d;border:4px solid #7a5cfa;text-align:center;box-shadow:0 8px 0 #0004}
+.r-brain b{font:700 16px var(--display);color:#7a5cfa}.r-brain p{margin:2px 0 0;font:700 22px/1.25 var(--read)}
+.r-gatel{display:none;position:absolute;transform:translate(-50%,-50%);padding:8px 16px;border-radius:14px;font:700 clamp(20px,3vw,30px) var(--display);color:#141b3d;border:4px solid #141b3d;white-space:nowrap;box-shadow:0 5px 0 #0005}
+.r-gatel.g0{background:#8fc0ff}.r-gatel.g1{background:#ffe07a}.r-gatel.g2{background:#8ff0c0}
+.r-brakeb,.r-faceb{position:absolute;border-radius:50%;border:4px solid #fff;color:#fff;font-size:30px;cursor:pointer;box-shadow:0 0 18px #000a;width:76px;height:76px}
+.r-brakeb{right:calc(max(26px,env(safe-area-inset-right,0px)) + 20px);bottom:164px;background:radial-gradient(#8fa0ff,#3a48b8)}
+.r-faceb{right:calc(max(26px,env(safe-area-inset-right,0px)) + 112px);bottom:128px;background:radial-gradient(#7affc8,#1f9a70)}
+.r-brakeb.on{transform:scale(.92);filter:brightness(1.3)}
+.r-stars{font-size:54px;letter-spacing:6px;color:#cfd4e6;line-height:1}.r-stars .on{color:#ffb800;text-shadow:0 3px 0 #a86a00}
+.pin .pstars{font-style:normal;color:#ffd23f;font-size:16px;letter-spacing:2px;text-shadow:0 1px 0 #000}
 </style></head>
 <body>
 <div id="space"></div><div id="labels"></div><div id="hud"></div>
@@ -4635,15 +4650,15 @@ const BIKE = (() => {
    ========================================================= */
 const GEMC = '#4ff0ff';
 const SORTIES = [
-  { id: 'dunes', name: 'Red Dunes', ic: '🏜️', nests: 3, boss: 'gunship', prize: 20, extra: { drone: 2 },
+  { id: 'dunes', name: 'Red Dunes', ic: '🏜️', jobs: ['nest', 'cage', 'race'], nests: 3, boss: 'gunship', prize: 20, extra: { drone: 2 },
     seed: 11, A: 150, amp: 26, dune: 3, mesa: 28, canyon: 16, rocks: 160, pillars: 10, spires: 14, isles: 3, rings: 8, plants: 0,
     sky: { top: '#27468f', mid: '#d0709a', hor: '#ffb38a', sun: '#fff0c8', dir: [.55, .3, -.78], stars: .1, cloud: .5, sunPow: 1.0 }, fog: '#e0907e', fogD: .0021, sunI: 2.4, hemi: [0xc8d0ff, 0x8a4a3a, .7], exposure: 1.0, bloom: .6,
     pal: { low: '#b8603e', mid: '#d88a5a', high: '#a24c38', rock: '#6e3430', snow: '#ffd2a8', sand: '#eaa870' } },
-  { id: 'canyon', name: 'Crystal Canyon', ic: '💠', nests: 4, boss: 'gunship2', prize: 30, extra: { drone: 2, turret: 2 },
+  { id: 'canyon', name: 'Crystal Canyon', ic: '💠', jobs: ['nest', 'cage', 'chase', 'race'], nests: 4, boss: 'gunship2', prize: 30, extra: { drone: 2, turret: 2 },
     seed: 23, A: 150, amp: 30, dune: 1, mesa: 36, canyon: 26, rocks: 140, pillars: 14, spires: 20, isles: 4, rings: 8, plants: 70, plantC: '#7affd0',
     sky: { top: '#1a1450', mid: '#5a2f8f', hor: '#ff7f9c', sun: '#ffd6e0', dir: [-.5, .28, -.82], stars: .4, cloud: .45, sunPow: .8 }, fog: '#6a3f8a', fogD: .0023, sunI: 2.1, hemi: [0xa89cff, 0x2a1a4a, .75], exposure: 1.05, bloom: .8,
     pal: { low: '#3a3a7a', mid: '#5a50a0', high: '#b090d0', rock: '#2a2050', snow: '#e8d8ff', sand: '#7a6ab0' } },
-  { id: 'core', name: 'Glitch Core', ic: '🌀', nests: 5, boss: 'core', prize: 45, extra: { drone: 3, turret: 3 }, storm: true,
+  { id: 'core', name: 'Glitch Core', ic: '🌀', jobs: ['nest', 'cage', 'chase', 'nest'], nests: 5, boss: 'core', prize: 45, extra: { drone: 3, turret: 3 }, storm: true,
     seed: 37, A: 150, amp: 34, dune: 0, mesa: 30, canyon: 22, rocks: 150, pillars: 12, spires: 18, isles: 4, rings: 8, plants: 60, plantC: '#ff5ad0',
     sky: { top: '#05060f', mid: '#1a1538', hor: '#5a2068', sun: '#ff6a9a', dir: [.1, .45, -.88], stars: .9, cloud: .9, sunPow: .35 }, fog: '#2a1440', fogD: .003, sunI: 1.2, hemi: [0x8a7cff, 0x281a40, 1.05], exposure: 1.4, bloom: 1.0,
     pal: { low: '#2c2836', mid: '#4a3054', high: '#7a3a62', rock: '#1d1a2a', snow: '#ff7ac0', sand: '#3a3040' } },
@@ -4895,13 +4910,14 @@ const BOLTS = (() => {
     for (const m of [pCore, pGlow, eCore, eGlow]) { m.frustumCulled = false; m.count = 0; m.renderOrder = 4; scene.add(m); }
   }
   function setColor(c) { pGlow.material.color.setHex(c); }
-  function firePlayer(pos, dir, speed = 170, dmg = 1) { if (P.length >= NP) P.shift(); P.push({ p: pos.clone(), v: dir.clone().multiplyScalar(speed), life: 1.1, dmg }); }
+  function firePlayer(pos, dir, speed = 170, dmg = 1, tg = null) { if (P.length >= NP) P.shift(); P.push({ p: pos.clone(), v: dir.clone().multiplyScalar(speed), life: tg ? 2.2 : 1.1, dmg, tg }); }
   function fireEnemy(pos, dir, speed = 44, dmg = 8, col = 0xff3fb0, size = 1, homing = 0) { if (Ee.length >= NE) Ee.shift(); Ee.push({ p: pos.clone(), v: dir.clone().multiplyScalar(speed), life: 5, dmg, size, homing, col }); }
   const tmp = new T.Vector3();
   function update(dt, ctx) {
     // player bolts
     for (let i = P.length - 1; i >= 0; i--) {
-      const b = P[i], from = b.p.clone(); b.p.addScaledVector(b.v, dt); b.life -= dt;
+      const b = P[i], from = b.p.clone(); if (b.tg) { if (b.tg.dead) b.tg = null; else { const want = tmp.copy(b.tg.pos || b.tg.p).sub(b.p).normalize().multiplyScalar(b.v.length()); b.v.lerp(want, Math.min(1, 9 * dt)); } }
+      b.p.addScaledVector(b.v, dt); b.life -= dt;
       let hit = false; const gy = ctx.H.h(b.p.x, b.p.z);
       if (b.p.y < gy + .3) { RFX.spark(b.p, 8, 0xffd9a0, new T.Vector3(0, 1, 0), 12); hit = true; }
       else for (const e of ctx.enemies) { if (e.dead || e.untargetable) continue;
@@ -4988,6 +5004,10 @@ const FOES = (() => {
     const cage = new T.LineSegments(G('coL', () => new T.EdgesGeometry(new T.IcosahedronGeometry(7.2, 0))), new T.LineBasicMaterial({ color: 0x35e7ff, transparent: true, opacity: .8, blending: T.AdditiveBlending })); g.add(cage);
     const halo = sprite(0xff3fb0, 40, .6); g.add(halo); g.userData = { inner, cage, halo, core }; return g;
   }
+  function modelLock() {
+    const g = new T.Group(), b = new T.Mesh(G('lkB', () => new T.OctahedronGeometry(1.5, 0)), metal(0x40103a, { emissive: 0xff3fb0, emissiveIntensity: 1.2, flatShading: true })); b.userData.flash = true; g.add(b);
+    const r = new T.Mesh(G('lkR', () => new T.TorusGeometry(2.1, .14, 8, 28)), glow(0xffffff)); g.add(r); g.add(sprite(0xff3fb0, 8, .6)); g.userData = { b, r }; return g;
+  }
   function modelNest() {
     const g = new T.Group(), mound = new T.Mesh(G('neM', () => { const q = new T.IcosahedronGeometry(4.2, 1); q.scale(1, .5, 1); return q; }), metal(0x2a1830, { roughness: .7, metalness: .3, flatShading: true })); mound.castShadow = true; mound.receiveShadow = true; mound.userData.flash = true; g.add(mound);
     const spikes = new T.Group(); g.add(spikes);
@@ -5011,6 +5031,7 @@ const FOES = (() => {
     gunship: { hp: 70, r: 7, score: 120, model: () => modelGunship(0), speed: 20, name: 'Glitch Gunship', boss: true },
     gunship2: { hp: 110, r: 7, score: 180, model: () => modelGunship(1), speed: 24, name: 'Storm Gunship', boss: true },
     core: { hp: 100, r: 5.4, score: 300, model: modelCore, speed: 0, name: 'The Glitch Core', boss: true },
+    lock: { hp: 3, r: 2.6, score: 5, model: modelLock, speed: 0, name: 'Cage Lock' },
     nest: { hp: 24, r: 5.2, score: 50, model: modelNest, speed: 0, name: 'Glitch Nest' },
     plate: { hp: 14, r: 4.2, score: 40, model: modelPlate, speed: 0, name: 'Shield Plate' },
   };
@@ -5083,10 +5104,11 @@ const FOES = (() => {
         U.halo.material.opacity = .45 + .15 * Math.sin(t * 4); break;
       }
       case 'plate': break;
+      case 'lock': U.b.rotation.y += dt * 2; U.r.rotation.x += dt * 3; U.r.rotation.y += dt * 1.3; break;
       case 'nest': {
         e.spawnT -= dt; const near = dist < 150; U.core.scale.setScalar(1 + .12 * Math.sin(t * 5 + e.ph) + (e.spawnT < .5 ? (.5 - e.spawnT) * .8 : 0)); U.ring.rotation.z += dt * 1.5; U.ring2.rotation.z -= dt * 1.1; U.beam.material.opacity = .22 + .1 * Math.sin(t * 3 + e.ph);
         U.spikes.rotation.y += dt * .2;
-        if (e.spawnT <= 0) { e.spawnT = near ? 2.6 : 5; if (SWARM.count() < (ctx.swarmCap || 60) && near) { SWARM.spawn(e.pos.clone().add(V3(0, 4, 0)), 3); RFX.burst(e.pos.clone().add(V3(0, 4, 0)), 14, 0xff4fd0, 12, 1.2, .5); } }
+        if (e.spawnT <= 0) { e.spawnT = 2.4; if (SWARM.count() < (ctx.swarmCap || 60) && e.active) { SWARM.spawn(e.pos.clone().add(V3(0, 4, 0)), 3); RFX.burst(e.pos.clone().add(V3(0, 4, 0)), 14, 0xff4fd0, 12, 1.2, .5); } }
         break;
       }
     }
@@ -5108,16 +5130,16 @@ const SWARM = (() => {
     for (const m of [body, eye, wing]) { m.count = 0; m.frustumCulled = false; scene.add(m); } body.castShadow = true;
   }
   const R = () => Math.random() - .5;
-  function spawn(pos, n) { for (let i = 0; i < n && M.length < N; i++) M.push({ p: pos.clone().add(tv.set(R() * 3, R() * 2, R() * 3)), v: new T.Vector3(R() * 20, 8 + Math.random() * 8, R() * 20), st: 'hunt', dive: 2.5 + Math.random() * 5, ph: Math.random() * 6.28, orb: 11 + Math.random() * 15, hh: R() * 12, spit: Math.random() < .14, fire: 2 + Math.random() * 3, life: 0, diveT: 0 }); }
-  function pop(i, byPlayer) { const m = M[i]; RFX.burst(m.p, 12, 0xff6ae0, 15, 1, .4); RFX.burst(m.p, 5, 0xffffff, 9, .7, .25); if (byPlayer && C) C.miteKilled(m.p); M.splice(i, 1); }
+  function spawn(pos, n) { for (let i = 0; i < n && M.length < N; i++) { const m = { p: pos.clone().add(tv.set(R() * 3, R() * 2, R() * 3)), v: new T.Vector3(R() * 20, 8 + Math.random() * 8, R() * 20), st: 'hunt', dive: 2.5 + Math.random() * 5, ph: Math.random() * 6.28, orb: 7 + Math.random() * 11, hh: R() * 12, spit: Math.random() < .14, fire: 2 + Math.random() * 3, life: 0, diveT: 0 }; m.pos = m.p; m.vel = m.v; m.r = 1.8; M.push(m); } }
+  function pop(i, byPlayer) { const m = M[i]; m.dead = true; RFX.burst(m.p, 12, 0xff6ae0, 15, 1, .4); RFX.burst(m.p, 5, 0xffffff, 9, .7, .25); if (byPlayer && C) C.miteKilled(m.p); M.splice(i, 1); }
   function update(dt, ctx) {
     C = ctx; const P = ctx.player, t = ctx.t, f = ctx.pfwd;
     for (let i = M.length - 1; i >= 0; i--) {
       const m = M[i]; m.life += dt; let tgt;
       if (m.st === 'dive') { tgt = tw.copy(P.pos).addScaledVector(P.vel, .25); m.diveT -= dt; if (m.diveT <= 0) { m.st = 'hunt'; m.dive = 3 + Math.random() * 5; } }
-      else { m.dive -= dt; const a = m.ph + t * (.7 + (i % 5) * .12); tgt = tw.set(P.pos.x + f.x * 18 + Math.cos(a) * m.orb, P.pos.y + 2 + m.hh * .6 + Math.sin(a * 1.7) * 3, P.pos.z + f.z * 18 + Math.sin(a) * m.orb);
+      else { m.dive -= dt; const a = m.ph + t * (.7 + (i % 5) * .12); tgt = tw.set(P.pos.x + f.x * 34 + Math.cos(a) * m.orb, P.pos.y + 2 + m.hh * .5 + Math.sin(a * 1.7) * 3, P.pos.z + f.z * 34 + Math.sin(a) * m.orb);
         if (m.dive <= 0 && m.life > 2) { m.st = 'dive'; m.diveT = 2.4; } }
-      const sp = m.st === 'dive' ? 46 : 34; tv.copy(tgt).sub(m.p); const L = tv.length() || 1; tv.multiplyScalar(Math.min(sp, L * 2.5) / L);
+      const sp = m.st === 'dive' ? 38 : 27; tv.copy(tgt).sub(m.p); const L = tv.length() || 1; tv.multiplyScalar(Math.min(sp, L * 2.5) / L);
       for (let k = 1; k <= 5 && M.length > 1; k++) { const o = M[(i + k) % M.length]; if (o === m) continue; const dx = m.p.x - o.p.x, dy = m.p.y - o.p.y, dz = m.p.z - o.p.z, d2 = dx * dx + dy * dy + dz * dz; if (d2 < 10 && d2 > 1e-4) { const s = (10 - d2) * 2.5; tv.x += dx * s; tv.y += dy * s; tv.z += dz * s; } }
       m.v.lerp(tv, Math.min(1, (m.st === 'dive' ? 2.4 : 1.7) * dt)); m.p.addScaledVector(m.v, dt);
       const gy = ctx.H.h(m.p.x, m.p.z) + 1.5; if (m.p.y < gy) { m.p.y = gy; m.v.y = Math.abs(m.v.y); }
@@ -5126,18 +5148,19 @@ const SWARM = (() => {
       if (m.spit && ctx.alive) { m.fire -= dt; if (m.fire <= 0 && d2p < 4900) { const dir = tw.copy(P.pos).addScaledVector(P.vel, .4).sub(m.p).normalize(); BOLTS.fireEnemy(m.p, dir, 42, 5, 0xff4fd0, .7); m.fire = 3 + Math.random() * 3; } }
     }
     const n = M.length; body.count = eye.count = wing.count = n;
-    for (let i = 0; i < n; i++) { const m = M[i]; d.position.copy(m.p); d.quaternion.setFromUnitVectors(fz, tv.copy(m.v).normalize()); d.scale.setScalar(Math.min(1, m.life * 3)); d.updateMatrix(); body.setMatrixAt(i, d.matrix); eye.setMatrixAt(i, d.matrix);
-      d.scale.set(.3 + .7 * Math.abs(Math.sin(t * 26 + m.ph)), 1, 1); d.updateMatrix(); wing.setMatrixAt(i, d.matrix); }
+    for (let i = 0; i < n; i++) { const m = M[i]; d.position.copy(m.p); d.quaternion.setFromUnitVectors(fz, tv.copy(m.v).normalize()); d.scale.setScalar(Math.min(1, m.life * 3) * 1.5); d.updateMatrix(); body.setMatrixAt(i, d.matrix); eye.setMatrixAt(i, d.matrix);
+      d.scale.set((.3 + .7 * Math.abs(Math.sin(t * 26 + m.ph))) * 1.5, 1.5, 1.5); d.updateMatrix(); wing.setMatrixAt(i, d.matrix); }
     body.instanceMatrix.needsUpdate = eye.instanceMatrix.needsUpdate = wing.instanceMatrix.needsUpdate = true;
   }
   function hit(a, b) {
     seg.copy(b).sub(a); const L2 = seg.lengthSq() || 1e-6;
-    for (let i = 0; i < M.length; i++) { const m = M[i]; const t = Math.max(0, Math.min(1, tv.copy(m.p).sub(a).dot(seg) / L2)); cp.copy(a).addScaledVector(seg, t); if (cp.distanceToSquared(m.p) < 3.2) { pop(i, true); return true; } }
+    for (let i = 0; i < M.length; i++) { const m = M[i]; const t = Math.max(0, Math.min(1, tv.copy(m.p).sub(a).dot(seg) / L2)); cp.copy(a).addScaledVector(seg, t); if (cp.distanceToSquared(m.p) < 7) { pop(i, true); return true; } }
     return false;
   }
-  function nearest(from, dir, cosMin, maxD) { let best = null, bc = cosMin; for (const m of M) { tv.copy(m.p).sub(from); const L = tv.length(); if (L > maxD || L < 5) continue; const c = tv.dot(dir) / L; if (c > bc) { bc = c; best = m; } } return best ? { pos: best.p, vel: best.v, mite: true, r: 1.2 } : null; }
+  function nearest(from, dir, cosMin, maxD) { let best = null, bc = cosMin; for (const m of M) { tv.copy(m.p).sub(from); const L = tv.length(); if (L > maxD || L < 5) continue; const c = tv.dot(dir) / L; if (c > bc) { bc = c; best = m; } } return best; }
+  function inCone(from, dir, cosMin, maxD, out, max) { for (const m of M) { if (out.length >= max) break; tv.copy(m.p).sub(from); const L = tv.length(); if (L > maxD || L < 4) continue; if (tv.dot(dir) / L > cosMin && !out.includes(m)) out.push(m); } }
   function dispose() { for (const m of [body, eye, wing]) if (m) { scene.remove(m); m.geometry.dispose(); m.material.dispose(); } M.length = 0; }
-  return { init, spawn, update, hit, nearest, dispose, count: () => M.length, list: M, clear() { M.length = 0; }, popAll() { while (M.length) pop(M.length - 1, false); } };
+  return { init, spawn, update, hit, nearest, inCone, dispose, count: () => M.length, list: M, clear() { M.length = 0; }, popAll() { while (M.length) pop(M.length - 1, false); } };
 })();
 
 /* ---------- 💎 crystal shards: drop, float, fly to you when close ---------- */
@@ -5267,11 +5290,11 @@ const RIDE = (() => {
     const map = h('div', { class: 'rm-map' }, art);
     const path = h('div', { class: 'rm-path', html: `<svg viewBox="0 0 100 100" preserveAspectRatio="none"><polyline points="${PIN.map(([x, y]) => x * 100 + ',' + y * 100).join(' ')}" fill="none" stroke="#fff" stroke-width=".8" stroke-dasharray="2 2" opacity=".7"/></svg>` }); map.append(path);
     const goBox = h('div', { class: 'rm-go' });
-    const pins = SORTIES.map((c, i) => { const b = h('button', { class: 'pin', style: { left: PIN[i][0] * 100 + '%', top: PIN[i][1] * 100 + '%' }, onclick: () => { if (!unlocked(i)) { SFX.no(); flash('Free the one before first! 🔒'); return; } sel = i; SFX.tap(); paint(); } }, h('span', { class: 'pi' }, c.ic), h('b', {}, c.name)); map.append(b); return b; });
+    const pins = SORTIES.map((c, i) => { const b = h('button', { class: 'pin', style: { left: PIN[i][0] * 100 + '%', top: PIN[i][1] * 100 + '%' }, onclick: () => { if (!unlocked(i)) { SFX.no(); flash('Free the one before first! 🔒'); return; } sel = i; SFX.tap(); paint(); } }, h('span', { class: 'pi' }, c.ic), h('b', {}, c.name), h('i', { class: 'pstars' }, '★'.repeat((R.stars || {})[c.id] || 0) + '☆'.repeat(3 - ((R.stars || {})[c.id] || 0)))); map.append(b); return b; });
     function paint() {
       pins.forEach((b, i) => { b.className = 'pin' + (unlocked(i) ? '' : ' lock') + (R.done[SORTIES[i].id] ? ' done' : '') + (i === sel ? ' sel' : ''); });
       const c = SORTIES[sel], done = R.done[c.id];
-      goBox.innerHTML = ''; goBox.append(h('div', { class: 'rg-info' }, h('b', {}, c.ic + ' ' + c.name), h('span', { class: 'rg-icons' }, h('i', {}, '🎯 ×' + c.nests), h('i', {}, '👾 Boss'), h('i', { class: 'g' }, '💎 +' + (done ? 5 : c.prize) + ' bonus'))),
+      goBox.innerHTML = ''; goBox.append(h('div', { class: 'rg-info' }, h('b', {}, c.ic + ' ' + c.name), h('span', { class: 'rg-icons' }, h('i', {}, '✅ ' + c.jobs.length + ' jobs'), h('i', {}, '👾 Boss'), h('i', { class: 'g' }, '💎 +' + (done ? 5 : c.prize) + ' bonus'))),
         h('button', { class: 'btn orange rg-btn', onclick: () => { close(); start(c.id); } }, 'GO! 🏍'));
     }
     paint();
@@ -5322,16 +5345,13 @@ const RIDE = (() => {
     const sx = -A * .72, P = { pos: V3(sx, 0, H.cy(sx)), vel: V3(), yaw: 0, vy: 0, pitch: 0, speed: 38, shield: pk.shield, maxShield: pk.shield, boost: 100, boosting: false, steer: 0 };
     P.pos.y = H.h(P.pos.x, P.pos.z) + 46; P.vy = -18;
     const ui = buildUI();
-    run = { cfg, id, idx: SORTIES.indexOf(cfg), scene, cam, world, H, A, bike, P, gl, comp, bloom, fin, saved, ui, pk, enemies: [], pickups: [], rings: 0, kills: 0, mites: 0, gems: 0, nestsDown: 0, nestsTotal: cfg.nests, cores: { ok: 0, total: 0 },
-      phase: 'nests', state: 'fly', t: 0, shake: 0, dmg: 0, hurtCD: 1.5, fireT: 0, gun: 0, freeze: false, paused: false, slow: 1, boss: null, hintPlate: 0, reinfT: 20, lastHit: -9, intro: 2.2,
+    run = { cfg, id, idx: SORTIES.indexOf(cfg), scene, cam, world, H, A, bike, P, gl, comp, bloom, fin, saved, ui, pk, enemies: [], pickups: [], rings: 0, kills: 0, mites: 0, gems: 0,  cores: { ok: 0, total: 0 },
+      phase: 'jobs', state: 'fly', t: 0, shake: 0, dmg: 0, hurtCD: 1.5, fireT: 0, gun: 0, freeze: false, paused: false, slow: 1, boss: null, hintPlate: 0, reinfT: 20, lastHit: -9, intro: 2.2,
       keys: {}, mouse: { x: 0, y: 0, moved: 0 }, stick: { x: 0, y: 0, id: null, ox: 0, oy: 0 }, fire: false, boostBtn: false, q: Math.min(devicePixelRatio || 1, [1, 1.25, 1.5][QUAL.level]), fq: [], camInit: false, over: false, roll: 0, f: V3(1, 0, 0), wing: null };
     run.ctx = { scene, H, player: P, enemies: run.enemies, t: 0, pfwd: run.f, alive: true, swarmCap: 34 + run.idx * 10,
       spawn: (type, pos) => spawn(type, pos), say: (who, line) => comm(who, line), hurt: (d, p) => hurt(d, p), kill: (e, ram) => kill(e, ram), damage: (e, d, p) => damage(e, d, p),
       miteKilled: p => { run.mites++; run.kills++; if (Math.random() < SHARDS.mite) GEMS.spawn(p, 1, 8); SFXR.pop(); hitMark(); }, gem: p => { run.gems++; SFXR.gem(); popGems(); RFX.burst(p, 5, 0x9ffcff, 8, .6, .25); } };
-    // nests spread across the arena, plus guards
-    const ang0 = Math.random() * 6.28;
-    for (let i = 0; i < cfg.nests; i++) { const a = ang0 + i / cfg.nests * 6.28, rr = A * (.32 + (i % 2) * .26), x = Math.cos(a) * rr + A * .08, z = Math.sin(a) * rr; spawn('nest', V3(x, H.h(x, z) - .8, z)); }
-    for (const k of Object.keys(cfg.extra)) for (let n = 0; n < cfg.extra[k]; n++) { const nest = run.enemies.filter(e => e.type === 'nest')[n % cfg.nests], p = nest.pos.clone().add(V3((Math.random() - .5) * 40, 0, (Math.random() - .5) * 40)); p.y = k === 'turret' ? H.h(p.x, p.z) : H.h(p.x, p.z) + 18; spawn(k, p); }
+    setupJobs();
     // crystal spires are targets too
     for (const s of world.spires) run.enemies.push({ type: 'spire', sp: { name: 'Crystals' }, mesh: s.g, pos: s.pos, vel: V3(), hp: 3, maxhp: 3, r: s.r, dead: false, spire: s, flash: 0 });
     if (pk.drone) run.wing = makeWing(scene);
@@ -5339,7 +5359,7 @@ const RIDE = (() => {
     bike.root.position.copy(P.pos);
     resize(); bindInput(); SFXR.engineStart();
     run.last = performance.now(); run.raf = requestAnimationFrame(frame);
-    comm('Nova', 'Smash the pink nests! Grab the 💎!'); setTimeout(() => run && !run.over && comm('Bolt', 'Follow the pink beams. Watch out for the swarm!'), 5200);
+    comm('Nova', 'Each beam is a job. Pick any one and fly to it!');
     if (R.flights <= 3) showHelp();
     window.__ride = { get run() { return run; }, tick, frameOnce: () => render(), kill: () => run.enemies.slice().forEach(e => e.type !== 'spire' && kill(e)), tp: (x, y, z) => P.pos.set(x, y, z), spawn, hurt, say: comm };
   }
@@ -5350,8 +5370,8 @@ const RIDE = (() => {
     g.add(RU.sprite(0x3ddc97, 5, .5)); scene.add(g); return { g, ring, t: 0 };
   }
   function showHelp() {
-    const c = coarse(), el = h('div', { class: 'r-help' }, c ? [h('div', {}, h('span', { class: 'hb' }, '👈'), 'Drag to fly'), h('div', {}, h('span', { class: 'hb red' }, '●'), 'FIRE'), h('div', {}, h('span', { class: 'hb' }, '⚡'), 'Boost')]
-      : [h('div', {}, h('span', { class: 'keys' }, h('kbd', {}, 'W'), h('br'), h('kbd', {}, 'A'), h('kbd', {}, 'S'), h('kbd', {}, 'D')), 'Up / down / turn'), h('div', {}, h('kbd', { class: 'wide' }, 'Space'), 'Shoot'), h('div', {}, h('kbd', { class: 'wide' }, 'Shift'), 'Boost')]);
+    const c = coarse(), el = h('div', { class: 'r-help' }, c ? [h('div', {}, h('span', { class: 'hb' }, '👈'), 'Drag to fly'), h('div', {}, h('span', { class: 'hb red' }, '●'), 'FIRE'), h('div', {}, h('span', { class: 'hb' }, '⚡'), 'Boost'), h('div', {}, h('span', { class: 'hb' }, '✋'), 'Slow down'), h('div', {}, h('span', { class: 'hb' }, '🎯'), 'Turn to target')]
+      : [h('div', {}, h('span', { class: 'keys' }, h('kbd', {}, 'W'), h('br'), h('kbd', {}, 'A'), h('kbd', {}, 'S'), h('kbd', {}, 'D')), 'Up / down / turn'), h('div', {}, h('kbd', { class: 'wide' }, 'Space'), 'Shoot'), h('div', {}, h('kbd', { class: 'wide' }, 'Shift'), 'Boost'), h('div', {}, h('kbd', {}, 'X'), 'Slow down'), h('div', {}, h('kbd', {}, 'F'), 'Turn to target')]);
     document.body.append(el); setTimeout(() => el.classList.add('out'), 6000); setTimeout(() => el.remove(), 6800);
   }
 
@@ -5381,23 +5401,23 @@ const RIDE = (() => {
     const radar = h('canvas', { class: 'r-radar', width: 260, height: 260 });
     const alt = h('div', { class: 'r-alt' }, h('i', { class: 'ag' }), h('b', {}));
     const cross = h('div', { class: 'r-cross' }), lock = h('div', { class: 'r-lock' }), hit = h('div', { class: 'r-hit' }), dmg = h('div', { class: 'r-dmg' });
-    const marks = Array.from({ length: 8 }, () => h('div', { class: 'r-mark' }));
-    const root = h('div', { class: 'rideui' }, dmg, h('div', { class: 'r-tl' }, sh.el, bo.el), h('div', { class: 'r-tc' }, obj, bossBar), h('div', { class: 'r-tr' }, h('div', { class: 'chip gem r-gems' }, '💎 ', gems), pauseB, radar), alt, cross, lock, hit, ...marks);
+    const marks = Array.from({ length: 8 }, () => h('div', { class: 'r-mark' })), paints = Array.from({ length: 6 }, () => h('div', { class: 'r-paint' }));
+    const root = h('div', { class: 'rideui' }, dmg, h('div', { class: 'r-tl' }, sh.el, bo.el), h('div', { class: 'r-tc' }, obj, bossBar), h('div', { class: 'r-tr' }, h('div', { class: 'chip gem r-gems' }, '💎 ', gems), pauseB, radar), alt, cross, lock, hit, ...marks, ...paints);
     const comm = h('div', { class: 'r-comm hidden' }); root.append(comm);
     if (coarse()) {
       const ring = h('div', { class: 'r-stick' }), knob = h('i'); ring.append(knob);
-      const fire = h('button', { class: 'r-fire' }, 'FIRE'), boost = h('button', { class: 'r-boostb' }, '⚡');
-      root.append(ring, fire, boost);
-      root.addEventListener('pointerdown', e => { const s = run.stick; if (e.target === fire || e.target === boost || e.target.closest('.r-pause')) return; if (e.clientX < innerWidth * .55 && s.id == null) { s.id = e.pointerId; s.ox = e.clientX; s.oy = e.clientY; ring.style.cssText = `left:${e.clientX - 70}px;top:${e.clientY - 70}px;opacity:1`; knob.style.transform = 'translate(0,0)'; try { root.setPointerCapture(e.pointerId); } catch (x) {} } });
+      const fire = h('button', { class: 'r-fire' }, 'FIRE'), boost = h('button', { class: 'r-boostb' }, '⚡'), brake = h('button', { class: 'r-brakeb' }, '✋'), face = h('button', { class: 'r-faceb' }, '🎯');
+      root.append(ring, fire, boost, brake, face);
+      root.addEventListener('pointerdown', e => { const s = run.stick; if (e.target === fire || e.target === boost || e.target === brake || e.target === face || e.target.closest('.r-pause')) return; if (e.clientX < innerWidth * .55 && s.id == null) { s.id = e.pointerId; s.ox = e.clientX; s.oy = e.clientY; ring.style.cssText = `left:${e.clientX - 70}px;top:${e.clientY - 70}px;opacity:1`; knob.style.transform = 'translate(0,0)'; try { root.setPointerCapture(e.pointerId); } catch (x) {} } });
       root.addEventListener('pointermove', e => { const s = run.stick; if (e.pointerId !== s.id) return; let dx = e.clientX - s.ox, dy = e.clientY - s.oy; const L = Math.hypot(dx, dy), m = 64; if (L > m) { dx *= m / L; dy *= m / L; } s.x = dx / m; s.y = -dy / m; knob.style.transform = `translate(${dx}px,${dy}px)`; });
       const end = e => { const s = run.stick; if (e.pointerId !== s.id) return; s.id = null; s.x = s.y = 0; ring.style.opacity = '0'; };
       root.addEventListener('pointerup', end); root.addEventListener('pointercancel', end);
       const hold = (btn, on, off) => { btn.addEventListener('pointerdown', e => { e.stopPropagation(); on(); btn.classList.add('on'); }); const f = () => { off(); btn.classList.remove('on'); }; ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => btn.addEventListener(ev, f)); };
-      hold(fire, () => run.fire = true, () => run.fire = false); hold(boost, () => run.boostBtn = true, () => run.boostBtn = false);
+      hold(fire, () => run.fire = true, () => run.fire = false); hold(boost, () => run.boostBtn = true, () => run.boostBtn = false); hold(brake, () => run.brakeBtn = true, () => run.brakeBtn = false); face.addEventListener('pointerdown', e => { e.stopPropagation(); run.faceBtn = true; });
       root.classList.add('touch');
     }
     document.body.append(root);
-    return { root, sh, bo, obj, bossBar, gems, radar, rctx: radar.getContext('2d'), alt, cross, lock, hit, dmg, marks, comm, commT: 0 };
+    return { root, paints, sh, bo, obj, bossBar, gems, radar, rctx: radar.getContext('2d'), alt, cross, lock, hit, dmg, marks, comm, commT: 0 };
   }
   function comm(who, line) {
     const ui = run && run.ui; if (!ui) return; const k = /glitch/i.test(who) ? 'glitch' : /bolt/i.test(who) ? 'bolt' : 'nova';
@@ -5412,6 +5432,100 @@ const RIDE = (() => {
     el.style.cssText = `display:flex;left:${(x * .5 + .5) * innerWidth}px;top:${(-y * .5 + .5) * innerHeight}px`; el.className = 'r-mark ' + cls + (off ? ' off' : '');
     el.innerHTML = label + (dist != null ? `<small>${Math.round(dist)}m</small>` : '');
     if (off) el.style.setProperty('--a', Math.atan2(-y, x) + 'rad');
+  }
+
+  /* ---------- jobs: one clear thing to do at each landmark ---------- */
+  const JOBINFO = { nest: ['🎯', 0xff3fb0], cage: ['🔓', 0x4ff0ff], chase: ['🚚', 0xffa040], race: ['🏁', 0xffd23f] };
+  function beamMesh(col) { const g = new T.CylinderGeometry(1.2, 2.2, 150, 14, 1, true); g.translate(0, 75, 0); return new T.Mesh(g, new T.MeshBasicMaterial({ color: col, transparent: true, opacity: .3, blending: T.AdditiveBlending, depthWrite: false, side: T.DoubleSide })); }
+  function krixling(col) {
+    const g = new T.Group(), b = new T.Mesh(new T.OctahedronGeometry(.9, 1), new T.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: .7, roughness: .2, flatShading: true })); b.scale.set(1, 1.2, 1); b.position.y = 1.1; g.add(b);
+    for (const s of [-1, 1]) { const e = new T.Mesh(new T.SphereGeometry(.2, 8, 6), new T.MeshBasicMaterial({ color: 0xffffff })); e.position.set(s * .3, 1.35, .7); g.add(e); const p = new T.Mesh(new T.SphereGeometry(.1, 6, 5), new T.MeshBasicMaterial({ color: 0x101030 })); p.position.set(s * .3, 1.35, .88); g.add(p); }
+    const top = new T.Mesh(new T.ConeGeometry(.25, .7, 5), new T.MeshStandardMaterial({ color: 0xffffff, emissive: col, emissiveIntensity: 1.5 })); top.position.y = 2.4; g.add(top); return g;
+  }
+  function setupJobs() {
+    const r = run, H = r.H, A = r.A, list = r.cfg.jobs, a0 = Math.random() * 6.28; r.jobs = []; r.job = null; r.krix = 0; r.oops = 0; r.brain = null; r.brainDone = false; r.charge = 0; r.paint = []; r.faceT = 0;
+    list.forEach((type, i) => {
+      const a = a0 + i / list.length * 6.28, rr = A * (.34 + (i % 2) * .2); let x = Math.cos(a) * rr + A * .06, z = Math.sin(a) * rr;
+      const j = { type, state: 'idle', t: 0, n: 0, objs: [] };
+      if (type === 'race') { const g0 = r.world.gates[0]; j.pos = g0.pos.clone(); }
+      else j.pos = V3(x, H.h(x, z), z);
+      if (type === 'nest') { j.nest = spawn('nest', V3(x, H.h(x, z) - .8, z)); j.nest.job = j; }
+      else { j.beam = beamMesh(JOBINFO[type][1]); j.beam.position.copy(j.pos); r.scene.add(j.beam); }
+      if (type === 'cage') {
+        const g = new T.Group(); g.position.copy(j.pos); const base = new T.Mesh(new T.CylinderGeometry(6, 6.6, 1.2, 20), new T.MeshStandardMaterial({ color: 0x2a2140, roughness: .6, metalness: .4 })); base.position.y = .4; base.receiveShadow = true; g.add(base);
+        const bars = new T.Group(); for (let k = 0; k < 12; k++) { const b = new T.Mesh(new T.CylinderGeometry(.16, .16, 7, 6), new T.MeshBasicMaterial({ color: 0xff4fd0 })); const an = k / 12 * 6.28; b.position.set(Math.cos(an) * 5.4, 4.4, Math.sin(an) * 5.4); bars.add(b); }
+        const ring = new T.Mesh(new T.TorusGeometry(5.4, .25, 8, 30), new T.MeshBasicMaterial({ color: 0xff4fd0 })); ring.rotation.x = Math.PI / 2; ring.position.y = 7.9; bars.add(ring); g.add(bars);
+        j.kx = [0x4ff0ff, 0x7affc8, 0xffe14a].map((c, k) => { const m = krixling(c); m.position.set(Math.cos(k * 2.1) * 2.4, 1, Math.sin(k * 2.1) * 2.4); m.rotation.y = k * 2; g.add(m); return m; });
+        r.scene.add(g); j.g = g; j.bars = bars;
+        j.locks = [0, 1, 2].map(k => { const an = k / 3 * 6.28 + 1, e = spawn('lock', V3(j.pos.x + Math.cos(an) * 9.5, j.pos.y + 6.5 + k * 1.5, j.pos.z + Math.sin(an) * 9.5)); e.job = j; return e; });
+      }
+      r.jobs.push(j);
+    });
+    r.hunt = { n: 0, total: r.world.spires.filter(s => s.isl).length };
+    r.world.gates.forEach(g => { g.g.visible = list.includes('race'); });
+  }
+  const needJobs = () => run.jobs.length, doneJobs = () => run.jobs.filter(j => j.state === 'done').length;
+  function jobDone(j) {
+    const r = run; if (j.state === 'done') return; j.state = 'done'; if (j.beam) { r.scene.remove(j.beam); j.beam = null; } if (r.job === j) r.job = null; SWARM.popAll(); BOLTS.clearEnemy();
+    SFXR.pickup(); GEMS.spawn(r.P.pos.clone().addScaledVector(r.f, 14), 8, 10); const left = needJobs() - doneJobs();
+    bigToast(left ? `Job done! ${left} to go` : 'All jobs done!'); comm('Bolt', left ? 'Nice! Pick the next beam.' : 'All done! Uh oh... something BIG is coming!');
+    if (!left) setTimeout(() => run === r && !r.over && startBoss(), 3200); else if (!r.brainDone && doneJobs() >= 1) setTimeout(() => run === r && !r.over && !r.job && brainGate(), 2600);
+  }
+  function resetJob(j) {
+    const r = run; if (!j || j.state === 'done') return;
+    if (j.type === 'chase') { if (j.thief && !j.thief.dead) { j.thief.dead = true; r.scene.remove(j.thief.mesh); const i = r.enemies.indexOf(j.thief); if (i >= 0) r.enemies.splice(i, 1); } j.thief = null; j.state = 'idle'; }
+    else if (j.type === 'race') { j.state = 'idle'; j.n = 0; r.world.gates.forEach(g => { g.taken = false; g.g.children[0].material.color.setHex(0x35e7ff); g.g.children[0].material.opacity = 1; }); }
+    else if (j.type === 'cage') { if (j.state === 'guard') { j.t = 16; } else j.state = 'idle'; }
+    else j.state = 'idle';
+    if (j.nest) j.nest.active = false; if (r.job === j && j.state === 'idle') r.job = null;
+  }
+  function jobsTick(dt, flying) {
+    const r = run, P = r.P; if (r.phase !== 'jobs' || !flying) return;
+    // which job is he at?
+    if (!r.job && !r.brain) { for (const j of r.jobs) { if (j.state === 'done') continue; const d = Math.hypot(P.pos.x - j.pos.x, P.pos.z - j.pos.z);
+        if (j.type === 'race' ? P.pos.distanceTo(j.pos) < 8 : j.type === 'cage' && j.state === 'guard' ? d < 70 : d < (j.type === 'nest' ? 75 : 55)) { r.job = j; startJob(j); break; } } }
+    const j = r.job; if (!j) return; const d = Math.hypot(P.pos.x - j.pos.x, P.pos.z - j.pos.z);
+    if (j.type === 'nest') { j.nest.active = true; if (d > 135) { j.nest.active = false; j.state = 'idle'; r.job = null; SWARM.popAll(); comm('Bolt', 'The nest is still there. Come back when you like!'); } }
+    else if (j.type === 'cage') {
+      if (j.state === 'guard') { if (d < 75) { j.t -= dt; j.wave -= dt; if (j.wave <= 0 && SWARM.count() < 22) { j.wave = 2.6; const a = Math.random() * 6.28; SWARM.spawn(V3(j.pos.x + Math.cos(a) * 45, j.pos.y + 14, j.pos.z + Math.sin(a) * 45), 4); } }
+        j.kx.forEach((m, k) => { const up = clamp((16 - j.t - k * 4.5) / 4, 0, 1); m.position.y = 1 + up * up * 40 + Math.abs(Math.sin(r.t * 6 + k)) * .6; m.rotation.y += dt * (2 + up * 8); m.visible = up < 1; });
+        if (j.t <= 0) { r.krix += 3; r.scene.remove(j.g); jobDone(j); comm('Nova', 'Three Krixlings are safe! They are coming home with us.'); } }
+      else if (d > 120) { j.state = 'idle'; r.job = null; }
+    }
+    else if (j.type === 'chase') { j.t -= dt; const e = j.thief; if (e && !e.dead) { j.drop -= dt; if (j.drop <= 0) { j.drop = .7; GEMS.spawn(e.pos, 1, 4); } const L = Math.hypot(e.pos.x, e.pos.z), mx = r.A * .8; if (L > mx) { e.pos.x *= mx / L; e.pos.z *= mx / L; } }
+      if (j.t <= 0) { comm('The Glitch', 'Too slow! Hee hee!'); resetJob(j); } }
+    else if (j.type === 'race') { j.t -= dt; if (j.t <= 0) { bigToast('Time up! Try again'); resetJob(j); } }
+  }
+  function startJob(j) {
+    const r = run; j.state = j.state === 'guard' ? 'guard' : 'active';
+    if (j.type === 'nest') comm('Bolt', 'Smash the nest! Hold fire and the lasers find the bugs.');
+    else if (j.type === 'cage' && j.state !== 'guard') comm('Nova', 'Krixlings in a cage! Shoot the 3 pink locks.');
+    else if (j.type === 'chase') { j.t = 55; j.drop = 0; const e = spawn('carrier', j.pos.clone().add(V3(0, 14, 0))); e.sp = Object.assign({}, e.sp, { speed: 30 }); e.hp = e.maxhp = 12; e.job = j; j.thief = e; comm('Bolt', 'That drone stole crystals! Boost and catch it!'); }
+    else if (j.type === 'race') { j.t = 34; j.n = 0; comm('Bolt', 'Ring race! Fly through the gold rings. Go go go!'); }
+  }
+  /* ---------- Brain Gate: fly through the right answer ---------- */
+  function brainGate() {
+    const r = run, P = r.P; let q = null; for (let k = 0; k < 12 && !q; k++) { try { const c = QB[pickOne(QUEST_KINDS)](); if (!c.t && !c.passage && !c.img && c.o && c.o.length >= 2 && c.o.includes(c.a) && c.o.every(o => String(o).length <= 22)) q = c; } catch (e) {} }
+    if (!q) return; r.brainDone = true;
+    const wrong = q.o.filter(o => o !== q.a).sort(() => Math.random() - .5).slice(0, 2), opts = [q.a, ...wrong].sort(() => Math.random() - .5), cols = [0x3d8bff, 0xffd23f, 0x3ddc97], n = opts.length;
+    let f = r.f; if (Math.hypot(P.pos.x + f.x * 120, P.pos.z + f.z * 120) > r.A * .68) { const L = Math.hypot(P.pos.x, P.pos.z) || 1; f = V3(-P.pos.x / L, 0, -P.pos.z / L); }
+    const gyaw = Math.atan2(f.z, f.x), gates = opts.map((o, i) => { const off = (i - (n - 1) / 2) * 24, x = P.pos.x + f.x * 120 - f.z * off, z = P.pos.z + f.z * 120 + f.x * off, y = Math.max(P.pos.y, r.H.h(x, z) + 12);
+      const g = new T.Group(), t = new T.Mesh(new T.TorusGeometry(8, .8, 10, 36), new T.MeshBasicMaterial({ color: cols[i] })), d = new T.Mesh(new T.CircleGeometry(7.6, 30), new T.MeshBasicMaterial({ color: cols[i], transparent: true, opacity: .22, side: T.DoubleSide, depthWrite: false, blending: T.AdditiveBlending })); g.add(t, d);
+      g.position.set(x, y, z); g.rotation.y = -gyaw + Math.PI / 2; r.scene.add(g); return { g, pos: g.position, o, el: h('div', { class: 'r-gatel g' + i }, String(o)) }; });
+    const panel = h('div', { class: 'r-brain' }, h('b', {}, '🧠 Fly through the right answer!'), h('p', { html: q.q })); r.ui.root.append(panel, ...gates.map(g => g.el));
+    r.brain = { q, gates, panel, t: 30 }; SFXR.ring(); comm('Nova', 'Brain Gate! Pick the right ring for bonus 💎.');
+  }
+  function brainEnd(pick) {
+    const r = run, b = r.brain; if (!b) return; r.brain = null; b.panel.remove(); b.gates.forEach(g => { r.scene.remove(g.g); g.el.remove(); });
+    if (!pick) return; const ok = pick.o === b.q.a; try { QGEN = b.q.gen || null; mark(b.q.key, ok, b.q.label, pick.o); QGEN = null; } catch (e) {}
+    if (ok) { r.gems += 8; popGems(); r.P.shield = r.P.maxShield; r.P.boost = 100; SFX.ok(); bigToast('Correct! +8 💎'); RFX.burst(pick.pos, 50, 0x9ffcff, 26, 1.5, .9); r.cores.ok++; }
+    else { SFX.no(); bigToast('It was: ' + b.q.a); comm('Bolt', 'No worries. We will practise that one!'); } r.cores.total++;
+  }
+  function brainTick(dt) {
+    const r = run, b = r.brain; if (!b) return; b.t -= dt;
+    for (const g of b.gates) { g.g.children[0].rotation.z += dt * .6; if (r.P.pos.distanceTo(g.pos) < 8.6) { brainEnd(g); return; }
+      const v = tA.copy(g.pos).project(r.cam); if (v.z < 1 && Math.abs(v.x) < 1.1) g.el.style.cssText = `display:block;left:${(v.x * .5 + .5) * innerWidth}px;top:${(-v.y * .5 + .5) * innerHeight}px`; else g.el.style.display = 'none'; }
+    if (b.t <= 0) brainEnd(null);
   }
 
   /* ---------- enemies ---------- */
@@ -5435,11 +5549,11 @@ const RIDE = (() => {
   function kill(e) {
     if (e.dead) return; e.dead = true; const r = run;
     const i = r.enemies.indexOf(e); if (i >= 0) r.enemies.splice(i, 1); r.scene.remove(e.mesh);
-    if (e.type === 'spire') { e.spire.dead = true; RFX.burst(e.pos, 40, 0x9ffcff, 22, 1.4, .8); RFX.burst(e.pos, 16, 0xffffff, 14, .8, .5); GEMS.spawn(e.pos, SHARDS.spire, 16); SND.play('gem', .5, .7) || SFXR.ring(); return; }
+    if (e.type === 'spire') { e.spire.dead = true; if (e.spire.isl) { r.hunt.n++; bigToast(`Hidden crystals ${r.hunt.n}/${r.hunt.total}`); } RFX.burst(e.pos, 40, 0x9ffcff, 22, 1.4, .8); RFX.burst(e.pos, 16, 0xffffff, 14, .8, .5); GEMS.spawn(e.pos, SHARDS.spire, 16); SND.play('gem', .5, .7) || SFXR.ring(); return; }
     const sc = clamp(e.r / 2, .6, 5); RFX.explode(e.pos, sc, e.type === 'nest' ? 0xff4fd0 : 0xff9a40); SFXR.explode(sc);
     r.shake = Math.max(r.shake, Math.min(.9, sc * .2 / Math.max(1, e.pos.distanceTo(r.P.pos) / 60)));
     r.kills++; GEMS.spawn(e.pos, SHARDS[e.type] || 1, 14);
-    if (e.type === 'nest') { r.nestsDown++; dropCore(e.pos.clone().add(V3(0, 7, 0))); const left = r.nestsTotal - r.nestsDown; bigToast(left ? `Nest down! ${left} to go` : 'All nests down!'); if (left) comm('Bolt', left === 1 ? 'One more nest! You got this!' : `Nest down! ${left} to go!`); else setTimeout(() => run === r && !r.over && startBoss(), 2600); }
+    if (e.job) { const j = e.job; if (e.type === 'lock') { j.n++; if (j.n >= 3) { j.state = 'guard'; j.t = 16; j.wave = 0; j.bars.visible = false; if (!r.job) r.job = j; bigToast('Cage open!'); comm('Nova', 'They are free! Guard them while they beam up!'); } else bigToast(`Lock ${j.n}/3`); } else jobDone(j); }
     if (e === r.boss) bossDown(e);
   }
   function dropCore(pos) {
@@ -5465,7 +5579,7 @@ const RIDE = (() => {
       const ov = h('div', { class: 'overlay' }, card); document.body.append(ov); }, 1300);
   }
   function retry() {
-    const r = run, P = r.P; SWARM.popAll(); BOLTS.clearEnemy(); P.shield = P.maxShield; P.boost = 100; r.state = 'fly'; r.ctx.alive = true; r.freeze = false; r.bike.root.visible = true; r.lowWarn = 0;
+    const r = run, P = r.P; r.oops++; resetJob(r.job); if (r.brain) brainEnd(null); SWARM.popAll(); BOLTS.clearEnemy(); P.shield = P.maxShield; P.boost = 100; r.state = 'fly'; r.ctx.alive = true; r.freeze = false; r.bike.root.visible = true; r.lowWarn = 0;
     P.pos.y = Math.max(P.pos.y, r.H.h(P.pos.x, P.pos.z) + 22); P.vel.set(0, 0, 0); P.vy = 0; r.hurtCD = 2.5; r.last = performance.now();
   }
 
@@ -5502,12 +5616,13 @@ const RIDE = (() => {
   }
   function finish(win) {
     const r = run, R = ensureRide(), cfg = r.cfg; r.over = true; r.freeze = true; SFXR.engineStop();
-    const first = win && !R.done[cfg.id], bonus = win ? (first ? cfg.prize : 5) : 0, total = r.gems + bonus + r.rings;
+    const huntAll = r.hunt.total > 0 && r.hunt.n >= r.hunt.total, stars = win ? 1 + (huntAll ? 1 : 0) + (huntAll && !r.oops ? 1 : 0) : 0; R.stars = R.stars || {}; R.stars[cfg.id] = Math.max(R.stars[cfg.id] || 0, stars); R.krix = (R.krix || 0) + r.krix;
+    const first = win && !R.done[cfg.id], bonus = win ? (first ? cfg.prize : 5) : 0, total = r.gems + bonus;
     if (win) { R.done[cfg.id] = true; } R.kills += r.kills; R.best[cfg.id] = Math.max(R.best[cfg.id] || 0, r.kills); R.gemsTotal = (R.gemsTotal || 0) + total; addGems(total); save();
     try { HUB.krixHeal(Object.keys(R.done).filter(k => SORTIES.some(s => s.id === k)).length / SORTIES.length); } catch (e) {}
     const last = win && r.idx === SORTIES.length - 1;
-    const rows = [['💎', 'Crystals', r.gems], ['🔵', 'Rings', '+' + r.rings], ['🎯', 'Nests', `${r.nestsDown}/${r.nestsTotal}`], ['👾', 'Glitches', r.kills], ['🏆', first ? 'First win!' : 'Bonus', '+' + bonus]];
-    const card = h('div', { class: 'panel quest r-end win' }, h('h2', {}, win ? `${cfg.ic} ${cfg.name} is free!` : 'Back home'), last ? h('p', { class: 'r-endtxt' }, 'The Glitch Core is gone! Krix is free!') : null,
+    const rows = [['💎', 'Crystals', r.gems], ['✅', 'Jobs', `${doneJobs()}/${needJobs()}`], ['🧊', 'Krixlings saved', r.krix], ['🔍', 'Hidden crystals', `${r.hunt.n}/${r.hunt.total}`], ['🏆', first ? 'First win!' : 'Bonus', '+' + bonus]];
+    const card = h('div', { class: 'panel quest r-end win' }, h('h2', {}, win ? `${cfg.ic} ${cfg.name} is free!` : 'Back home'), win ? h('div', { class: 'r-stars' }, [1, 2, 3].map(k => h('span', { class: k <= stars ? 'on' : '' }, '★'))) : null, win && stars < 3 ? h('p', { class: 'r-endtxt' }, stars < 2 ? '★★ Find every hidden crystal on the sky islands' : '★★★ Do it without crashing') : null, last ? h('p', { class: 'r-endtxt' }, 'The Glitch Core is gone! Krix is free!') : null,
       h('div', { class: 'r-rows' }, rows.map(([ic, a, b]) => h('div', {}, h('span', {}, ic + ' ' + a), h('b', {}, b)))), h('div', { class: 'r-total' }, `+${total} 💎`),
       h('div', { class: 'r-endbtns' }, h('button', { class: 'btn orange', onclick: () => { ov.remove(); teardown(); closeOut(); setTimeout(openBuild, 300); } }, '🏗 Build!'), h('button', { class: 'btn panel', onclick: () => { ov.remove(); teardown(); closeOut(); open(); } }, '🏍 Fly again'), h('button', { class: 'btn panel', onclick: () => { ov.remove(); teardown(); closeOut(); } }, '🏠')));
     const ov = h('div', { class: 'overlay' }, card); document.body.append(ov); SND.play('level_up', .6); if (win) { try { confetti(); } catch (e) {} }
@@ -5528,19 +5643,23 @@ const RIDE = (() => {
     const K = r.keys, st = r.stick, ms = r.mouse; let sx = 0, sy = 0;
     if (K.KeyA || K.ArrowLeft) sx -= 1; if (K.KeyD || K.ArrowRight) sx += 1; if (K.KeyW || K.ArrowUp) sy += 1; if (K.KeyS || K.ArrowDown) sy -= 1;
     if (!sx && !sy) { if (st.id != null) { sx = st.x; sy = st.y; } else if (performance.now() - ms.moved < 4000) { const dz = .1; sx = Math.abs(ms.x) < dz ? 0 : clamp((ms.x - Math.sign(ms.x) * dz) / .5, -1, 1); sy = Math.abs(ms.y) < dz ? 0 : clamp(-(ms.y - Math.sign(ms.y) * dz) / .5, -1, 1); } }
-    return { sx, sy, fire: r.fire || !!K.Space, boost: !!(K.ShiftLeft || K.ShiftRight || r.boostBtn) };
+    return { sx, sy, fire: r.fire || !!K.Space, boost: !!(K.ShiftLeft || K.ShiftRight || r.boostBtn), brake: !!(K.KeyX || K.ControlLeft || r.brakeBtn), face: !!(K.KeyF || r.faceBtn) };
   }
   const tA = V3(), tB = V3();
   function tick(dt) {
     const r = run; if (!r) return; const P = r.P, ctx = r.ctx, H = r.H, A = r.A, pk = r.pk;
     if (r.freeze) { r.world.update(0, r.t, P.pos, r.cam); return; }
     dt *= r.slow; r.t += dt; ctx.t = r.t; r.hurtCD = Math.max(0, r.hurtCD - dt); r.intro = Math.max(0, r.intro - dt);
-    const flying = r.state === 'fly' || r.state === 'collect', inp = flying && r.intro <= 0 ? readInput(r) : { sx: 0, sy: 0, fire: false, boost: false };
+    const flying = r.state === 'fly' || r.state === 'collect', inp = flying && r.intro <= 0 ? readInput(r) : { sx: 0, sy: 0, fire: false, boost: false, brake: false, face: false };
     // ----- flight: turn with left/right, climb/dive directly with up/down
     const wantBoost = inp.boost && P.boost > 4 && (P.boosting || P.boost > 14); if (wantBoost && !P.boosting) SFXR.boost(); P.boosting = wantBoost;
     P.boost = clamp(P.boost + (P.boosting ? -pk.boostDrain : 16) * dt, 0, 100);
-    const tgtSp = r.state === 'down' ? 0 : P.boosting ? 70 : 38; P.speed = lerp(P.speed, tgtSp, 1 - Math.exp(-(P.boosting ? 3 : 1.8) * dt));
-    P.steer = lerp(P.steer, inp.sx, 1 - Math.exp(-8 * dt)); P.yaw += P.steer * 1.9 * dt;
+    const tgtSp = r.state === 'down' ? 0 : inp.brake ? 6 : P.boosting ? 70 : 38; P.speed = lerp(P.speed, tgtSp, 1 - Math.exp(-(P.boosting ? 3 : 1.8) * dt));
+    P.steer = lerp(P.steer, inp.sx, 1 - Math.exp(-8 * dt)); P.yaw += P.steer * (inp.brake ? 2.6 : 1.9) * dt;
+    if (inp.face && r.faceT <= 0) { r.faceT = 1.1; r.faceBtn = false; SFX.tap(); }
+    if (r.faceT > 0) { r.faceT -= dt; let tg = null, bd = 170; for (const e of r.enemies) { if (e.type === 'spire') continue; const d = e.pos.distanceTo(P.pos); if (d < bd) { bd = d; tg = e.pos; } } const nm = SWARM.list[0]; if (!tg && nm) tg = nm.p;
+      if (!tg) { const j = r.job || r.jobs.filter(j => j.state !== 'done').sort((a, b) => a.pos.distanceTo(P.pos) - b.pos.distanceTo(P.pos))[0]; if (j) tg = j.pos; }
+      if (tg) { const want = Math.atan2(tg.z - P.pos.z, tg.x - P.pos.x), dd = Math.atan2(Math.sin(want - P.yaw), Math.cos(want - P.yaw)); P.yaw += clamp(dd * 5, -4, 4) * dt; } }
     const gy = H.h(P.pos.x, P.pos.z), f = fwd(P, r.f);
     let lift = 0; for (const d of [14, 30, 50]) { const need = H.h(P.pos.x + f.x * d, P.pos.z + f.z * d) + 4; if (need > P.pos.y) lift = Math.max(lift, (need - P.pos.y) / (d / Math.max(10, P.speed)) * .9); }
     const tvy = r.intro > 0 ? -16 : Math.max(inp.sy * 26, inp.sy < -.2 ? -26 : 0) + Math.min(30, lift);
@@ -5560,14 +5679,19 @@ const RIDE = (() => {
     const aimDir = tB.set(Math.cos(P.yaw) * Math.cos(P.pitch * .6), Math.sin(P.pitch * .6), Math.sin(P.yaw) * Math.cos(P.pitch * .6)).normalize();
     let lock = null, best = .962;
     for (const e of r.enemies) { const d = tA.copy(e.pos).sub(P.pos), dl = d.length(); if (dl > 230 || dl < 6) continue; let c = d.dot(aimDir) / dl; if (e.type === 'spire') c -= .012; if (c > best) { best = c; lock = e; } }
-    const mite = SWARM.nearest(P.pos, aimDir, Math.max(best, .975), 140); if (mite) lock = mite;
+    const mite = SWARM.nearest(P.pos, aimDir, Math.max(best - .02, .955), 150); if (mite) lock = mite;
     r.lock = lock; r.fireT -= dt;
     if (flying && inp.fire && r.fireT <= 0) {
       r.fireT = pk.fire; r.gun ^= 1; const m = V3(); b.muzzleWorld(r.gun, m); let aim = P.pos.clone().addScaledVector(aimDir, 120);
       if (lock) { const tl = lock.pos.distanceTo(m) / 180; aim = lock.pos.clone().addScaledVector(lock.vel || V3(), tl * .85); }
-      BOLTS.firePlayer(m, aim.sub(m).normalize(), 180, 1); b.fire(r.gun); SFXR.shot();
+      BOLTS.firePlayer(m, aim.sub(m).normalize(), 180, 1, lock && lock.type !== 'spire' ? lock : null); b.fire(r.gun); SFXR.shot();
+      if (r.charge >= 1 && r.paint.length) { for (const tg of r.paint) { if (tg.dead) continue; BOLTS.firePlayer(m.clone(), tA.copy(tg.pos).sub(m).normalize().add(V3(0, .25, 0)).normalize(), 150, 3, tg); } SND.play('dash', .5, 1.4); r.shake = Math.max(r.shake, .2); r.paint = []; }
+      r.charge = 0;
       RFX.emit(m.x, m.y, m.z, 0, 0, 0, laserOf(S.ride.laser).c, 1.4, .08, 0, 0, 1);
     }
+    // lock-on charge: stop firing for a moment and up to 6 enemies get marked; the next shot sends a homing laser to each
+    if (flying && !inp.fire) r.charge = Math.min(1, r.charge + dt / 1.2);
+    if (r.charge >= 1) { r.paintT = (r.paintT || 0) - dt; if (r.paintT <= 0) { r.paintT = .15; const list = []; for (const e of r.enemies) { if (list.length >= 6) break; if (e.type === 'spire') continue; const d = tA.copy(e.pos).sub(P.pos), dl = d.length(); if (dl < 170 && d.dot(aimDir) / dl > .74) list.push(e); } SWARM.inCone(P.pos, aimDir, .74, 150, list, 6); r.paint = list; } } else r.paint = [];
     if (r.wing) { const w = r.wing, tp = tA.copy(P.pos).addScaledVector(f, -3); tp.x += -f.z * 4.5; tp.z += f.x * 4.5; tp.y += 3 + Math.sin(r.t * 2) * .4; w.g.position.lerp(tp, 1 - Math.exp(-5 * dt)); w.g.rotation.y = -P.yaw - Math.PI / 2; w.ring.rotation.z += dt * 4; w.t -= dt;
       if (w.t <= 0 && flying) { const tg = SWARM.nearest(w.g.position, f, .3, 90) || r.enemies.find(e => e.type !== 'spire' && e.pos.distanceTo(w.g.position) < 80); if (tg) { BOLTS.firePlayer(w.g.position.clone(), tg.pos.clone().sub(w.g.position).normalize(), 170, 1); w.t = .45; } else w.t = .2; } }
     // ----- world + enemies
@@ -5575,10 +5699,10 @@ const RIDE = (() => {
     for (const e of r.enemies.slice()) { if (e.dead || e.type === 'spire') continue; FOES.update(e, dt, ctx);
       if (r.state === 'fly' && e.type !== 'chaser' && e.pos.distanceTo(P.pos) < e.r + 1.7) { hurt(e.boss || e.type === 'plate' ? 12 : 6, e.pos); const away = tA.copy(P.pos).sub(e.pos).normalize(); P.pos.addScaledVector(away, 2.5); } }
     SWARM.update(dt, ctx); BOLTS.update(dt, ctx); GEMS.update(dt, ctx, pk.magnet);
-    // reinforcements: drones guard the remaining nests
-    r.reinfT -= dt; if (r.reinfT <= 0 && r.phase === 'nests') { r.reinfT = 28; const nests = r.enemies.filter(e => e.type === 'nest'); if (nests.length && r.enemies.filter(e => e.type === 'drone').length < 3) { const n = nests[(Math.random() * nests.length) | 0]; spawn('drone', n.pos.clone().add(V3(0, 16, 0))); } }
+    jobsTick(dt, flying); brainTick(dt);
     // rings
-    for (const g of r.world.gates) { g.g.children[1].material.opacity = g.taken ? .05 : .25 + .12 * Math.sin(r.t * 4); if (!g.taken && flying && P.pos.distanceTo(g.pos) < 7.5) { g.taken = true; r.rings++; P.boost = 100; SFXR.ring(); flash('+1 💎'); g.g.children[0].material.color.setHex(0x4ff0ff); g.g.children[0].material.opacity = .25; g.g.children[0].material.transparent = true; RFX.burst(g.pos, 26, 0x9ffcff, 18, 1.2, .7); } }
+    { const rj = r.jobs.find(j => j.type === 'race'); if (rj && rj.state !== 'done') r.world.gates.forEach((g, i) => { const next = rj.state === 'active' ? i === rj.n : i === 0; g.g.children[1].material.opacity = next ? .35 + .2 * Math.sin(r.t * 6) : .06; g.g.children[0].material.color.setHex(g.taken ? 0x4ff0ff : next ? 0xffd23f : 0x35e7ff);
+        if (!g.taken && flying && rj.state === 'active' && i === rj.n && P.pos.distanceTo(g.pos) < 8) { g.taken = true; rj.n++; r.rings++; P.boost = 100; SFXR.ring(); RFX.burst(g.pos, 26, 0xffe14a, 18, 1.2, .7); if (rj.n >= r.world.gates.length) { r.gems += 10; popGems(); jobDone(rj); } } }); }
     // data cores
     for (let i = r.pickups.length - 1; i >= 0; i--) { const pkp = r.pickups[i]; pkp.t += dt; pkp.c.rotation.y += dt * 2.4; pkp.c.rotation.x += dt * 1.1; pkp.ring.rotation.x = Math.PI / 2 + Math.sin(pkp.t * 2) * .3; pkp.ring.rotation.z += dt * 2;
       if (flying && P.pos.distanceTo(pkp.pos) < 7) { r.scene.remove(pkp.g); r.pickups.splice(i, 1); RFX.burst(pkp.pos, 30, 0xffe14a, 22, 1.4, .8); ask(); break; } }
@@ -5605,7 +5729,8 @@ const RIDE = (() => {
   function hud(dt, f, aimDir) {
     const r = run, P = r.P, ui = r.ui;
     ui.sh.f.style.width = (P.shield / P.maxShield * 100) + '%'; ui.sh.el.classList.toggle('low', P.shield < P.maxShield * .3); ui.bo.f.style.width = P.boost + '%'; ui.bo.el.classList.toggle('on', P.boosting);
-    ui.obj.textContent = r.state === 'collect' ? '💎 Grab the crystals!' : r.phase === 'boss' ? '👾 Beat the boss!' : `🎯 Nests ${r.nestsDown} / ${r.nestsTotal}`;
+    { const j = r.job; ui.obj.textContent = r.state === 'collect' ? '💎 Grab the crystals!' : r.phase === 'boss' ? '👾 Beat the boss!' : r.brain ? '🧠 Fly through the right answer!' : !j ? `⭐ Jobs ${doneJobs()}/${needJobs()} · fly to a beam` :
+      j.type === 'nest' ? `🎯 Smash the nest ${Math.round((1 - j.nest.hp / j.nest.maxhp) * 100)}%` : j.type === 'cage' ? (j.state === 'guard' ? `🛡 Guard them! ${Math.ceil(j.t)}s` : `🔓 Shoot the locks ${j.n}/3`) : j.type === 'chase' ? `🚚 Catch the thief! ${Math.ceil(j.t)}s` : `🏁 Ring ${j.n}/${r.world.gates.length} · ${Math.ceil(j.t)}s`; }
     if (r.boss && !r.boss.dead) ui.bossBar.lastChild.firstChild.style.width = Math.max(0, r.boss.hp / r.boss.maxhp * 100) + '%';
     if (ui.commT > 0) { ui.commT -= dt; if (ui.commT <= 0) ui.comm.classList.add('hidden'); }
     // crosshair sits where the lasers go
@@ -5617,7 +5742,10 @@ const RIDE = (() => {
     let mi = 0; const M = ui.marks.length;
     for (const pkp of r.pickups) if (mi < M) projMark(ui.marks[mi++], pkp.pos, '💾', 'core', pkp.pos.distanceTo(P.pos));
     if (r.boss && !r.boss.dead && mi < M) projMark(ui.marks[mi++], r.boss.pos, '👾', 'boss', r.boss.pos.distanceTo(P.pos));
-    for (const e of r.enemies) if (e.type === 'nest' && mi < M) projMark(ui.marks[mi++], tA.copy(e.pos).add(V3(0, 6, 0)), '🎯', 'nest', e.pos.distanceTo(P.pos));
+    if (r.brain && mi < M) { const g = r.brain.gates[(r.brain.gates.length / 2) | 0]; projMark(ui.marks[mi++], g.pos, '🧠', 'core cur', g.pos.distanceTo(P.pos)); }
+    if (r.phase === 'jobs') for (const j of r.jobs) if (j.state !== 'done' && mi < M) { const jp = j.type === 'chase' && j.thief && !j.thief.dead ? j.thief.pos : j.pos; projMark(ui.marks[mi++], tA.copy(jp).add(V3(0, 8, 0)), JOBINFO[j.type][0], 'nest' + (j === r.job ? ' cur' : ''), jp.distanceTo(P.pos)); }
+    ui.paints.forEach((el, i) => { const tg = r.paint[i]; if (!tg || tg.dead) { el.style.display = 'none'; return; } const v = tA.copy(tg.pos).project(r.cam); if (v.z > 1) { el.style.display = 'none'; return; } el.style.cssText = `display:block;left:${(v.x * .5 + .5) * innerWidth}px;top:${(-v.y * .5 + .5) * innerHeight}px`; });
+    ui.cross.classList.toggle('charged', r.charge >= 1);
     for (; mi < M; mi++) ui.marks[mi].style.display = 'none';
     // altitude gauge
     const gy = r.H.h(P.pos.x, P.pos.z), k = clamp(P.pos.y / 125, 0, 1); ui.alt.lastChild.style.bottom = (k * 100) + '%'; ui.alt.firstChild.style.height = clamp(gy / 125, 0, 1) * 100 + '%';
@@ -5626,7 +5754,8 @@ const RIDE = (() => {
     c.save(); c.translate(130, 130); c.beginPath(); c.arc(0, 0, 124, 0, 7); c.fillStyle = 'rgba(10,16,48,.62)'; c.fill(); c.lineWidth = 4; c.strokeStyle = 'rgba(120,190,255,.7)'; c.stroke(); c.lineWidth = 1.5; c.strokeStyle = 'rgba(120,190,255,.3)'; c.beginPath(); c.arc(0, 0, 62, 0, 7); c.moveTo(0, -124); c.lineTo(0, 124); c.moveTo(-124, 0); c.lineTo(124, 0); c.stroke();
     const dot = (p, col, rad, sq) => { const dx = p.x - P.pos.x, dz = p.z - P.pos.z, fw = dx * hx + dz * hz, rt = -dx * hz + dz * hx; let x = rt * sc, y = -fw * sc; const L = Math.hypot(x, y); if (L > 116) { x *= 116 / L; y *= 116 / L; } c.fillStyle = col; if (sq) c.fillRect(x - rad, y - rad, rad * 2, rad * 2); else { c.beginPath(); c.arc(x, y, rad, 0, 7); c.fill(); } };
     for (const m of SWARM.list) dot(m.p, 'rgba(255,90,210,.8)', 2.6);
-    for (const e of r.enemies) if (e.type === 'nest') dot(e.pos, '#ff3fb0', 9, true); else if (e.type !== 'spire' && e.type !== 'plate') dot(e.pos, e.boss ? '#ff3fb0' : '#ff9a3f', e.boss ? 10 : 5);
+    for (const j of r.jobs) if (j.state !== 'done') dot(j.pos, '#' + JOBINFO[j.type][1].toString(16).padStart(6, '0'), 8, true);
+    for (const e of r.enemies) if (e.type === 'nest' || e.type === 'lock') continue; else if (e.type !== 'spire' && e.type !== 'plate') dot(e.pos, e.boss ? '#ff3fb0' : '#ff9a3f', e.boss ? 10 : 5);
     for (const pkp of r.pickups) dot(pkp.pos, '#ffe14a', 7);
     c.beginPath(); c.moveTo(0, -11); c.lineTo(8, 9); c.lineTo(0, 5); c.lineTo(-8, 9); c.closePath(); c.fillStyle = '#fff'; c.fill(); c.restore();
     if (r.state === 'collect' && !GEMS.list.length && !r.endSoon) { r.endSoon = 1; setTimeout(() => run === r && !r.over && finish(true), 900); }
