@@ -3737,6 +3737,33 @@ function cloudStart() {
   return CLOUD.p;
 }
 
+
+/* A DIFFERENT name on the title screen is a different commander: never give them the old one's game. Returns true to stop (reloading, or they chose to go back). */
+async function switchPlayer(nm) {
+  const newId = cloudId(nm), oldId = cloudId(S.name);
+  if (!newId || !oldId || newId === oldId || blankSave(S)) return false;
+  const oldName = S.name;
+  try { if (CLOUD.okId === oldId) await cloudPush(true); } catch (e) {}   // save the old commander first
+  const ask = (title, line, yes, no) => new Promise(res => {
+    const ov = h('div', { class: 'overlay', style: { zIndex: 70 } }, h('div', { class: 'panel', style: { textAlign: 'center', width: 'min(520px,94vw)' } },
+      h('h2', {}, title), h('p', { style: { fontWeight: 700, fontSize: '19px', margin: '8px 0' } }, line),
+      h('div', { class: 'gu-row', style: { justifyContent: 'center', marginTop: '10px' } },
+        h('button', { class: 'btn mint', id: 'swYes', onclick: () => { ov.remove(); res(true); } }, yes),
+        h('button', { class: 'btn panel', id: 'swNo', onclick: () => { ov.remove(); res(false); } }, no))));
+    document.body.append(ov);
+  });
+  const fresh = off => { writeSave({ name: nm, items: {}, cloudOff: off ? newId : '' }); location.reload(); return true; };
+  let got = null, offline = false;
+  try { got = await cloudFetch(newId); } catch (e) { if (e.message !== 'nocode') offline = true; }
+  if (got) {
+    const sv = got.save;
+    if (await ask('Another commander!', `Found ${sv.name || nm}'s saved game (${sv.stars || 0} stars · ${Object.keys(sv.items || {}).length} things learned). Bring it back? ${oldName}'s game stays saved.`, 'Yes, bring it back', 'No, start new')) { cloudRestore(got, newId); return true; }
+    return fresh(true);
+  }
+  if (await ask('A new commander?', (offline ? `Can't check online for ${nm} right now. ` : `There is no saved game for ${nm}. `) + `Start a new game for ${nm}? ${oldName}'s game stays saved.`, 'Yes, start new', 'No, go back')) return fresh(false);
+  return true;
+}
+
 /* ---------- message box ---------- */
 async function sendMessage(from, text) {
   const body = JSON.stringify(fsFields({ from: String(from || '').slice(0, 60), text: String(text).slice(0, 2000), game: CLOUD.game, t: Date.now() }));
@@ -6487,6 +6514,7 @@ function toggleLook() {
   const go = async () => {
     const nm = nameIn.value.trim().replace(/\s+/g, ' ');
     if (!nm) { nameIn.classList.remove('shake'); void nameIn.offsetWidth; nameIn.classList.add('shake'); nameIn.focus(); SFX.no(); return; }
+    if (await switchPlayer(nm.charAt(0).toUpperCase() + nm.slice(1))) return;
     S.name = nm.charAt(0).toUpperCase() + nm.slice(1);
     S.settings.music = !quiet.checked; save();
     await cloudStart(); // may offer to bring back a saved game for this name
