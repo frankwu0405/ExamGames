@@ -889,6 +889,16 @@ kbd{display:inline-block;min-width:26px;padding:3px 7px;margin:0 2px;border-radi
 .r-brakeb.on{transform:scale(.92);filter:brightness(1.3)}
 .r-stars{font-size:54px;letter-spacing:6px;color:#cfd4e6;line-height:1}.r-stars .on{color:#ffb800;text-shadow:0 3px 0 #a86a00}
 .pin .pstars{font-style:normal;color:#ffd23f;font-size:16px;letter-spacing:2px;text-shadow:0 1px 0 #000}
+
+/* ===== walking view ===== */
+.dock-btn.view-btn{background:linear-gradient(#d9ecff,#9cc8ff)}
+body.walking #labels .st-label{display:none!important}
+body.walking #labels .st-label[data-near]{display:flex!important}
+.act-btn{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:6;display:flex;align-items:center;gap:12px;padding:12px 26px 12px 16px;border-radius:40px;border:4px solid var(--ink);background:linear-gradient(#fff3b0,#ffd23f);color:var(--ink);font:700 26px var(--display);cursor:pointer;box-shadow:0 7px 0 #a8641a,0 0 0 6px #ffffff55;animation:actIn .2s cubic-bezier(.2,1.4,.4,1)}
+.act-btn span{font-size:36px;line-height:1}.act-btn.hidden{display:none}.act-btn:active{transform:translateX(-50%) translateY(4px);box-shadow:0 3px 0 #a8641a}
+@keyframes actIn{from{transform:translateX(-50%) scale(.6);opacity:0}}
+.w-stick{position:fixed;left:max(28px,env(safe-area-inset-left,0px));bottom:130px;z-index:6;width:124px;height:124px;border-radius:50%;border:4px solid #ffffffaa;background:#ffffff26;touch-action:none}
+.w-stick i{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px;border-radius:50%;background:#fff;box-shadow:0 4px 0 #0004}.w-stick.hidden{display:none}
 </style></head>
 <body>
 <div id="space"></div><div id="labels"></div><div id="hud"></div>
@@ -6244,7 +6254,7 @@ const HUB = (() => {
     const hg = hits.find(x => x.object.userData.glitch); if (hg && glitch.visible) { onGlitch && onGlitch(); return; }
     const hv = hits.find(x => x.object.userData.vehicle); if (hv) { onVehicle && onVehicle(hv.object.userData.vehicle); return; }
     const hit = hits.find(x => x.object.userData.station); if (hit) enter(hit.object.userData.station); }
-  let onVehicle = null, onAssets = null;
+  let onVehicle = null, onAssets = null, camFn = null; const ticks = [];
   let busy = false, lock = false;
   async function enter(id) {
     if (busy || lock) return; busy = true; SFX.tap();
@@ -6296,7 +6306,7 @@ const HUB = (() => {
     animateTo({ yaw: ctl.yaw, pitch: .62, dist: ovDist(), tx: 0, ty: 1.5, tz: 0 }, 900); refresh();
   }
   /* ===== loop ===== */
-  let paused = false, last = performance.now(), hideCrewUI = false, onTick = null; const pickers = [];
+  let paused = false, last = performance.now(), hideCrewUI = false; const pickers = [];
   /* post: bloom + filmic tone curve (falls back to a plain render if unavailable) */
   let comp = null, finPass = null, bloomP = null;
   /* pick a quality level from real frame times, a few seconds after start; only ever step down after that */
@@ -6318,7 +6328,7 @@ const HUB = (() => {
     if (document.querySelector('.screen')) return; // a study screen covers the base: draw nothing
     if (shadowDirty > 0) { shadowDirty--; sun.shadow.needsUpdate = true; }
     probe(dt);
-    if (tween) tween(now); else if (ctl.auto && !launching) ctl.yaw += dt * .05;
+    if (tween) tween(now); else if (ctl.auto && !launching && !camFn) ctl.yaw += dt * .05;
     const t = now / 1000;
     groups.forEach(G => { const u = G.g.userData; if (u.spin) u.spin.rotation.y = t * .6; if (u.ring) u.ring.rotation.z = t * .5; if (u.shuttle) u.shuttle.position.y = 3 + Math.sin(t * 1.4) * .12;
       if (u.arm) u.arm.rotation.z = Math.sin(t * 1.2) * .5; if (u.bubble) u.bubble.position.y = .6 + ((t * .6) % 1) * 1.1; if (u.blink) u.blink.visible = Math.sin(t * 5) > 0; if (u.flag) u.flag.rotation.y = Math.sin(t * 3) * .25; if (u.scope) u.scope.rotation.z = Math.sin(t * .4) * .3; });
@@ -6365,10 +6375,10 @@ const HUB = (() => {
     if (engineTest > 0) { engineTest -= dt; flame.visible = engineTest > 0; flame.scale.set(1 + Math.sin(t * 40) * .1, 1 + Math.sin(t * 33) * .2, 1); if (engineTest <= 0) flame.scale.set(1, 1, 1); }
     for (let i = smoke.length - 1; i >= 0; i--) { const s = smoke[i]; s.life -= dt * .45; s.s.position.add(s.v); s.s.scale.multiplyScalar(1 + dt * .9); s.s.material.opacity = Math.max(0, s.life * .9); if (s.life <= 0) { scene.remove(s.s); smoke.splice(i, 1); } }
     falling.forEach(f => { f.v.y -= dt * .35; f.o.position.add(f.v); f.o.rotation.x += f.spin; f.o.rotation.z += f.spin * .7; });
-    placeCam();
+    if (camFn && !tween && !launching && !busy && !document.body.classList.contains('building')) camFn(dt); else placeCam();
     krix.rotation.y = t * .03; krixRing.rotation.z = t * .05; krixBits.forEach(b => { const u = b.userData, a = u.a + t * u.s; b.position.set(Math.cos(a) * u.r, Math.sin(a * 1.3) * 3, Math.sin(a) * u.r); b.rotation.set(t * u.s * 3, t, 0); });
     earth.rotation.y = t * .02;
-    if (onTick) onTick(t, dt);
+    for (const f of ticks) f(t, dt);
     if (comp) { finPass.uniforms.uT.value = t; comp.render(); } else renderer.render(scene, cam);
     tmp.copy(krix.position).project(cam); { const vis = tmp.z < 1 && !launching && !hideCrewUI && Math.abs(tmp.x) < 1.05 && tmp.y < 1.05; krixLabel.style.display = vis ? '' : 'none'; if (vis) { krixLabel.style.left = ((tmp.x + 1) / 2 * innerWidth) + 'px'; krixLabel.style.top = ((1 - tmp.y) / 2 * innerHeight + 70) + 'px'; } }
     const W = window.innerWidth, H = window.innerHeight;
@@ -6383,7 +6393,8 @@ const HUB = (() => {
   return {
     init() { buildStations(); buildCrew(); resize(); refresh(); placeCam(); requestAnimationFrame(loop); ASSET.load().then(() => { buildDecor(); if (onAssets) onAssets(); }); },
     scene: () => scene, cam: () => cam, ctl: () => ctl, islandTop: (x, z) => islandTop(x, z), islandR: () => ISL_R[islandLvl], level: () => islandLvl,
-    setLevel(l) { if (l === islandLvl) return; buildIsland(l); buildDecor(); }, onIsland(f) { onIsland = f; }, onAssets(f) { onAssets = f; }, onTick(f) { onTick = f; }, addPicker(f) { pickers.push(f); }, krixHeal, halo, busy: () => busy || lock,
+    setLevel(l) { if (l === islandLvl) return; buildIsland(l); buildDecor(); }, onIsland(f) { onIsland = f; }, onAssets(f) { onAssets = f; }, onTick(f) { ticks.push(f); }, setCamFn(f) { camFn = f; if (!f) ctl.auto = true; }, enter: id => enter(id), tapCrew: id => onCrew && onCrew(id), isBusy: () => busy || !!tween || !!launching,
+    places: () => groups.map(G => ({ id: G.st.id, name: G.st.name, lab: G.lab, x: G.g.position.x, z: G.g.position.z })), crewNow: () => Object.keys(crew).filter(k => crew[k].g.visible).map(k => ({ id: k, x: crew[k].g.position.x, z: crew[k].g.position.z })), addPicker(f) { pickers.push(f); }, krixHeal, halo, busy: () => busy || lock,
     overview(ms = 900) { ctl.auto = true; return animateTo({ yaw: ctl.yaw, ...overviewView, dist: ovDist() }, ms); },
     fly: (to, ms) => { ctl.auto = false; return animateTo(to, ms); }, focusStation, focusAt, lock(v) { lock = v; },
     crewVisible, crewSay, setQuest, crewPos: id => crew[id] ? crew[id].g.position.clone() : null, crewOn: id => !!(crew[id] && crew[id].g.visible),
@@ -6604,9 +6615,101 @@ const BASE = (() => {
     scene = HUB.scene(); HUB.addPicker(picker); HUB.onTick(tick);
     HUB.onAssets(() => { if (S.base.lvl > 1) HUB.setLevel(S.base.lvl); respawnAll(); ready = true; if (!S.base.seen) { S.base.seen = 1; save(); setTimeout(() => { if (!STORY_BUSY) bolt('New! Fly to Planet Krix 🪐 for 💎. Then tap Build 🏗 to grow your base!', { ms: 5200 }); }, 2500); } try { HUB.krixHeal(Object.keys(ensureRide().done || {}).length / SORTIES.length); } catch (e) {} });
   }
-  return { init, openTray, closeTray, perks, collect, get ready() { return ready; }, debug: { objs, plotPos, allPlots, place: p => place(p), pick } };
+  return { init, openTray, closeTray, perks, collect, get ready() { return ready; }, spots: () => ({ built: Object.values(objs).map(o => ({ p: o.item.p, id: o.id, x: o.g.position.x, z: o.g.position.z, gems: o.id === 'drill' ? drillGems(o.item.p) : 0 })), free: allPlots().filter(p => !used().has(p)).map(p => { const v = plotPos(p); return { p, x: v.x, z: v.z }; }) }), info: p => info(p),
+    debug: { objs, plotPos, allPlots, place: p => place(p), pick } };
 })();
 function openBuild() { BASE.openTray(); }
+
+/* =========================================================
+   WALK · he can switch from the overhead view to walking his own
+   character around the island. One action button shows what he can
+   do with whatever he is standing next to.
+   ========================================================= */
+const WALK = (() => {
+  const T = THREE; let on = false, av = null, parts = null, btn = null, stickEl = null, cur = null, target = null, phase = 0, speed = 0, camYaw = 0, lastLab = null;
+  const pos = new T.Vector3(0, 0, 8), keys = {}, stick = { x: 0, y: 0, id: null, ox: 0, oy: 0 }; let face = 0;
+  const coarse = () => { try { return matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window; } catch (e) { return false; } };
+  function build() {
+    const R = ensureRide(), suit = (PAINTS.find(p => p.id === R.paint) || PAINTS[0]).c, g = new T.Group();
+    const m = (geo, c, o = {}) => { const x = new T.Mesh(geo, new T.MeshStandardMaterial({ color: c, roughness: .5, metalness: .1, ...o })); x.castShadow = false; return x; };
+    const body = m(new T.CapsuleGeometry(.36, .5, 6, 12), suit); body.position.y = 1.0; g.add(body);
+    const belt = m(new T.TorusGeometry(.37, .06, 6, 16), 0xffd23f); belt.rotation.x = Math.PI / 2; belt.position.y = .82; g.add(belt);
+    const pack = m(new T.BoxGeometry(.5, .55, .26), 0xdfe4ec, { metalness: .4 }); pack.position.set(0, 1.08, -.36); g.add(pack);
+    const head = new T.Group(); head.position.y = 1.72; g.add(head);
+    head.add(m(new T.SphereGeometry(.4, 20, 16), 0xf4f6fb, { roughness: .25 }));
+    const visor = m(new T.SphereGeometry(.33, 18, 12, 0, Math.PI * 2, 0, Math.PI * .55), 0x1a2a55, { roughness: .1, metalness: .6 }); visor.rotation.x = Math.PI / 2; visor.position.z = .14; head.add(visor);
+    const stripe = m(new T.TorusGeometry(.4, .04, 6, 20, Math.PI), suit); stripe.rotation.z = Math.PI / 2; stripe.rotation.y = Math.PI / 2; head.add(stripe);
+    const limb = (x, y, len, c) => { const p = new T.Group(); p.position.set(x, y, 0); const l = m(new T.CapsuleGeometry(.12, len, 4, 8), c); l.position.y = -len / 2 - .08; p.add(l); g.add(p); return p; };
+    const armL = limb(-.5, 1.3, .42, suit), armR = limb(.5, 1.3, .42, suit), legL = limb(-.18, .62, .4, 0x2a3350), legR = limb(.18, .62, .4, 0x2a3350);
+    const sh = new T.Mesh(new T.CircleGeometry(.6, 20), new T.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: .28, depthWrite: false })); sh.rotation.x = -Math.PI / 2; sh.position.y = .04; g.add(sh);
+    g.scale.setScalar(.92); parts = { body, head, armL, armR, legL, legR }; return g;
+  }
+  /* what is he standing next to? */
+  function nearest() {
+    let best = null, bd = 1e9; const add = (x, z, r, a) => { const d = Math.hypot(pos.x - x, pos.z - z) - r; if (d < bd) { bd = d; best = a; } };
+    for (const p of HUB.places()) { if (p.id === 'launch') add(p.x, p.z, 4.2, { ic: '🏍', label: 'Ride', run: () => openRide(), lab: null }); else add(p.x, p.z, 3.2, { ic: '📖', label: p.name || 'Study', run: () => HUB.enter(p.id), lab: p.lab }); }
+    for (const c of HUB.crewNow()) add(c.x, c.z, .7, { ic: '💬', label: 'Talk', run: () => HUB.tapCrew(c.id) });
+    try { const s = BASE.spots(); for (const b of s.built) add(b.x, b.z, 3.2, b.gems ? { ic: '💎', label: 'Collect ' + b.gems, run: () => BASE.collect(b.p) } : { ic: '👀', label: 'Look', run: () => BASE.info(b.p) });
+      for (const f of s.free) add(f.x, f.z, 2.2, { ic: '🏗️', label: 'Build here', run: () => openBuild() }); } catch (e) {}
+    return bd < 1.8 ? best : null;
+  }
+  function blockers() { const out = []; for (const p of HUB.places()) out.push([p.x, p.z, p.id === 'launch' ? 3.6 : 2.4]); try { for (const b of BASE.spots().built) out.push([b.x, b.z, 2.6]); } catch (e) {} return out; }
+  let blk = [], blkT = 0;
+  function tick(t, dt) {
+    if (!on || !av) return; const idle = document.querySelector('.screen,.ride-menu,.rideui,.build-tray,.overlay,.bt-hint') || STORY_BUSY || CUR || HUB.isBusy();
+    btn.classList.toggle('hidden', !!idle || !cur); stickEl && stickEl.classList.toggle('hidden', !!idle);
+    if (idle) { speed = 0; pose(t, dt); return; }
+    let mx = 0, mz = 0; if (keys.KeyW || keys.ArrowUp) mz += 1; if (keys.KeyS || keys.ArrowDown) mz -= 1; if (keys.KeyA || keys.ArrowLeft) mx -= 1; if (keys.KeyD || keys.ArrowRight) mx += 1;
+    if (stick.id != null) { mx = stick.x; mz = stick.y; }
+    const c = HUB.ctl(), fx = -Math.cos(c.yaw), fz = -Math.sin(c.yaw); // camera looks from yaw toward the avatar
+    let vx = fx * mz + -fz * mx, vz = fz * mz + fx * mx, L = Math.hypot(vx, vz);
+    if (L > .08) target = null; else if (target) { vx = target.x - pos.x; vz = target.z - pos.z; L = Math.hypot(vx, vz); if (L < .5) { target = null; L = 0; } }
+    const want = L > .08 ? 7.5 * Math.min(1, L) : 0; speed += (want - speed) * Math.min(1, dt * 10);
+    if (L > .08) { vx /= L; vz /= L; pos.x += vx * speed * dt; pos.z += vz * speed * dt; const a = Math.atan2(vx, vz); face += Math.atan2(Math.sin(a - face), Math.cos(a - face)) * Math.min(1, dt * 12); }
+    blkT -= dt; if (blkT <= 0) { blkT = 1; blk = blockers(); }
+    for (const [x, z, r] of blk) { const dx = pos.x - x, dz = pos.z - z, d = Math.hypot(dx, dz) || 1e-3; if (d < r) { pos.x = x + dx / d * r; pos.z = z + dz / d * r; if (target) target = null; } }
+    const R = HUB.islandR() - 1.6, d0 = Math.hypot(pos.x, pos.z); if (d0 > R) { pos.x *= R / d0; pos.z *= R / d0; target = null; }
+    pos.y = HUB.islandTop(pos.x, pos.z); pose(t, dt);
+    const n = nearest(); if ((n && n.label) !== (cur && cur.label)) { cur = n; if (n) { btn.firstChild.textContent = n.ic; btn.lastChild.textContent = n.label; } }
+    else if (n) cur = n;
+    const lab = cur && cur.lab; if (lab !== lastLab) { if (lastLab) delete lastLab.dataset.near; if (lab) lab.dataset.near = '1'; lastLab = lab; }
+  }
+  function pose(t, dt) {
+    av.position.copy(pos); av.rotation.y = face; const k = Math.min(1, speed / 7.5); phase += dt * (4 + k * 9); const s = Math.sin(phase) * k;
+    parts.legL.rotation.x = s * .9; parts.legR.rotation.x = -s * .9; parts.armL.rotation.x = -s * .8; parts.armR.rotation.x = s * .8;
+    parts.body.position.y = 1.0 + Math.abs(Math.cos(phase)) * .06 * k + Math.sin(t * 2) * .012; parts.head.position.y = 1.72 + Math.abs(Math.cos(phase)) * .06 * k; parts.head.rotation.y = Math.sin(t * .6) * .15 * (1 - k);
+  }
+  const look = new T.Vector3();
+  function camFn(dt) {
+    const c = HUB.ctl(), cam = HUB.cam(); c.pitch = Math.max(.16, Math.min(.95, c.pitch)); const dist = 11;
+    cam.position.set(pos.x + Math.cos(c.yaw) * Math.cos(c.pitch) * dist, pos.y + 1.4 + Math.sin(c.pitch) * dist, pos.z + Math.sin(c.yaw) * Math.cos(c.pitch) * dist);
+    cam.lookAt(look.set(pos.x, pos.y + 1.5, pos.z));
+  }
+  function picker(hits) {
+    if (!on) return false; if (document.body.classList.contains('building')) return false;
+    const hgt = hits.find(x => x.point && Math.abs(x.point.y) < 1.2 && Math.hypot(x.point.x, x.point.z) < HUB.islandR()) || hits[0];
+    if (hgt && hgt.point) { target = new T.Vector3(hgt.point.x, 0, hgt.point.z); const d = Math.hypot(target.x, target.z), R = HUB.islandR() - 1.6; if (d > R) { target.x *= R / d; target.z *= R / d; } SFX.tap(); }
+    return true;
+  }
+  function set(v, quiet) {
+    on = v; S.settings.view = v ? 'walk' : 'sky'; save(); document.body.classList.toggle('walking', v);
+    if (v) { if (!av) { av = build(); HUB.scene().add(av); } av.visible = true; HUB.ctl().pitch = .42; HUB.ctl().auto = false; HUB.setCamFn(camFn); }
+    else { if (av) av.visible = false; HUB.setCamFn(null); btn.classList.add('hidden'); stickEl && stickEl.classList.add('hidden'); if (lastLab) { delete lastLab.dataset.near; lastLab = null; } if (!quiet) HUB.overview(700); }
+    $$('.view-btn small').forEach(s => s.textContent = v ? 'Sky view' : 'Walk'); $$('.view-btn span').forEach(s => s.textContent = v ? '🛰️' : '🚶');
+  }
+  function init() {
+    btn = h('button', { class: 'act-btn hidden', onclick: () => { if (cur) { SFX.tap(); cur.run(); } } }, h('span', {}, ''), h('b', {}, '')); document.body.append(btn);
+    addEventListener('keydown', e => { if (!on) return; keys[e.code] = true; if ((e.code === 'Space' || e.code === 'Enter' || e.code === 'KeyE') && cur && !btn.classList.contains('hidden') && !e.repeat && !/INPUT|TEXTAREA/.test((document.activeElement || {}).tagName || '')) { e.preventDefault(); btn.click(); } });
+    addEventListener('keyup', e => { keys[e.code] = false; });
+    if (coarse()) { const knob = h('i'); stickEl = h('div', { class: 'w-stick hidden' }, knob); document.body.append(stickEl);
+      stickEl.addEventListener('pointerdown', e => { stick.id = e.pointerId; const r = stickEl.getBoundingClientRect(); stick.ox = r.left + r.width / 2; stick.oy = r.top + r.height / 2; stickEl.setPointerCapture(e.pointerId); mv(e); });
+      const mv = e => { if (e.pointerId !== stick.id) return; let dx = e.clientX - stick.ox, dy = e.clientY - stick.oy; const L = Math.hypot(dx, dy), m = 52; if (L > m) { dx *= m / L; dy *= m / L; } stick.x = dx / m; stick.y = -dy / m; knob.style.transform = `translate(${dx}px,${dy}px)`; };
+      stickEl.addEventListener('pointermove', mv); const end = e => { if (e.pointerId !== stick.id) return; stick.id = null; stick.x = stick.y = 0; knob.style.transform = ''; }; stickEl.addEventListener('pointerup', end); stickEl.addEventListener('pointercancel', end); }
+    HUB.addPicker(picker); HUB.onTick(tick);
+    set(S.settings.view !== 'sky', true);
+  }
+  return { init, toggle: () => { SFX.tap(); set(!on); }, set, get on() { return on; }, pos };
+})();
 
 /* =============== boot =============== */
 function nextGoal() {
@@ -6658,11 +6761,12 @@ function moreToggle(on) { const p = $('#morePop'); if (!p) return; p.classList.t
       dockBtn('🛠️', 'Hangar', () => { moreToggle(false); openHangar(); }, 'shop-btn', h('i', { class: 'can-dot' })),
       dockBtn('👁', 'Signs', () => { moreToggle(false); toggleLook(); }, 'eye-btn')),
     h('div', { class: 'dock' },
+      dockBtn('🚶', 'Walk', () => WALK.toggle(), 'view-btn'),
       dockBtn('🏗️', 'Build', openBuild, 'build-btn'),
       dockBtn('🏍', 'Ride', openRide, 'ride-btn'),
       dockBtn('☰', 'More', () => moreToggle(), 'more-btn')));
   addEventListener('pointerdown', e => { if (!e.target.closest('#morePop,.more-btn')) moreToggle(false); });
-  HUB.init(); BASE.init(); HUB.onCrew(tapCrew); HUB.onGlitch(tapGlitch); HUB.onVehicle(tapVehicle);
+  HUB.init(); BASE.init(); WALK.init(); HUB.onCrew(tapCrew); HUB.onGlitch(tapGlitch); HUB.onVehicle(tapVehicle);
   applyHangar(); crewSync(false); glitchSync(); updateHUD(); refreshCrewChip(); refreshGlitch(); refreshHangarBadge();
   setInterval(updateHUD, 30000);
   if (await restoreFromLink()) return;
