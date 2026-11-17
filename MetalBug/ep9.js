@@ -547,7 +547,7 @@ async function e9Hand(words){
   {const tr=$('#tray');if(tr)tr.style.visibility='';}
   Mic.off();Snd.music(true);
   play.replaceChildren(el('div','sm','You earned'));
-  const row=el('div','e9row');words.forEach(w=>{const c=el('div','e9card',w);c.append(el('small','','soft sound'));row.append(c);});play.append(row);
+  const row=el('div','e9row');words.forEach(w=>{if(typeof CARD!=='undefined'&&CARD[w]){const im=el('img');im.src=CARD[w];im.alt=w;im.style.cssText='flex:1;min-width:0;max-width:46%;filter:drop-shadow(4px 4px 0 #000)';row.append(im);}else{const c=el('div','e9card',w);c.append(el('small','','soft sound'));row.append(c);}});play.append(row);
   sfx('card');
   const note=el('div','sm','Teacher hands over the real cards');note.style.textAlign='center';play.append(note);
   await waitGo('Cards handed over ✓');

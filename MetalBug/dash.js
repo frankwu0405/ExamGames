@@ -169,7 +169,7 @@ function openDash(){
   /* ---------- 2 · POWER: cards are the keys ---------- */
   const SETS=[
     {ep:8,words:CARDS.slice(),have:w=>(S.earned||[]).includes(w),tint:'cyan',img:w=>CARD[w]},
-    {ep:9,words:['city','giant','cage','face'],have:w=>!!(S.e9&&S.e9.earned&&S.e9.earned.includes(w)),tint:'violet',img:null}
+    {ep:9,words:['city','giant','cage','face'],have:w=>!!(S.e9&&S.e9.earned&&S.e9.earned.includes(w)),tint:'violet',img:w=>CARD[w]}
   ];
   const lit=w=>(G.cards&&G.cards[w])||0;                 /* 2 = from memory, 1 = needed a hint */
   const total=()=>SETS.reduce((a,x)=>a+x.words.reduce((b,w)=>b+(lit(w)===2?1:lit(w)===1?.5:0),0),0)/8;
