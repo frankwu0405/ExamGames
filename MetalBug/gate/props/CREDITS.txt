@@ -1,0 +1,2 @@
+Props are CC0 1.0 (public domain) low-poly models from Quaternius and Kenney,
+via the npm package @netforge/asset-library-files. Restyled at runtime (toon shading, ink outlines, recolour).
