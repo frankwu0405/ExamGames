@@ -4,7 +4,7 @@
       silhouettes on a blueprint, not as a text list.
    2) POWER: the gate runs on memory. Recall words with no options.
    The 3D gate is gate/index.html?embed=1 in an iframe, driven by
-   postMessage. Energy slowly drains, so memory keeps it alive.
+   postMessage. Charge is kept between visits.
    ========================================================= */
 const GATE_COST=[6,10,10,14,14,18,22,16];  /* total 110 · tune here */
 const GATE_SAY={
@@ -70,8 +70,8 @@ const gPick=a=>a[Math.floor(Math.random()*a.length)];
 
 function gateState(){if(!S.gate)S.gate={mask:0};const g=S.gate;if(g.energy==null){g.energy=0;g.t=Date.now();}if(!g.wl)g.wl={};if(!g.opens)g.opens=0;return g;}
 function gateNext(){const m=gateState().mask;for(let i=0;i<8;i++)if(!(m&(1<<i)))return i;return -1;}
-/* energy drains about 12% a day: memory keeps the gate alive */
-function gateEnergy(){const g=gateState();const days=(Date.now()-g.t)/864e5;return Math.max(0,g.energy-.12*days);}
+/* charge is kept: he will not play every day */
+function gateEnergy(){return gateState().energy;}
 function gateSetEnergy(v){const g=gateState();g.energy=Math.max(0,Math.min(1,v));g.t=Date.now();save();}
 
 function dashButton(){
@@ -140,7 +140,8 @@ function openDash(){
   /* words he has actually met; those charged recently sit out for 4 hours */
   function recallPool(){
     const E=S.e9&&S.e9.words||{},fallback=['city','giant','cage','face','nice','race','gem','huge','page','ice'];
-    let ws=Object.keys(E).filter(w=>/^[a-z]+$/.test(w));
+    const ep8=Object.keys(S.stats||{}).concat(S.earned||[]).map(w=>String(w).toLowerCase());
+    let ws=[...new Set(Object.keys(E).concat(ep8))].filter(w=>/^[a-z]{2,10}$/.test(w));
     if(ws.length<6)ws=ws.concat(fallback.filter(w=>!ws.includes(w)));
     return {elig:ws.filter(w=>now()-(G.wl[w]||0)>4*36e5),all:ws};
   }
