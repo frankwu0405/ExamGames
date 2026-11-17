@@ -12,6 +12,7 @@ const E9_CH=[
  {name:'THE LIFT',hook:['What waits at the ','top','?'],shot:'e9_lift'},
  {name:'THE CAGE',hook:['Who is in the ','cage','?'],shot:'e9_gate3'}
 ];
+const E9_SLOW=2.6;/* slow reader: every timer is stretched */
 const E9_MUST=[['city','face'],['city','giant'],['cage','face']];
 const E9_SHOT={
  e9_tower:[4,62,42,1240,1330], e9_guards:[4,1190,42,1310,1330],
@@ -150,6 +151,7 @@ async function e9Run(cfg){
 }
 async function e9Once(cfg){
   const E=e9S();
+  const tr=$('#tray');if(tr)tr.style.visibility='hidden';
   let st=E.open&&E.open.id===cfg.id?E.open:null;
   if(!st){
     st={id:cfg.id,q:cfg.items().map(x=>({...x})),total:0,h:0,m:0,streak:0,best:0,rush:0,ass:false,ms:0,n:0,pts:0,hard:false,flip:Math.random()<.5,cm:0,lockUntil:0,idle:0};
@@ -159,7 +161,7 @@ async function e9Once(cfg){
   const tag=el('div','e9tag',cfg.title);play.append(tag);
   if(cfg.sub)play.append(el('div','e9sub',cfg.sub));
   const hud=el('div','e9hud'),pips=el('div','pips'),stEl=el('div','st','');hud.append(pips,stEl);play.append(hud);
-  const box=el('div','');box.style.cssText='position:relative;flex:1;display:flex;flex-direction:column;gap:10px;min-height:0';play.append(box);
+  const box=el('div','');box.style.cssText='position:relative;flex:1;display:flex;flex-direction:column;gap:10px;min-height:0;padding-bottom:6px';play.append(box);
   const paint=()=>{pips.replaceChildren();const done=st.total-st.q.length;for(let i=0;i<st.total;i++){const p=el('div','pip'+(i<done?' on':''));pips.append(p);}
     stEl.textContent=(st.streak>=3?'🔥'+st.streak:'')+(st.hard?' ⚡':'')+(st.ass?' 🛟':'');};
   const api={cfg,st,box,
@@ -167,7 +169,7 @@ async function e9Once(cfg){
     lock(ms,msg){st.lockUntil=Date.now()+ms;const j=el('div','e9jam',msg);box.append(j);setTimeout(()=>j.remove(),ms);sfx('zap');},
     /* a wrong answer given suspiciously fast, twice in a row = random tapping */
     judgeRush(ms,ok){if(ok){st.rush=0;return;}if(ms<380){st.rush++;if(st.rush>=2){st.rush=0;api.lock(2600,'LOOK FIRST!\nTap again slowly');}}else st.rush=0;},
-    ring(ms,onEnd){const r=el('div','e9ring');const i=el('i');i.style.animationDuration=ms+'ms';r.append(i);box.prepend(r);let t=setTimeout(()=>{r.classList.add('hot');},ms*.65);let t2=setTimeout(()=>onEnd&&onEnd(),ms);return()=>{clearTimeout(t);clearTimeout(t2);r.remove();};}
+    ring(ms,onEnd){ms=Math.round(ms*E9_SLOW);const r=el('div','e9ring');const i=el('i');i.style.animationDuration=ms+'ms';r.append(i);box.prepend(r);let t=setTimeout(()=>{r.classList.add('hot');},ms*.65);let t2=setTimeout(()=>onEnd&&onEnd(),ms);return()=>{clearTimeout(t);clearTimeout(t2);r.remove();};}
   };
   const t0all=Date.now();
   while(st.q.length){
@@ -203,6 +205,7 @@ async function e9Once(cfg){
 }
 function e9Result(cfg,R){
   return new Promise(res=>{
+    const tr=$('#tray');if(tr)tr.style.visibility='hidden';
     play.replaceChildren();
     const {st,stars,acc}=R;
     play.append(el('div','e9tag',cfg.title+' · done'));
@@ -316,7 +319,7 @@ function e9Foils(w){
   f.delete(w);return [...f];
 }
 function e9HearCfg(id,{pool,n=8,title,sub}){
-  return {id,type:'hear',title,sub,limit:9000,fast:4600,
+  return {id,type:'hear',title,sub,limit:9000,fast:8000,
     items:()=>e9Pick(pool,n).map(w=>({w})),
     async render(it,box,st,api){
       const head=el('div','e9big','Listen, then tap the right spelling');
@@ -330,7 +333,7 @@ function e9HearCfg(id,{pool,n=8,title,sub}){
 
 /* ---------- drill: fill the blank ---------- */
 function e9FillCfg(id,{items,title,sub}){
-  return {id,type:'fill',title,sub,limit:10000,fast:5200,
+  return {id,type:'fill',title,sub,limit:10000,fast:9000,
     items:()=>shuffle(items).slice(0,6),
     async render(it,box,st,api){
       const head=el('div','e9big',it.s.replace('___','______'));head.style.cssText+=';font:700 clamp(20px,6vw,26px)/1.3 var(--bd);text-align:left;color:var(--paper)';
@@ -342,7 +345,7 @@ function e9FillCfg(id,{items,title,sub}){
 /* ---------- drill: odd one out ---------- */
 function e9OddCfg(id,{a,b,title,sub,n=6,ruleA,ruleB}){
   /* three from A + one from B; tap the odd one */
-  return {id,type:'odd',title,sub,limit:9000,fast:4400,
+  return {id,type:'odd',title,sub,limit:9000,fast:8000,
     items:()=>Array.from({length:n},(_,i)=>{const flip=i%2?1:0,A=flip?b:a,B=flip?a:b;const as=e9Pick(A,3),od=e9Pick(B.filter(x=>!as.includes(x)),1)[0];return{as,od,rule:flip?ruleB:ruleA};}),
     async render(it,box,st,api){
       const head=el('div','e9big','Three say '+it.rule+'.\nTap the odd one out.');head.style.whiteSpace='pre-line';
@@ -353,7 +356,7 @@ function e9OddCfg(id,{a,b,title,sub,n=6,ruleA,ruleB}){
 
 /* ---------- drill: order the beats ---------- */
 function e9OrderCfg(id,{sets,title,sub}){
-  return {id,type:'order',title,sub,limit:22000,fast:12000,
+  return {id,type:'order',title,sub,limit:22000,fast:22000,
     items:()=>shuffle(sets.map((lines,i)=>({lines,i}))),
     async render(it,box,st,api){
       const head=el('div','e9big','Tap the story in order');box.append(head);
@@ -377,7 +380,7 @@ function e9OrderCfg(id,{sets,title,sub}){
 
 /* ---------- drill: build the word from tiles ---------- */
 function e9BuildCfg(id,{pool,n=6,title,sub}){
-  return {id,type:'build',title,sub,limit:26000,fast:12000,
+  return {id,type:'build',title,sub,limit:26000,fast:22000,
     items:()=>e9Pick(pool,n).map(w=>({w})),
     async render(it,box,st,api){
       const w=it.w,letters=[...w];
@@ -410,7 +413,7 @@ function e9BuildCfg(id,{pool,n=6,title,sub}){
 
 /* ---------- drill: spot it in the picture ---------- */
 function e9SpotCfg(id,{list,n=6,title,sub}){
-  return {id,type:'spot',title,sub,limit:11000,fast:5200,
+  return {id,type:'spot',title,sub,limit:11000,fast:9000,
     items:()=>{const must=list.filter(x=>x.w),rest=list.filter(x=>!x.w);return shuffle(shuffle(must).concat(shuffle(rest)).slice(0,n)).map(x=>({q:x.q,w:x.w,shot:x.shot,spots:x.spots}));},
     async render(it,box,st,api){
       stageH(46);cam(it.shot,{dur:700});
@@ -421,7 +424,7 @@ function e9SpotCfg(id,{list,n=6,title,sub}){
         const lim=limit(st);
         function limit(s){return 11000*(s.ass?1.6:1)*(s.hard?.7:1);}
         const stop=api.ring(lim,()=>finish(null,true));
-        const hint=setTimeout(()=>{if(done)return;const c=it.spots[0];ping(c[0],c[1],'hint');st.hinted=1;},6500);
+        const hint=setTimeout(()=>{if(done)return;const c=it.spots[0];ping(c[0],c[1],'hint');st.hinted=1;},14000);
         const pt=e=>{const r=world.getBoundingClientRect(),sc=r.width/IW;return [(e.clientX-r.left)/sc,(e.clientY-r.top)/sc];};
         const sr=()=>stage.getBoundingClientRect();
         function ping(ax,ay,cls){const r=world.getBoundingClientRect(),sc=r.width/IW,s0=sr();const p=el('div','e9ping '+(cls||''));p.style.left=(r.left-s0.left+ax*sc)+'px';p.style.top=(r.top-s0.top+ay*sc)+'px';$('#fx').append(p);setTimeout(()=>p.remove(),1600);}
@@ -458,7 +461,7 @@ function e9CatchCfg(id,{soft,hard,n=16,title,sub}){
       return new Promise(res=>{
         const words=it.words.slice(),total=words.length;let h=0,m=0,floor=0,spawned=0,resolved=0,last=performance.now(),acc=0,over=false;
         const chips=[];let decoyTaps=[];const W=()=>lane.clientWidth||320,H=()=>lane.clientHeight||260;
-        const speed=()=>(st.ass?85:st.hard?150:112)+floor*2.2;
+        const speed=()=>((st.ass?85:st.hard?150:112)+floor*2.2)*.55;
         const words2=[];const mk=w=>{const c=el('div','e9chip',w.w);c.dataset.t=w.t;lane.append(c);const x=8+Math.random()*Math.max(10,W()-110);c._x=x;c._y=-40;c._w=w;c.style.transform=`translate(${x}px,-40px)`;
           const hit=ev=>{ev.preventDefault();if(c._d||api.locked()||over)return;c._d=1;
             if(w.t){h++;floor++;fl.textContent='FLOOR '+floor;c.classList.add('hit');sfx('tick');e9Rec(w.w,true,'catch');pop('+1');}
@@ -466,7 +469,7 @@ function e9CatchCfg(id,{soft,hard,n=16,title,sub}){
               const now=Date.now();decoyTaps=decoyTaps.filter(t=>now-t<2200);decoyTaps.push(now);if(decoyTaps.length>=3){decoyTaps=[];api.lock(2400,'ONLY SOFT WORDS!\nLook first');}}
             resolved++;setTimeout(()=>c.remove(),260);};
           c.addEventListener('pointerdown',hit);chips.push(c);return c;};
-        const spawn=setInterval(()=>{if(over)return;if(api.locked())return;if(words.length){mk(words.shift());spawned++;}},st.ass?1200:st.hard?760:950);
+        const spawn=setInterval(()=>{if(over)return;if(api.locked())return;if(words.length){mk(words.shift());spawned++;}},(st.ass?1200:st.hard?760:950)*1.7);
         let raf;const tick=now=>{
           if(over)return;const dt=Math.min(.05,(now-last)/1000);last=now;
           if(!api.locked())chips.forEach(c=>{if(c._d)return;c._y+=speed()*dt;c.style.transform=`translate(${c._x}px,${c._y}px)`;
@@ -524,6 +527,7 @@ function e9intro(i){
   })();
 }
 async function e9Hand(words){
+  {const tr=$('#tray');if(tr)tr.style.visibility='';}
   Mic.off();Snd.music(true);
   play.replaceChildren(el('div','sm','You earned'));
   const row=el('div','e9row');words.forEach(w=>{const c=el('div','e9card',w);c.append(el('small','','soft sound'));row.append(c);});play.append(row);
