@@ -26,6 +26,15 @@ const gPick=a=>a[Math.floor(Math.random()*a.length)];
 #dash{position:fixed;inset:0;z-index:60;background:#05070e;display:flex;flex-direction:column}
 #dash iframe{border:0;width:100%;height:44dvh;flex:none;background:#05070e;transition:height .4s}
 #dash.pw iframe{height:36dvh}
+#dash.wake iframe{height:100dvh;position:absolute;inset:0}
+#dash.wake .dp{display:none}
+#dash .wk{position:absolute;left:0;right:0;bottom:calc(26px + env(safe-area-inset-bottom));text-align:center;z-index:3;pointer-events:none;font:400 24px var(--hd);letter-spacing:.08em;color:#fff;text-shadow:0 2px 0 #000,0 0 14px #2cc8ff;animation:wkp 1.6s ease-in-out infinite}
+@keyframes wkp{50%{opacity:.35}}
+#dash .wkb{position:absolute;top:12px;z-index:3;border:3px solid #000;background:var(--paper);color:var(--ink);font:700 14px var(--bd);padding:5px 10px;box-shadow:3px 3px 0 #000}
+#dash .dts{position:absolute;top:18px;left:0;right:0;display:flex;justify-content:center;gap:10px;z-index:3}
+#dash .dt{width:14px;height:14px;border:2px solid #000;background:#222;transform:rotate(45deg);opacity:.7}
+#dash .dt.on{background:#7fe3ff}#dash .dt.cur{opacity:1;box-shadow:0 0 0 3px #fff}
+#dash .flash{position:fixed;inset:0;z-index:70;background:#fff;opacity:0;pointer-events:none;transition:opacity .5s}
 #dash .dp{flex:1;min-height:0;overflow:auto;padding:26px 12px 14px;display:flex;flex-direction:column;gap:10px;background:var(--ink) radial-gradient(rgba(255,255,255,.045) 1.4px,transparent 1.6px) 0 0/11px 11px;clip-path:polygon(0 14px,100% 0,100% 100%,0 100%);margin-top:-14px}
 #dash .kip{display:flex;gap:8px;align-items:center;flex:none}
 #dash .kip .pt i{width:60px;height:60px}
@@ -111,7 +120,10 @@ function openDash(){
   const now=()=>Date.now();
   const onMsg=e=>{
     if(e.source!==fr.contentWindow)return;
-    if(e.data==='gate-ready'&&!ready){ready=true;post({mask:G.mask,anim:false,charge:curE,color:'cyan'});}
+    if(e.data==='gate-ready'&&!ready){ready=true;post({mask:G.mask,anim:false,charge:curE,color:'cyan'});if(d.classList.contains('wake'))wake();}
+    else if(e.data==='gate-tap'){if(d.classList.contains('wake'))stepThrough();}
+    else if(e.data==='gate-entered'){arrive();}
+    else if(e.data&&e.data.swipe){swipe(e.data.swipe);}
     else if(e.data&&e.data.thumbs){thumbs=e.data.thumbs;if(gateNext()>=0)drawBuild();}
   };
   addEventListener('message',onMsg);
@@ -184,7 +196,6 @@ function openDash(){
     const sv=el('button','silver'+(all?' on':G.silver?' on':''));sv.append(el('span','',all||G.silver?'NARA':'?'));
     sv.onclick=()=>{if(!all&&!G.silver){sfx('buzz');talk('Light every card first.');return;}if(!G.silver){G.silver=1;save();}openGateShow('Nara\'s silver card. It opens the tower.');};
     rows.append(sv);
-    if(typeof sceneRow==='function')dp.append(sceneRow(SETS,lit,()=>d.remove()));
     dp.append(back());
     const t=total();
     talk(msg||(t>=1?'All lit. Take the silver card!':!SETS.some(x=>x.words.some(w=>x.have(w)))?'Earn some cards first.':'Tap a glowing card. Hear it. Spell it.'));
@@ -246,6 +257,66 @@ function openDash(){
     });
   }
 
-  if(gateNext()>=0)drawBuild(G.mask===0?gPick(GATE_SAY.hello):'');else drawPower();
+  /* ---------- 3 · WAKE: the whole screen is the gate; tap it to go through ---------- */
+  /* gates: one per episode. swipe the gate sideways (or tap a dot) to go to the next one. */
+  const GATE_SCENE={8:'tower',9:'tower'};
+  const gateOn=i=>SETS[i].words.every(w=>lit(w)===2)||/[?&]force=1/.test(location.search);
+  const awake=()=>gateNext()<0&&SETS.some((_,i)=>gateOn(i));
+  let cur=-1,busy=false,wkEls=[],dots=null,hintEl=null;
+  function showGate(i,anim){
+    cur=i;const on=gateOn(i),S0=SETS[i];
+    post({color:S0.tint});post({charge:on?1:.12});
+    const t0=performance.now(),from=on?0:.85,to=on?.85:0;
+    (function f(){const k=Math.min(1,(performance.now()-t0)/(anim?1600:1));post({reveal:from+(to-from)*k});if(k<1&&d.isConnected&&cur===i)requestAnimationFrame(f);})();
+    if(hintEl)hintEl.textContent=on?(GATE_SCENE[S0.ep]?'TAP THE GATE':'GATE '+S0.ep+' IS AWAKE'):'GATE '+S0.ep+' · ASLEEP';
+    if(dots)[...dots.children].forEach((x,j)=>{x.className='dt'+(j===i?' cur':'')+(gateOn(j)?' on':'');});
+  }
+  function wake(){
+    if(!awake())return false;
+    d.classList.remove('pw');d.classList.add('wake');wkEls.forEach(x=>x.remove());wkEls=[];
+    hintEl=el('div','wk','');
+    const bk=el('button','wkb','◂');bk.style.left='12px';bk.onclick=()=>{if(!busy)d.remove();};
+    const cd=el('button','wkb','Cards');cd.style.right='12px';cd.onclick=()=>{if(busy)return;d.classList.remove('wake');wkEls.forEach(x=>x.remove());wkEls=[];drawPower();};
+    dots=el('div','dts');SETS.forEach((_,j)=>{const x=el('i','dt');x.onclick=()=>{if(!busy&&j!==cur){sfx('tick');showGate(j,true);}};dots.append(x);});
+    d.append(hintEl,bk,cd,dots);wkEls=[hintEl,bk,cd,dots];
+    let i0=cur>=0?cur:-1;if(i0<0)for(let j=0;j<SETS.length;j++)if(gateOn(j))i0=j;
+    setTimeout(()=>showGate(i0,true),400);
+    return true;
+  }
+  function swipe(dir){if(busy||!d.classList.contains('wake'))return;const n=cur+dir;if(n<0||n>=SETS.length)return;sfx('whoosh');showGate(n,true);}
+  function stepThrough(){
+    if(busy)return;
+    if(!gateOn(cur)){sfx('buzz');return;}
+    if(!GATE_SCENE[SETS[cur].ep]){sfx('buzz');if(hintEl)hintEl.textContent='NOTHING BEYOND IT YET';return;}
+    busy=true;sfx('whoosh');wkEls.forEach(x=>x.style.opacity=0);
+    post({reveal:1,charge:1});post({enter:1});
+    /* pre-warm the scene behind the flash */
+    pk=document.createElement('iframe');pk.className='pkf';pk.src='gate/index.html?embed=1&peek='+GATE_SCENE[SETS[cur].ep]+'&v=2';
+    pk.style.cssText='position:fixed;inset:0;width:100%;height:100%;border:0;z-index:65;opacity:0;transition:opacity .9s;background:#000';
+    d.append(pk);
+  }
+  let pk=null,fl=null;
+  function arrive(){
+    if(!pk)return;
+    fl=el('div','flash');d.append(fl);requestAnimationFrame(()=>{fl.style.opacity=1;});
+    const show=()=>{pk.style.opacity=1;fl.style.opacity=0;setTimeout(()=>fl.remove(),700);hud();};
+    setTimeout(show,520);
+  }
+  function hud(){
+    const out=el('button','wkb','✕');out.style.cssText+=';right:12px;z-index:80;position:fixed';
+    const cnt=el('b','wkb','0 / 8');cnt.style.cssText+=';left:12px;z-index:80;position:fixed;padding:5px 10px';
+    d.append(cnt,out);
+    const L=gateState();if(!L.loot)L.loot={};let best=0;
+    const onm=e=>{if(!pk||e.source!==pk.contentWindow)return;const m=e.data||{};
+      if(m.peekCollected){sfx('good');best=Math.max(best,m.n);cnt.textContent=m.n+' / '+m.total;}
+      if(m.peekDone!=null)best=Math.max(best,m.peekDone);};
+    addEventListener('message',onm);
+    out.onclick=()=>{removeEventListener('message',onm);cnt.remove();out.remove();
+      if(best>(L.loot.peek||0)){const g=best-(L.loot.peek||0);L.loot.peek=best;save();try{earn(g);}catch(_){}}
+      pk.style.opacity=0;setTimeout(()=>{pk.remove();pk=null;busy=false;post({reveal:.85});(function(){let t0=performance.now();})();wake();},700);
+      /* come back out: reset the gate camera */
+      try{fr.src=fr.src;}catch(_){}ready=false;};
+  }
+  if(gateNext()>=0)drawBuild(G.mask===0?gPick(GATE_SAY.hello):'');else if(!wake())drawPower();
   curE=gateNext()<0?total():0;
 }
