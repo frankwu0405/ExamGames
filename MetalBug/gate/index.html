@@ -1,0 +1,11 @@
+<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Gate · portal test</title>
+<style>html,body{margin:0;height:100%;background:radial-gradient(ellipse at 50% 45%,#10203a,#05070e 70%);overflow:hidden;font-family:system-ui,sans-serif;color:#dfe9ff}
+canvas{display:block;position:fixed;inset:0;touch-action:none}
+#ui{z-index:5;position:fixed;left:0;right:0;bottom:0;padding:14px 16px calc(18px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;background:linear-gradient(0deg,rgba(5,7,14,.9),transparent)}
+#ui .row{display:flex;gap:8px;align-items:center}#ui button{flex:1;padding:12px 8px;border:2px solid #0d1220;background:#222c46;color:#cfe0ff;font:700 14px system-ui;letter-spacing:.04em;border-radius:3px}
+#ui button.on{background:#ffd23f;color:#0d1220}#ch{flex:1;width:100%;accent-color:#5ad0ff}
+small{z-index:5;opacity:.6;text-align:center;font-size:11px;letter-spacing:.14em;text-transform:uppercase}</style>
+<small style="position:fixed;top:14px;left:0;right:0">drag to tilt the gate</small>
+<div id=ui><div class=row><button data-m=hollow_s>Hollow model</button><button data-m=solid_h>Solid model, cut open</button></div>
+<div class=row><span>Charge</span><input id=ch type=range min=0 max=1 step=.01 value=0><button id=go style="flex:none;padding:12px 16px">▶ Charge</button></div></div>
+<script src="gate.js"></script>
