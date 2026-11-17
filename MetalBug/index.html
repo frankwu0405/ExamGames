@@ -1209,7 +1209,7 @@ function cardEl(c,{idle=false,tilt=true,max=16,spin=false}={}){
   const fr=el('div','fr');fr.append(im,sh,gl);const bk=el('div','bk'),bi=el('img');bi.src='assets/card-back.webp?v=5';bi.alt='';bi.draggable=false;
   const bsh=el('div','sh'),bgl=el('div','gl');[bsh,bgl].forEach(x=>{x.style.webkitMaskImage=x.style.maskImage=`url(${CARD[c]})`;});bk.append(bi,bsh,bgl);
   /* a little real thickness: a stack of thin metal slabs shaped like the card sit between the faces */
-  if(spin){const T=7,N=9;w.style.setProperty('--tz',(T/2+.3)+'px');
+  if(spin){const T=3.5,N=7;w.style.setProperty('--tz',(T/2+.3)+'px');
     for(let i=0;i<N;i++){const z=(i/(N-1)-.5)*T,sl=el('div','slab');sl.style.webkitMaskImage=sl.style.maskImage=`url(${CARD[c]})`;
       const t=Math.abs(i/(N-1)-.5)*2;sl.style.background=`linear-gradient(90deg,#6c758a,#c9d1e0 ${40+t*10}%,#7b8499)`;
       sl.style.filter=`brightness(${(.78+.22*(1-t)+(i%2?0:.05)).toFixed(2)})`;sl.style.transform=`translateZ(${z}px)`;inn.append(sl);}}
