@@ -184,6 +184,7 @@ function openDash(){
     const sv=el('button','silver'+(all?' on':G.silver?' on':''));sv.append(el('span','',all||G.silver?'NARA':'?'));
     sv.onclick=()=>{if(!all&&!G.silver){sfx('buzz');talk('Light every card first.');return;}if(!G.silver){G.silver=1;save();}openGateShow('Nara\'s silver card. It opens the tower.');};
     rows.append(sv);
+    if(typeof sceneRow==='function')dp.append(sceneRow(SETS,lit,()=>d.remove()));
     dp.append(back());
     const t=total();
     talk(msg||(t>=1?'All lit. Take the silver card!':!SETS.some(x=>x.words.some(w=>x.have(w)))?'Earn some cards first.':'Tap a glowing card. Hear it. Spell it.'));
