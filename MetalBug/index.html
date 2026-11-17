@@ -1545,8 +1545,8 @@ function title(editName=false){
   $('#title')?.remove();
   RUN++;Mic.off();Snd.music(false);Snd.theme(true);setStatic(0);panelView=null;$('#ret').style.display='none';document.querySelectorAll('.pin').forEach(p=>p.remove());
   stageH(56,false);cam('title',{dur:0});cap(null);$('#curtain').classList.add('up');
-  const tl=el('div','');tl.id='title';tl.style.cssText='position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;justify-content:flex-end;pointer-events:none;background:linear-gradient(0deg,rgba(13,18,32,.95),transparent 55%)';
-  {const _rm=tl.remove.bind(tl);tl.remove=()=>{world.style.translate='';bez.style.translate='';_rm();};}
+  const tl=el('div','');tl.id='title';tl.style.cssText='position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;justify-content:flex-end;pointer-events:none';
+  {const _rm=tl.remove.bind(tl);tl.remove=()=>{world.style.visibility='';bez.style.visibility='';_rm();};}
   const t=el('div','ttl','The Gate 8:');t.append(el('em','','The Empty Room'));
   stage.style.touchAction='pan-x';
   const car=el('div','');car.id='car';tl.append(car);
@@ -1556,8 +1556,9 @@ function title(editName=false){
   const slideTint=(r,g,b,a=.6)=>`linear-gradient(180deg,rgba(${r},${g},${b},${a}),rgba(5,7,13,.9))`;
   const HUE={'01':175,'02':280,'03':225,'04':140,'05':-5,'06':310,'07':175};
   const past=[['01','assets/ep1.jpg',[],slideTint(40,60,130),'Archive sealed'],['02','assets/ep2.jpg',[],slideTint(110,20,90),'Memory fragment'],['03','assets/ep3.jpg',[],slideTint(70,30,140),'Frequency unknown'],['04','assets/ep4.jpg',[],slideTint(10,100,100),'File corrupted'],['05','assets/ep5.jpg',[],slideTint(130,70,10),'Echo only'],['06','assets/ep6.jpg',[],slideTint(140,15,35),'Signal weak'],['07','assets/ep7.jpg',[],slideTint(30,50,120,.6),'Signal lost']].map(([n,pg,r,t,sg])=>{const sl=lockSlide(n,pg,r,t,sg);sl.querySelector('.sil').style.filter=`brightness(.3) contrast(1.5) sepia(1) hue-rotate(${HUE[n]}deg) saturate(2) blur(1.5px)`;sl.querySelectorAll('.sil.g').forEach((g,i)=>{g.style.filter=`brightness(.85) contrast(1.35) sepia(1) hue-rotate(${HUE[n]+(i?35:0)}deg) saturate(2.6)`;g.style.opacity='.9';});return sl;});
-  const s8=el('div','slide');s8.append(t);
-  const s9=el('div','slide');{const f=el('div','');f.style.cssText=`position:absolute;left:${bez.style.left};top:${bez.style.top};width:${bez.style.width};height:${bez.style.height};background:#05070d url(assets/ep9-cover.webp?v=3) center/cover no-repeat;box-shadow:0 0 0 3px #000,0 0 0 5px var(--paper)`;s9.append(f);const t9=el('div','ttl','The Gate 9:');t9.append(el('em','','Into the Tower'));s9.append(t9);}
+  const GR=()=>{const g=el('div','');g.style.cssText='position:absolute;inset:0;background:linear-gradient(0deg,rgba(13,18,32,.95),transparent 55%)';return g;};
+  const s8=el('div','slide');{const [pg,x,y,w,h]=SHOT.title,k=parseFloat(bez.style.width)/w;const f=el('div','');f.style.cssText=`position:absolute;left:${bez.style.left};top:${bez.style.top};width:${bez.style.width};height:${bez.style.height};background:url(assets/p${pg+1}.jpg) no-repeat;background-size:${IW*k}px ${IH*k}px;background-position:${-x*k}px ${-y*k}px;box-shadow:0 0 0 3px #000,0 0 0 5px var(--paper)`;s8.append(f,GR(),t);world.style.visibility='hidden';bez.style.visibility='hidden';}
+  const s9=el('div','slide');{const f=el('div','');f.style.cssText=`position:absolute;left:${bez.style.left};top:${bez.style.top};width:${bez.style.width};height:${bez.style.height};background:#05070d url(assets/ep9-cover.webp?v=3) center/cover no-repeat;box-shadow:0 0 0 3px #000,0 0 0 5px var(--paper)`;s9.append(f,GR());const t9=el('div','ttl','The Gate 9:');t9.append(el('em','','Into the Tower'));s9.append(t9);}
   const s10=lockSlide('10',1,[1492,52,1008,568],'linear-gradient(180deg,rgba(10,70,70,.5),rgba(5,7,13,.92))','Transmission incoming');
   const EP8=TEST?0:past.length,EP9=EP8+1;
   const hl=el('div','swh l','‹'),hr=el('div','swh r','›');
@@ -1572,9 +1573,8 @@ function title(editName=false){
     trayEpisode=curEp+1;
     renderTray();
   };
-  const drift=()=>{const x=-(car.scrollLeft-car.clientWidth*EP8);world.style.translate=x+'px 0';bez.style.translate=x+'px 0';};
-  if(!TEST)car.addEventListener('scroll',()=>{if(!car.clientWidth)return;drift();const n=Math.round(car.scrollLeft/car.clientWidth);if(n!==curEp){curEp=n;paint();Snd.init();sfx('tick');hl.remove();hr.remove();}},{passive:true});
-  stage.append(tl);car.style.scrollBehavior='auto';car.scrollLeft=car.clientWidth*EP8;drift();
+  if(!TEST)car.addEventListener('scroll',()=>{if(!car.clientWidth)return;const n=Math.round(car.scrollLeft/car.clientWidth);if(n!==curEp){curEp=n;paint();Snd.init();sfx('tick');hl.remove();hr.remove();}},{passive:true});
+  stage.append(tl);car.style.scrollBehavior='auto';car.scrollLeft=car.clientWidth*EP8;
   play.replaceChildren();
   const go=el('button','go',S.checkpoint?.chapter===S.ch?(S.ch===4?'Continue · finale ▸':`Continue · paragraph ${S.ch+1} ▸`):S.ch>0&&S.ch<4?`Continue · paragraph ${S.ch+1} ▸`:'Start ▸');
   const wrap=el('div','');wrap.style.cssText='display:flex;flex-direction:column;gap:10px;margin-top:auto';
