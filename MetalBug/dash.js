@@ -58,7 +58,7 @@ const gPick=a=>a[Math.floor(Math.random()*a.length)];
 #dash .kcr .ep{font:400 20px var(--hd);color:var(--yellow);letter-spacing:.05em;width:58px;flex:none;line-height:1}
 #dash .kl{display:flex;gap:8px;flex:1}
 #dash .kslot{position:relative;flex:1;aspect-ratio:992/1440;padding:0;border:2px dashed #2a3560;background:rgba(30,42,90,.35);display:flex;align-items:center;justify-content:center}
-#dash .kslot.none{background:url(assets/card-back.webp?v=3) center/100% 100% no-repeat;border:2px solid #000;opacity:.5}
+#dash .kslot.none{background:url(assets/card-back.webp?v=4) center/100% 100% no-repeat;border:2px solid #000;opacity:.5}
 #dash .kslot .q{font:400 26px var(--hd);color:#3a4676}
 #dash .kslot .kc{position:absolute;inset:0}
 #dash .kslot img{width:100%;height:100%;display:block;filter:brightness(0) opacity(.55)}
