@@ -53,6 +53,26 @@ const gPick=a=>a[Math.floor(Math.random()*a.length)];
 #dash .plate i{width:18px;height:18px;border:3px solid #000;background:#27304f;transform:rotate(45deg)}
 #dash .plate i.on{background:var(--teal);box-shadow:0 0 8px var(--teal)}
 #dash .plate i.bad{background:var(--red)}
+#dash .kcs{display:flex;flex-direction:column;gap:10px;flex:none}
+#dash .kcr{display:flex;align-items:center;gap:8px}
+#dash .kcr .ep{font:400 20px var(--hd);color:var(--yellow);letter-spacing:.05em;width:58px;flex:none;line-height:1}
+#dash .kl{display:flex;gap:8px;flex:1}
+#dash .kslot{position:relative;flex:1;aspect-ratio:992/1440;padding:0;border:2px dashed #2a3560;background:rgba(30,42,90,.35);display:flex;align-items:center;justify-content:center}
+#dash .kslot .q{font:400 26px var(--hd);color:#3a4676}
+#dash .kslot .kc{position:absolute;inset:0}
+#dash .kslot img{width:100%;height:100%;display:block;filter:brightness(0) opacity(.55)}
+#dash .kslot.full img,#dash .kslot.dim img{filter:none}
+#dash .kslot.dim img{filter:saturate(.5) brightness(.8)}
+#dash .kslot .kc.ph{background:#1a2347;border:2px solid #000}
+#dash .kslot .kc.ph.on{background:var(--paper)}
+#dash .kslot .kc.ph span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:400 16px var(--hd);color:var(--ink)}
+#dash .kslot.ready{border:3px solid var(--teal)}
+#dash .kslot.pulse{animation:dnx 1.2s ease-in-out infinite}
+#dash .kslot.full{border:3px solid var(--good);box-shadow:0 0 10px rgba(125,255,138,.6)}
+#dash .kslot.dim{border:3px solid var(--yellow)}
+#dash .kslot b{position:absolute;right:2px;top:2px;font:400 16px var(--hd);color:var(--yellow);-webkit-text-stroke:2px #000;paint-order:stroke fill}
+#dash .silver{align-self:center;width:84px;aspect-ratio:992/1440;border:3px dashed #3a4676;background:#1a2347;color:#3a4676;font:400 24px var(--hd);display:flex;align-items:center;justify-content:center;padding:0}
+#dash .silver.on{border:3px solid #000;background:linear-gradient(135deg,#f4f7fb,#9aa4b8 55%,#e8edf5);color:var(--ink);box-shadow:0 0 14px rgba(220,230,255,.8);animation:dnx 1.4s ease-in-out infinite}
 #dash .rc{display:flex;flex-direction:column;align-items:center;gap:8px;flex:none}
 #dash .spk{font:400 26px var(--hd);color:var(--ink);background:var(--paper);border:3px solid #000;box-shadow:4px 4px 0 #000;padding:8px 22px 10px;letter-spacing:.04em}
 #dash .sent{font:700 17px/1.3 var(--bd);color:var(--paper);text-align:center}
@@ -86,11 +106,11 @@ function openDash(){
   fr.src='gate/index.html?embed=1&loc=woods&beyond=city&parts=0&charge='+gateEnergy().toFixed(2)+'&v=10';
   const dp=el('div','dp');d.append(fr,dp);document.body.append(d);
   const post=o=>{try{fr.contentWindow.postMessage(o,'*');}catch(_){}};
-  let thumbs=null,ready=false,tk=0,say,curE=gateEnergy();
+  let thumbs=null,ready=false,tk=0,say,curE=0;
   const now=()=>Date.now();
   const onMsg=e=>{
     if(e.source!==fr.contentWindow)return;
-    if(e.data==='gate-ready'&&!ready){ready=true;post({mask:G.mask,anim:false,charge:curE});}
+    if(e.data==='gate-ready'&&!ready){ready=true;post({mask:G.mask,anim:false,charge:curE,color:'cyan'});}
     else if(e.data&&e.data.thumbs){thumbs=e.data.thumbs;if(gateNext()>=0)drawBuild();}
   };
   addEventListener('message',onMsg);
@@ -126,61 +146,72 @@ function openDash(){
     else drawBuild(gPick(GATE_SAY.bought));
   }
 
-  /* ---------- 2 · POWER ---------- */
-  function drawPower(){
-    d.classList.remove('pw');dp.replaceChildren();
+  /* ---------- 2 · POWER: cards are the keys ---------- */
+  const SETS=[
+    {ep:8,words:CARDS.slice(),have:w=>(S.earned||[]).includes(w),tint:'cyan',img:w=>CARD[w]},
+    {ep:9,words:['city','giant','cage','face'],have:w=>!!(S.e9&&S.e9.earned&&S.e9.earned.includes(w)),tint:'violet',img:null}
+  ];
+  const lit=w=>(G.cards&&G.cards[w])||0;                 /* 2 = from memory, 1 = needed a hint */
+  const total=()=>SETS.reduce((a,x)=>a+x.words.reduce((b,w)=>b+(lit(w)===2?1:lit(w)===1?.5:0),0),0)/8;
+  const cardFace=(set,w,on)=>{
+    const c=el('div','kc'+(on?' on':''));
+    if(set.img){const im=el('img');im.src=set.img(w);im.alt='';im.draggable=false;c.append(im);}
+    else{c.classList.add('ph');c.append(el('span','',on?w:''));}
+    return c;
+  };
+  function drawPower(msg){
+    d.classList.remove('pw');dp.replaceChildren();G.cards=G.cards||{};
     dp.append(head(false));
-    const e=gateEnergy();
-    const b=el('button','pwr',e>.92?'⚡ Full':'⚡ Wake the gate');
-    b.onclick=()=>session();
-    dp.append(b);
+    const rows=el('div','kcs');dp.append(rows);
+    let next=null;
+    SETS.forEach(set=>{
+      const row=el('div','kcr');row.append(el('div','ep','Gate '+set.ep));
+      const line=el('div','kl');
+      set.words.forEach(w=>{
+        const own=set.have(w),st=lit(w),slot=el('button','kslot'+(st===2?' full':st===1?' dim':own?' ready':' none'));
+        if(own){slot.append(cardFace(set,w,st>0));
+          if(st===1)slot.append(el('b','','½'));
+          slot.onclick=()=>{if(st===2){speak(w);sfx('tick');}else{recallCard(set,w);}};
+          if(!next&&st<2)next=slot;
+        }else slot.append(el('span','q','?'));
+        line.append(slot);
+      });
+      row.append(line);rows.append(row);
+    });
+    /* Nara's silver card: the reward for lighting every card */
+    const all=SETS.every(x=>x.words.every(w=>lit(w)===2));
+    const sv=el('button','silver'+(all?' on':G.silver?' on':''));sv.append(el('span','',all||G.silver?'NARA':'?'));
+    sv.onclick=()=>{if(!all&&!G.silver){sfx('buzz');talk('Light every card first.');return;}if(!G.silver){G.silver=1;save();}openGateShow('Nara\'s silver card. It opens the tower.');};
+    rows.append(sv);
     dp.append(back());
-    talk(e>.92?gPick(GATE_SAY.full):e<.05?gPick(GATE_SAY.cold):'She is '+(e<.5?'dim':'warm')+'. Keep her going.');
-  }
-  /* words he has actually met; those charged recently sit out for 4 hours */
-  function recallPool(){
-    const E=S.e9&&S.e9.words||{},fallback=['city','giant','cage','face','nice','race','gem','huge','page','ice'];
-    const ep8=Object.keys(S.stats||{}).concat(S.earned||[]).map(w=>String(w).toLowerCase());
-    let ws=[...new Set(Object.keys(E).concat(ep8))].filter(w=>/^[a-z]{2,10}$/.test(w));
-    if(ws.length<6)ws=ws.concat(fallback.filter(w=>!ws.includes(w)));
-    return {elig:ws.filter(w=>now()-(G.wl[w]||0)>4*36e5),all:ws};
+    const t=total();
+    talk(msg||(t>=1?'All lit. Take the silver card!':!SETS.some(x=>x.words.some(w=>x.have(w)))?'Earn some cards first.':'Tap a glowing card. Hear it. Spell it.'));
+    if(next)next.classList.add('pulse');
   }
   const fillFor=w=>(typeof E9_FILL!=='undefined'?E9_FILL:[]).find(x=>x.w===w);
-  async function session(){
-    const {elig,all}=recallPool();
-    if(elig.length<3&&!/[?&]force=1/.test(location.search)){talk(gPick(GATE_SAY.rest));return;}
-    d.classList.add('pw');
-    const src=elig.length>=6?elig:elig.concat(all.filter(w=>!elig.includes(w)));
-    const words=src.map(w=>({w,k:(typeof e9Weak==='function'?e9Weak(w):1)+Math.random()*1.5})).sort((a,b)=>b.k-a.k).slice(0,6).map(x=>x.w);
-    dp.replaceChildren();dp.append(head(false));
-    const plate=el('div','plate');words.forEach(()=>plate.append(el('i','')));dp.append(plate);
-    const body=el('div','rc');dp.append(body);
-    const kb=el('div','kb');dp.append(kb);
+  async function openGateShow(line){
+    talk(line);sfx('whoosh');
+    const t0=performance.now();
+    await new Promise(r=>{(function f(){const k=Math.min(1,(performance.now()-t0)/3000);post({reveal:k});if(k<1)requestAnimationFrame(f);else r();})();});
+    await new Promise(r=>setTimeout(r,3200));
+    const t1=performance.now();(function f(){const k=Math.min(1,(performance.now()-t1)/1500);post({reveal:1-k});if(k<1)requestAnimationFrame(f);})();
+  }
+  async function recallCard(set,w){
+    d.classList.add('pw');dp.replaceChildren();dp.append(head(false));
+    const body=el('div','rc'),kb=el('div','kb');dp.append(body,kb);
     talk('Listen. Spell it. No help from me.');
-    let gained=0;const startE=gateEnergy();
-    for(let n=0;n<words.length;n++){
-      if(!d.isConnected)return;
-      const w=words[n],res=await recall(w,body,kb);
-      plate.children[n].classList.add(res.ok?'on':'bad');
-      const fresh=now()-(G.wl[w]||0)>4*36e5;
-      if(typeof e9Rec==='function')e9Rec(w,res.ok,'recall');
-      if(res.ok){
-        sfx('good');if(typeof burst==='function')burst(6);
-        const add=fresh?(res.hint?.07:.15):0;
-        if(fresh)G.wl[w]=now();
-        const e0=curE;rampCharge(e0,Math.min(1,e0+add),700);gained+=add;talk(gPick(GATE_SAY.good));
-      }else{sfx('zap');talk(gPick(GATE_SAY.reveal));}
-      gateSetEnergy(Math.min(1,startE+gained));
-      await new Promise(r=>setTimeout(r,res.ok?650:1500));
-    }
-    if(gateEnergy()>=.9){
-      G.opens=(G.opens||0)+1;save();talk(GATE_SAY.open[0]);sfx('whoosh');
-      const t0=performance.now();
-      await new Promise(r=>{(function f(){const k=Math.min(1,(performance.now()-t0)/3000);post({reveal:k});if(k<1)requestAnimationFrame(f);else r();})();});
-      await new Promise(r=>setTimeout(r,3500));
-      const t1=performance.now();(function f(){const k=Math.min(1,(performance.now()-t1)/1500);post({reveal:1-k});if(k<1)requestAnimationFrame(f);})();
-    }
-    drawPower();
+    const res=await recall(w,body,kb);
+    if(!d.isConnected)return;
+    if(typeof e9Rec==='function')e9Rec(w,res.ok,'recall');
+    const before=lit(w),setBefore=set.words.every(x=>lit(x)===2);
+    if(res.ok){G.cards[w]=res.hint?Math.max(before,1):2;sfx('good');if(typeof burst==='function')burst(8);}else sfx('zap');
+    save();
+    const e0=curE,e1=total();rampCharge(e0,e1,1200);
+    if(set.tint)post({color:set.tint});
+    const doneSet=set.words.every(x=>lit(x)===2);
+    await new Promise(r=>setTimeout(r,res.ok?900:1500));
+    if(res.ok&&doneSet&&!setBefore){drawPower();await openGateShow('Gate '+set.ep+' is awake!');drawPower('Gate '+set.ep+' is awake!');return;}
+    drawPower(res.ok?(res.hint?'Half lit. Try again with no help.':gPick(GATE_SAY.good)):'Not yet. Tap it to try again.');
   }
   /* one word, typed from memory. 3 tries. a hint costs charge. */
   function recall(w,body,kb){
@@ -214,4 +245,5 @@ function openDash(){
   }
 
   if(gateNext()>=0)drawBuild(G.mask===0?gPick(GATE_SAY.hello):'');else drawPower();
+  curE=gateNext()<0?total():0;
 }
