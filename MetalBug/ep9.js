@@ -10,19 +10,23 @@ var E9ON=false;
 const E9_CH=[
  {name:'THE TOWER',hook:['Who watches from the ','tower','?'],shot:'e9_tower'},
  {name:'THE LIFT',hook:['What waits at the ','top','?'],shot:'e9_lift'},
- {name:'THE CAGE',hook:['Who is in the ','cage','?'],shot:'e9_gate3'}
+ {name:'THE CAGE',hook:['Who is in the ','cage','?'],shot:'e9_gate3'},
+ {name:'THE CROWN',hook:['Who steps out of the ','door','?'],shot:'e9_bang'}
 ];
 const E9_SLOW=2.6;/* slow reader: every timer is stretched */
-const E9_MUST=[['city','face'],['city','giant'],['cage','face']];
+const E9_MUST=[['city','face'],['city','giant'],['cage','face'],['giant','cage']];
 const E9_SHOT={
  e9_tower:[4,62,42,1240,1330], e9_guards:[4,1190,42,1310,1330],
  e9_lift:[5,62,42,1110,1330], e9_door:[5,1110,42,1390,580], e9_gate:[5,995,625,1505,750],
- e9_gate3:[6,62,42,2440,680], e9_cage:[6,62,690,1290,680], e9_face:[6,1280,620,1220,750]
+ e9_gate3:[6,62,42,2440,680], e9_cage:[6,62,690,1290,680], e9_face:[6,1280,620,1220,750],
+ e9_bang:[7,60,40,1295,680], e9_bug:[7,1380,40,1115,680], e9_red:[7,60,700,1250,680], e9_king:[7,1250,700,1260,680]
 };
 const E9_BANK=[
  ["A red light burns on top of the tall tower.","Finn looks up at the dark city.","Nara holds up a glowing card.","Two guards stand by the big door.","The guards stare at her face.","Kip and Toby stay close to Finn.","The door opens and warm light spills out.","Nara says, Come with me and do not stop.","The tower is the tallest thing in the city.","Finn feels the cold air on his face."],
  ["They step into a glass lift.","The lift goes up, up, up.","Finn sees the whole city below him.","Sky ships race past like birds.","The lift stops and the doors open.","A dark hall waits at the top.","A giant gate stands in the hall.","It looks just like the gate in the woods.","Toby presses his nose on the glass.","Kip holds the rail with both hands."],
  ["Thick vines curl all over the giant gate.","Nara walks in front and does not look back.","A tiny red bug sits on her back.","A cage of blue light glows in the dark.","A man sits inside the cage with his head down.","The man looks up, and he has Finn's face.","His face is stern, and his eyes say, Go back.","Finn grips the bars of the cage.","Kip hides behind a big pipe.","Toby gives one low growl."]
+,
+ ["BANG! A giant door slams shut.","Finn spins around to face the sound.","Nara pulls them close to the wall.","Finn finds a tiny blue bug in his hand.","Kip looks scared and his eyes go wide.","The bug glows like a little star.","Toby turns his face to the dark hall.","The red gate hums and the cage glows.","A tall man with a crown steps in.","His red bugs fly across to his hand.","Soldiers march out and fill the place.","He rules the whole city from the tower."]
 ];
 /* sound pools: soft c = /s/, hard c = /k/, soft g = /j/, hard g = /g/ */
 const E9W={
@@ -50,7 +54,20 @@ const E9_SPOTS={
   {q:'the dog',shot:'e9_cage',spots:[[620,1190,120]]},
   {q:"Kip's yellow eyes",shot:'e9_cage',spots:[[280,1120,110]]},
   {q:"the man's face",w:'face',shot:'e9_face',spots:[[1790,950,190]]},
-  {q:'the red bug again',shot:'e9_face',spots:[[2380,1085,100]]}]
+  {q:'the red bug again',shot:'e9_face',spots:[[2380,1085,100]]}],
+3:[
+  {q:'the giant door',w:'giant',shot:'e9_bang',spots:[[580,380,230]]},
+  {q:"Nara's face",w:'face',shot:'e9_bang',spots:[[830,360,75]]},
+  {q:"Kip's purple head",shot:'e9_bang',spots:[[705,505,65]]},
+  {q:'the dog',shot:'e9_bang',spots:[[610,600,95]]},
+  {q:'the glowing blue bug',shot:'e9_bug',spots:[[1950,390,95]]},
+  {q:"Finn's face",w:'face',shot:'e9_bug',spots:[[1690,184,115]]},
+  {q:"Kip's yellow eye",shot:'e9_bug',spots:[[2130,250,100]]},
+  {q:'the giant red gate',w:'giant',shot:'e9_red',spots:[[500,890,220]]},
+  {q:'the red cage',w:'cage',shot:'e9_red',spots:[[860,1000,150]]},
+  {q:'the man with the crown',shot:'e9_king',spots:[[1960,880,130]]},
+  {q:'the red bugs',shot:'e9_king',spots:[[1600,870,85],[1775,880,65]]},
+  {q:'the soldiers',shot:'e9_king',spots:[[2300,990,200]]}]
 };
 const E9_ORDER=[
  ["They step into a glass lift.","The lift goes up, up, up.","The doors open at the top."],
@@ -581,11 +598,22 @@ async function e9p3(){
   await e9Hand(['cage','face']);
   await e9outro(2);
 }
+async function e9p4(){
+  await e9intro(3);
+  Snd.music(false);stageH(46);cap('4 · THE CROWN');
+  await e9Run(e9SpotCfg('p3.spot',{list:E9_SPOTS[3],n:6,title:'SPOT IT',sub:'Find it in the picture. Fast and right.'}));
+  await e9Run(e9GridCfg('p3.grid',{soft:E9W.cS.concat(E9W.gS),hard:E9W.cH.concat(E9W.gH),rounds:3,title:'CRACK THE CAGE',sub:'Soft bars go dark. Hard ones stay lit.'}));
+  await e9Run(e9SortCfg('p3.sort',{soft:E9W.cS.concat(E9W.gS),hard:E9W.cH.concat(E9W.gH),labS:'soft sound',labH:'hard sound',egS:'city, giant',egH:'cat, goat',title:'LAST SORT',sub:'c and g. Soft or hard?'}));
+  await e9Run(e9BuildCfg('p3.build',{pool:['city','giant','cage','face','nice','race','gem','huge','page','ice'],n:6,title:'BUILD IT',sub:'Hear it. Tap the letters in order.'}));
+  stageH(40);cap('4 · READ IT');cam('e9_bang');
+  Snd.music(false);await sprint(E9_BANK[3],['e9_bang','e9_bug','e9_red','e9_king'],8);
+  await e9outro(3);
+}
 async function e9end(){
-  Mic.off();Snd.music(true);stageH(44);cam('e9_face');cap('TO BE CONTINUED…');setStatic(0);
+  Mic.off();Snd.music(true);stageH(44);cam('e9_king');cap('TO BE CONTINUED…');setStatic(0);
   const E=e9S();const stars=Object.values(E.best).reduce((a,b)=>a+b.stars,0);
-  play.replaceChildren(el('div','sm','Paragraph 4 is coming'),el('div','e9big','⭐ '+stars+' stars · 🔧 '+(S.parts||0)+' parts'));
-  const h=el('div','hook');h.append('Who is ');h.append(el('em','','the man in the mask'));h.append('?');play.append(h);
+  play.replaceChildren(el('div','sm','Paragraph 5 is coming'),el('div','e9big','⭐ '+stars+' stars · 🔧 '+(S.parts||0)+' parts'));
+  const h=el('div','hook');h.append('Who is ');h.append(el('em','','the man with the crown'));h.append('?');play.append(h);
   const b=el('button','go','Home ▸');b.onclick=()=>{Snd.init();title();};play.append(b);
 }
 function startEp9(i,resume=false){
@@ -603,6 +631,6 @@ function startEp9(i,resume=false){
   }
   checkpointCursor=0;replayUntil=S.checkpoint.events.length;
   S.e9.ch=i;save();
-  const flows=[e9p1,e9p2,e9p3,e9end];const run=RUN;
-  flows[i]().then(()=>{if(run!==RUN)return;if(i<2)startEp9(i+1);else if(i===2){S.e9.ch=3;save();startEp9(3);}}).catch(e=>{if(e!=='cancel')console.error(e);});
+  const flows=[e9p1,e9p2,e9p3,e9p4,e9end];const run=RUN;
+  flows[i]().then(()=>{if(run!==RUN)return;if(i<4){S.e9.ch=i+1;save();startEp9(i+1);}}).catch(e=>{if(e!=='cancel')console.error(e);});
 }

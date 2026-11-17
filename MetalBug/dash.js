@@ -34,8 +34,13 @@ const gPick=a=>a[Math.floor(Math.random()*a.length)];
 #dash .dts{position:absolute;top:18px;left:0;right:0;display:flex;justify-content:center;gap:10px;z-index:3}
 #dash .dt{width:14px;height:14px;border:2px solid #000;background:#222;transform:rotate(45deg);opacity:.7}
 #dash .dt.on{background:#7fe3ff}#dash .dt.cur{opacity:1;box-shadow:0 0 0 3px #fff}
+#dash .swh{pointer-events:auto;padding:30px 14px;top:40%;z-index:3;cursor:pointer}
 #dash .arw{position:absolute;top:44%;z-index:3;width:46px;height:64px;border:3px solid #000;background:var(--paper);color:var(--ink);font:400 22px var(--hd);box-shadow:3px 3px 0 #000;padding:0;display:flex;align-items:center;justify-content:center}
 #dash .arw.l{left:8px}#dash .arw.r{right:8px}
+#dash .rlc{position:absolute;left:0;right:0;bottom:calc(74px + env(safe-area-inset-bottom));display:flex;justify-content:center;gap:8px;z-index:3;pointer-events:none}
+#dash .rs{width:40px;height:40px;border:3px solid #000;background:#0b1a22 center/cover;box-shadow:3px 3px 0 #000;opacity:.55}
+#dash .rs.on{opacity:1;border-color:#7fe3ff}
+#dash .grab{align-self:center;flex:none;border:0;background:none;color:#9aa7d6;font:400 26px/1 var(--hd);padding:0 40px 2px;margin-top:-16px}
 #dash .flash{position:fixed;inset:0;z-index:70;background:#fff;opacity:0;pointer-events:none;transition:opacity .5s}
 #dash .dp{flex:1;min-height:0;overflow:auto;padding:26px 12px 14px;display:flex;flex-direction:column;gap:10px;background:var(--ink) radial-gradient(rgba(255,255,255,.045) 1.4px,transparent 1.6px) 0 0/11px 11px;clip-path:polygon(0 14px,100% 0,100% 100%,0 100%);margin-top:-14px}
 #dash .kip{display:flex;gap:8px;align-items:center;flex:none}
@@ -122,7 +127,7 @@ function openDash(){
   const now=()=>Date.now();
   const onMsg=e=>{
     if(e.source!==fr.contentWindow)return;
-    if(e.data==='gate-ready'&&!ready){ready=true;post({mask:G.mask,anim:false,charge:curE,color:'cyan'});if(d.classList.contains('wake'))wake();}
+    if(e.data==='gate-ready'&&!ready){ready=true;post({mask:G.mask,anim:false,charge:curE,color:'cyan'});if(d.classList.contains('wake'))wake();if(afterExit){const f=afterExit;afterExit=null;setTimeout(()=>{f.style.opacity=0;setTimeout(()=>f.remove(),600);},350);}}
     else if(e.data==='gate-tap'){if(d.classList.contains('wake'))stepThrough();}
     else if(e.data==='gate-entered'){arrive();}
     else if(e.data&&e.data.swipe){swipe(e.data.swipe);}
@@ -175,7 +180,8 @@ function openDash(){
     return c;
   };
   function drawPower(msg){
-    backFn=()=>d.remove();d.classList.remove('pw');dp.replaceChildren();G.cards=G.cards||{};
+    backFn=()=>{if(awake())wake();else d.remove();};d.classList.remove('pw');dp.replaceChildren();G.cards=G.cards||{};
+    {const gb=el('button','grab','▾');gb.onclick=()=>backFn();dp.append(gb);let y0=null;dp.onpointerdown=e=>{y0=dp.scrollTop<=0?e.clientY:null;};dp.onpointerup=e=>{if(y0!=null&&e.clientY-y0>70)backFn();y0=null;};}
     dp.append(head(false));
     const rows=el('div','kcs');dp.append(rows);
     let next=null;
@@ -262,6 +268,8 @@ function openDash(){
   /* ---------- 3 · WAKE: the whole screen is the gate; tap it to go through ---------- */
   /* gates: one per episode. swipe the gate sideways (or tap a dot) to go to the next one. */
   const GATE_SCENE={8:'tower',9:'tower'};
+  const RELICS=['amber','lamp','helmet','drone','obelisk'];
+  const relics=()=>{const L=gateState();if(!L.loot)L.loot={};if(!L.loot.relics)L.loot.relics={};return L.loot.relics;};
   const gateOn=i=>SETS[i].words.every(w=>lit(w)===2)||/[?&]force=1/.test(location.search);
   const awake=()=>gateNext()<0&&SETS.some((_,i)=>gateOn(i));
   let cur=-1,busy=false,wkEls=[],dots=null,hintEl=null,arL=null,arR=null;
@@ -280,9 +288,10 @@ function openDash(){
     hintEl=el('div','wk','');
     backFn=()=>{if(!busy)d.remove();};pb.style.opacity=1;
     const cd=el('button','wkb','Cards');cd.style.right='12px';cd.onclick=()=>{if(busy)return;d.classList.remove('wake');wkEls.forEach(x=>x.remove());wkEls=[];drawPower();};
-    arL=el('button','arw l','◀');arR=el('button','arw r','▶');arL.onclick=()=>swipe(-1);arR.onclick=()=>swipe(1);
+    arL=el('div','swh l','‹');arR=el('div','swh r','›');arL.onclick=()=>swipe(-1);arR.onclick=()=>swipe(1);
     dots=el('div','dts');SETS.forEach((_,j)=>{const x=el('i','dt');x.onclick=()=>{if(!busy&&j!==cur){sfx('tick');showGate(j,true);}};dots.append(x);});
-    d.append(hintEl,cd,dots,arL,arR);wkEls=[hintEl,cd,dots,arL,arR];
+    const strip=el('div','rlc');const have=relics();RELICS.forEach(id=>{const sl=el('i','rs'+(have[id]?' on':''));if(have[id])sl.style.backgroundImage='url('+have[id]+')';strip.append(sl);});
+    d.append(hintEl,cd,dots,arL,arR,strip);wkEls=[hintEl,cd,dots,arL,arR,strip];
     let i0=cur>=0?cur:-1;if(i0<0)for(let j=0;j<SETS.length;j++)if(gateOn(j))i0=j;
     setTimeout(()=>showGate(i0,true),400);
     return true;
@@ -295,7 +304,7 @@ function openDash(){
     busy=true;sfx('whoosh');wkEls.forEach(x=>x.style.opacity=0);pb.style.opacity=0;
     post({reveal:1,charge:1});post({enter:1});
     /* pre-warm the scene behind the flash */
-    pk=document.createElement('iframe');pk.className='pkf';pk.src='gate/index.html?embed=1&peek='+GATE_SCENE[SETS[cur].ep]+'&v=3';
+    pk=document.createElement('iframe');pk.className='pkf';pk.src='gate/index.html?embed=1&peek='+GATE_SCENE[SETS[cur].ep]+'&have='+Object.keys(relics()).join(',')+'&v=4';
     pk.style.cssText='position:fixed;inset:0;width:100%;height:100%;border:0;z-index:65;opacity:0;transition:opacity .9s;background:#000';
     d.append(pk);
   }
@@ -306,20 +315,21 @@ function openDash(){
     const show=()=>{pk.style.opacity=1;fl.style.opacity=0;setTimeout(()=>fl.remove(),700);hud();};
     setTimeout(show,520);
   }
+  let afterExit=null;
   function hud(){
     const out=el('button','wkb','✕');out.style.cssText+=';right:12px;z-index:80;position:fixed';
-    const cnt=el('b','wkb','Relics: 0');cnt.style.cssText+=';left:12px;z-index:80;position:fixed;padding:5px 10px';
+    const cnt=el('b','wkb','Relics '+Object.keys(relics()).length+' / '+RELICS.length);cnt.style.cssText+=';left:12px;z-index:80;position:fixed;padding:5px 10px';
     d.append(cnt,out);
-    const L=gateState();if(!L.loot)L.loot={};let best=0;
+    let done=false;
     const onm=e=>{if(!pk||e.source!==pk.contentWindow)return;const m=e.data||{};
-      if(m.peekCollected){sfx('good');best=Math.max(best,m.n);cnt.textContent='Relics: '+m.n+' / '+m.total;}
-      if(m.peekDone!=null)best=Math.max(best,m.peekDone);};
+      if(m.peekCollected){const R=relics();if(m.id&&!R[m.id]){R[m.id]=m.thumb||'x';const n=Object.keys(R).length;save();sfx('good');try{earn(1);}catch(_){}
+        cnt.textContent='Relics '+n+' / '+RELICS.length;if(n===RELICS.length){try{earn(5);}catch(_){}}}else sfx('good');}
+      if(m.peekExit)leave();};
     addEventListener('message',onm);
-    out.onclick=()=>{removeEventListener('message',onm);cnt.remove();out.remove();
-      if(best>(L.loot.peek||0)){const g=best-(L.loot.peek||0);L.loot.peek=best;save();try{earn(g);}catch(_){}}
-      pk.style.opacity=0;setTimeout(()=>{pk.remove();pk=null;busy=false;post({reveal:.85});(function(){let t0=performance.now();})();wake();},700);
-      /* come back out: reset the gate camera */
-      try{fr.src=fr.src;}catch(_){}ready=false;};
+    function leave(){if(done)return;done=true;removeEventListener('message',onm);cnt.remove();out.remove();
+      const fl2=el('div','flash');fl2.style.transition='opacity .45s';d.append(fl2);requestAnimationFrame(()=>{fl2.style.opacity=1;});sfx('whoosh');
+      setTimeout(()=>{if(pk){pk.remove();pk=null;}busy=false;afterExit=fl2;ready=false;fr.src=fr.src;},520);}
+    out.onclick=leave;
   }
   if(gateNext()>=0)drawBuild(G.mask===0?gPick(GATE_SAY.hello):'');else if(!wake())drawPower();
   curE=gateNext()<0?total():0;

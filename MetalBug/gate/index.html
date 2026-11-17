@@ -9,6 +9,8 @@ button.on{background:#ffd23f;color:#0d1220}
 input[type=range]{flex:1;accent-color:#5ad0ff;min-width:0}
 small{z-index:5;position:fixed;top:12px;left:0;right:0;text-align:center;opacity:.55;font-size:10px;letter-spacing:.16em;text-transform:uppercase}.embed #ui,.embed small{display:none!important}
 #peekcap{position:fixed;left:12px;right:12px;bottom:22px;z-index:5;text-align:center;font:700 17px/1.3 system-ui,sans-serif;color:#fff;text-shadow:0 2px 6px #000,0 0 3px #000;opacity:0;transition:opacity .4s;pointer-events:none}#peekcap.on{opacity:1}
+#peekalert{position:fixed;inset:0;pointer-events:none;z-index:4;opacity:0;background:radial-gradient(ellipse at 50% 50%,transparent 30%,rgba(190,20,20,.85) 100%)}
+#peekeye{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:6;font:700 12px/1 system-ui,sans-serif;letter-spacing:.2em;padding:5px 10px;border:2px solid #000;background:#2a3a44;color:#9fb7c6;pointer-events:none}#peekeye:empty{display:none}#peekeye.s{background:#c92b2b;color:#fff}#peekeye.e{background:#d6b24a;color:#111}
 #peekv{position:fixed;inset:0;pointer-events:none;z-index:4;background:radial-gradient(ellipse at 50% 46%,transparent 38%,rgba(2,3,10,.55) 72%,rgba(2,3,10,.92) 100%)}
 </style>
 <small>drag to look around the gate</small>
@@ -19,4 +21,4 @@ small{z-index:5;position:fixed;top:12px;left:0;right:0;text-align:center;opacity
 <div class=row><b>Charge</b><input id=ch type=range min=0 max=1 step=.01 value=0><button id=go style="flex:none;padding:9px 12px">▶ Charge</button></div>
 <div class=row><b>Reveal</b><input id=rv type=range min=0 max=1 step=.01 value=0><button id=open style="flex:none;padding:9px 12px">▶ Open</button></div>
 </div>
-<script src="gate.js?v=16"></script>
+<script src="gate.js?v=17"></script>
