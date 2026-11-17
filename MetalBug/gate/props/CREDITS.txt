@@ -5,4 +5,10 @@ chars/ (used only in the peek-through-the-gate scene):
  - Soldier.glb, Xbot.glb: Mixamo characters as bundled in the three.js examples (free for use in projects).
  - RobotExpressive.glb: Tomas Laulhe (CC0), via three.js examples.
  - CesiumMan.glb: Cesium (CC BY 4.0), via KhronosGroup glTF-Sample-Assets.
- - fox.glb: Quaternius animals (CC0). coin.glb, gem_pink.glb, gem-blue.glb: Kenney pirate kit (CC0).
+ - fox.glb: Quaternius animals (CC0).
+
+arts/ (collectible artifacts in the peek scene; textures downscaled):
+ - lamp.glb (IridescenceLamp): Wayfair, CC BY 4.0, via KhronosGroup glTF-Sample-Assets.
+ - helmet.glb (DamagedHelmet): 'Battle Damaged Sci-fi Helmet' by theblueturtle_, CC BY 4.0.
+ - amber.glb (MosquitoInAmber): model by Loic Norgeot, mosquito scan by Geoffrey Marchal (Sketchfab), CC BY 4.0.
+ - drone and obelisk reuse robot_flyer.glb and obelisk.glb above (CC0).

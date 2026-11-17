@@ -30,10 +30,12 @@ const gPick=a=>a[Math.floor(Math.random()*a.length)];
 #dash.wake .dp{display:none}
 #dash .wk{position:absolute;left:0;right:0;bottom:calc(26px + env(safe-area-inset-bottom));text-align:center;z-index:3;pointer-events:none;font:400 24px var(--hd);letter-spacing:.08em;color:#fff;text-shadow:0 2px 0 #000,0 0 14px #2cc8ff;animation:wkp 1.6s ease-in-out infinite}
 @keyframes wkp{50%{opacity:.35}}
-#dash .wkb{position:absolute;top:12px;z-index:3;border:3px solid #000;background:var(--paper);color:var(--ink);font:700 14px var(--bd);padding:5px 10px;box-shadow:3px 3px 0 #000}
+#dash .wkb{position:absolute;top:12px;z-index:4;z-index:3;border:3px solid #000;background:var(--paper);color:var(--ink);font:700 14px var(--bd);padding:5px 10px;box-shadow:3px 3px 0 #000}
 #dash .dts{position:absolute;top:18px;left:0;right:0;display:flex;justify-content:center;gap:10px;z-index:3}
 #dash .dt{width:14px;height:14px;border:2px solid #000;background:#222;transform:rotate(45deg);opacity:.7}
 #dash .dt.on{background:#7fe3ff}#dash .dt.cur{opacity:1;box-shadow:0 0 0 3px #fff}
+#dash .arw{position:absolute;top:44%;z-index:3;width:46px;height:64px;border:3px solid #000;background:var(--paper);color:var(--ink);font:400 22px var(--hd);box-shadow:3px 3px 0 #000;padding:0;display:flex;align-items:center;justify-content:center}
+#dash .arw.l{left:8px}#dash .arw.r{right:8px}
 #dash .flash{position:fixed;inset:0;z-index:70;background:#fff;opacity:0;pointer-events:none;transition:opacity .5s}
 #dash .dp{flex:1;min-height:0;overflow:auto;padding:26px 12px 14px;display:flex;flex-direction:column;gap:10px;background:var(--ink) radial-gradient(rgba(255,255,255,.045) 1.4px,transparent 1.6px) 0 0/11px 11px;clip-path:polygon(0 14px,100% 0,100% 100%,0 100%);margin-top:-14px}
 #dash .kip{display:flex;gap:8px;align-items:center;flex:none}
@@ -130,12 +132,13 @@ function openDash(){
   new MutationObserver((_,o)=>{if(!d.isConnected){removeEventListener('message',onMsg);o.disconnect();}}).observe(document.body,{childList:true});
   const talk=t=>{if(!say)return;const id=++tk,t0=performance.now();say.textContent='';(function f(){if(!d.isConnected||id!==tk)return;const n=Math.min(t.length,Math.ceil((performance.now()-t0)/22));say.textContent=t.slice(0,n);if(n<t.length)requestAnimationFrame(f);})();};
   const head=(withBal)=>{const k=el('div','kip');k.append(P_KIP());say=el('div','say','');k.append(say);if(withBal)k.append(el('div','bal','🔧 '+(S.parts||0)));return k;};
-  const back=()=>{const b=el('button','bk','◂ Back');b.onclick=()=>d.remove();return b;};
+  let backFn=()=>d.remove();
+  const pb=el('button','wkb pb','◂');pb.style.left='12px';pb.onclick=()=>backFn();d.append(pb);
   const rampCharge=(from,to,ms=900)=>{curE=to;const t0=performance.now();(function f(){if(!d.isConnected)return;const k=Math.min(1,(performance.now()-t0)/ms);post({charge:from+(to-from)*k});if(k<1)requestAnimationFrame(f);})();};
 
   /* ---------- 1 · BUILD ---------- */
   function drawBuild(msg){
-    d.classList.remove('pw');dp.replaceChildren();
+    backFn=()=>d.remove();d.classList.remove('pw');dp.replaceChildren();
     dp.append(head(true));
     const grid=el('div','bp');dp.append(grid);
     const nx=gateNext();
@@ -147,7 +150,6 @@ function openDash(){
       sl.onclick=()=>{if(i===nx)buy(i,sl);else if(!own){sl.classList.add('shake');setTimeout(()=>sl.classList.remove('shake'),400);sfx('buzz');talk('One at a time. The glowing one.');}};
       grid.append(sl);
     });
-    dp.append(back());
     talk(msg||(G.mask===0?GATE_SAY.hello[0]:'Next part is glowing.'));
   }
   function buy(i,sl){
@@ -173,7 +175,7 @@ function openDash(){
     return c;
   };
   function drawPower(msg){
-    d.classList.remove('pw');dp.replaceChildren();G.cards=G.cards||{};
+    backFn=()=>d.remove();d.classList.remove('pw');dp.replaceChildren();G.cards=G.cards||{};
     dp.append(head(false));
     const rows=el('div','kcs');dp.append(rows);
     let next=null;
@@ -196,7 +198,6 @@ function openDash(){
     const sv=el('button','silver'+(all?' on':G.silver?' on':''));sv.append(el('span','',all||G.silver?'NARA':'?'));
     sv.onclick=()=>{if(!all&&!G.silver){sfx('buzz');talk('Light every card first.');return;}if(!G.silver){G.silver=1;save();}openGateShow('Nara\'s silver card. It opens the tower.');};
     rows.append(sv);
-    dp.append(back());
     const t=total();
     talk(msg||(t>=1?'All lit. Take the silver card!':!SETS.some(x=>x.words.some(w=>x.have(w)))?'Earn some cards first.':'Tap a glowing card. Hear it. Spell it.'));
     if(next)next.classList.add('pulse');
@@ -210,6 +211,7 @@ function openDash(){
     const t1=performance.now();(function f(){const k=Math.min(1,(performance.now()-t1)/1500);post({reveal:1-k});if(k<1)requestAnimationFrame(f);})();
   }
   async function recallCard(set,w){
+    backFn=()=>drawPower();
     d.classList.add('pw');dp.replaceChildren();dp.append(head(false));
     const body=el('div','rc'),kb=el('div','kb');dp.append(body,kb);
     talk('Listen. Spell it. No help from me.');
@@ -262,23 +264,25 @@ function openDash(){
   const GATE_SCENE={8:'tower',9:'tower'};
   const gateOn=i=>SETS[i].words.every(w=>lit(w)===2)||/[?&]force=1/.test(location.search);
   const awake=()=>gateNext()<0&&SETS.some((_,i)=>gateOn(i));
-  let cur=-1,busy=false,wkEls=[],dots=null,hintEl=null;
+  let cur=-1,busy=false,wkEls=[],dots=null,hintEl=null,arL=null,arR=null;
   function showGate(i,anim){
     cur=i;const on=gateOn(i),S0=SETS[i];
     post({color:S0.tint});post({charge:on?1:.12});
     const t0=performance.now(),from=on?0:.85,to=on?.85:0;
     (function f(){const k=Math.min(1,(performance.now()-t0)/(anim?1600:1));post({reveal:from+(to-from)*k});if(k<1&&d.isConnected&&cur===i)requestAnimationFrame(f);})();
     if(hintEl)hintEl.textContent=on?(GATE_SCENE[S0.ep]?'TAP THE GATE':'GATE '+S0.ep+' IS AWAKE'):'GATE '+S0.ep+' · ASLEEP';
+    if(arL){arL.style.visibility=i>0?'visible':'hidden';arR.style.visibility=i<SETS.length-1?'visible':'hidden';}
     if(dots)[...dots.children].forEach((x,j)=>{x.className='dt'+(j===i?' cur':'')+(gateOn(j)?' on':'');});
   }
   function wake(){
     if(!awake())return false;
     d.classList.remove('pw');d.classList.add('wake');wkEls.forEach(x=>x.remove());wkEls=[];
     hintEl=el('div','wk','');
-    const bk=el('button','wkb','◂');bk.style.left='12px';bk.onclick=()=>{if(!busy)d.remove();};
+    backFn=()=>{if(!busy)d.remove();};pb.style.opacity=1;
     const cd=el('button','wkb','Cards');cd.style.right='12px';cd.onclick=()=>{if(busy)return;d.classList.remove('wake');wkEls.forEach(x=>x.remove());wkEls=[];drawPower();};
+    arL=el('button','arw l','◀');arR=el('button','arw r','▶');arL.onclick=()=>swipe(-1);arR.onclick=()=>swipe(1);
     dots=el('div','dts');SETS.forEach((_,j)=>{const x=el('i','dt');x.onclick=()=>{if(!busy&&j!==cur){sfx('tick');showGate(j,true);}};dots.append(x);});
-    d.append(hintEl,bk,cd,dots);wkEls=[hintEl,bk,cd,dots];
+    d.append(hintEl,cd,dots,arL,arR);wkEls=[hintEl,cd,dots,arL,arR];
     let i0=cur>=0?cur:-1;if(i0<0)for(let j=0;j<SETS.length;j++)if(gateOn(j))i0=j;
     setTimeout(()=>showGate(i0,true),400);
     return true;
@@ -288,10 +292,10 @@ function openDash(){
     if(busy)return;
     if(!gateOn(cur)){sfx('buzz');return;}
     if(!GATE_SCENE[SETS[cur].ep]){sfx('buzz');if(hintEl)hintEl.textContent='NOTHING BEYOND IT YET';return;}
-    busy=true;sfx('whoosh');wkEls.forEach(x=>x.style.opacity=0);
+    busy=true;sfx('whoosh');wkEls.forEach(x=>x.style.opacity=0);pb.style.opacity=0;
     post({reveal:1,charge:1});post({enter:1});
     /* pre-warm the scene behind the flash */
-    pk=document.createElement('iframe');pk.className='pkf';pk.src='gate/index.html?embed=1&peek='+GATE_SCENE[SETS[cur].ep]+'&v=2';
+    pk=document.createElement('iframe');pk.className='pkf';pk.src='gate/index.html?embed=1&peek='+GATE_SCENE[SETS[cur].ep]+'&v=3';
     pk.style.cssText='position:fixed;inset:0;width:100%;height:100%;border:0;z-index:65;opacity:0;transition:opacity .9s;background:#000';
     d.append(pk);
   }
@@ -304,11 +308,11 @@ function openDash(){
   }
   function hud(){
     const out=el('button','wkb','✕');out.style.cssText+=';right:12px;z-index:80;position:fixed';
-    const cnt=el('b','wkb','0 / 8');cnt.style.cssText+=';left:12px;z-index:80;position:fixed;padding:5px 10px';
+    const cnt=el('b','wkb','Relics: 0');cnt.style.cssText+=';left:12px;z-index:80;position:fixed;padding:5px 10px';
     d.append(cnt,out);
     const L=gateState();if(!L.loot)L.loot={};let best=0;
     const onm=e=>{if(!pk||e.source!==pk.contentWindow)return;const m=e.data||{};
-      if(m.peekCollected){sfx('good');best=Math.max(best,m.n);cnt.textContent=m.n+' / '+m.total;}
+      if(m.peekCollected){sfx('good');best=Math.max(best,m.n);cnt.textContent='Relics: '+m.n+' / '+m.total;}
       if(m.peekDone!=null)best=Math.max(best,m.peekDone);};
     addEventListener('message',onm);
     out.onclick=()=>{removeEventListener('message',onm);cnt.remove();out.remove();
