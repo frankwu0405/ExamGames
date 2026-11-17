@@ -201,7 +201,7 @@ html,body{margin:0;height:100%;background:#05070d;color:var(--paper);font-family
 <body>
 <div id="app">
   <div id="stage">
-    <div id="world"><img class="pg" src="assets/p1.jpg" alt=""><img class="pg" src="assets/p2.jpg" alt=""><img class="pg" src="assets/p3.jpg" alt=""><img class="pg" src="assets/p4.jpg" alt=""></div>
+    <div id="world"><img class="pg" src="assets/p1.jpg" alt=""><img class="pg" src="assets/p2.jpg" alt=""><img class="pg" src="assets/p3.jpg" alt=""><img class="pg" src="assets/p4.jpg" alt=""><img class="pg" src="assets/p5.jpg" alt=""><img class="pg" src="assets/p6.jpg" alt=""><img class="pg" src="assets/p7.jpg" alt=""></div>
     <div id="bezel"></div>
     <canvas id="stat" width="96" height="72"></canvas>
     <svg id="ret" viewBox="0 0 84 84"><circle cx="42" cy="42" r="36" stroke="#000" stroke-opacity=".55"/><circle id="retp" cx="42" cy="42" r="36" stroke="#ffd23f" stroke-dasharray="226" stroke-dashoffset="226" transform="rotate(-90 42 42)"/><circle cx="42" cy="42" r="4" fill="#ffd23f" stroke="none"/></svg>
@@ -220,6 +220,7 @@ html,body{margin:0;height:100%;background:#05070d;color:var(--paper);font-family
 </div>
 <div id="teacher"><div class="sheet"><button class="x" id="tx">Close ✕</button><div id="tbody"></div></div></div>
 
+<script src="ep9.js?v=1"></script>
 <script>
 'use strict';
 /* =========================================================
@@ -970,7 +971,7 @@ const MUST=[['dirty','circle'],[],['purple','curly'],[]];
 
 async function sprint(bank,shots,n=10){
   Snd.music(false);
-  let pool=shuffle(bank);const must=MUST[S.ch]||[];
+  let pool=shuffle(bank);const must=(E9ON?E9_MUST[S.e9.ch]:MUST[S.ch])||[];
   const picked=[];must.forEach(w=>{const f=pool.find(s=>s.toLowerCase().includes(w)&&!picked.includes(s));if(f)picked.push(f);});
   pool.forEach(s=>{if(picked.length<n&&!picked.includes(s))picked.push(s);});
   const extraPractice=practiceAgain.splice(0);
@@ -1511,7 +1512,7 @@ async function orderCards(cards){
 
 /* ---------- title & chapter router ---------- */
 function title(editName=false){
-  trayEpisode=8;renderTray();
+  E9ON=false;trayEpisode=8;renderTray();
   T.skipChoice=null;T.force=null;
   $('#title')?.remove();
   RUN++;Mic.off();Snd.music(false);Snd.theme(true);setStatic(0);panelView=null;$('#ret').style.display='none';document.querySelectorAll('.pin').forEach(p=>p.remove());
@@ -1527,9 +1528,9 @@ function title(editName=false){
   const HUE={'01':175,'02':280,'03':225,'04':140,'05':-5,'06':310,'07':175};
   const past=[['01','assets/ep1.jpg',[],slideTint(40,60,130),'Archive sealed'],['02','assets/ep2.jpg',[],slideTint(110,20,90),'Memory fragment'],['03','assets/ep3.jpg',[],slideTint(70,30,140),'Frequency unknown'],['04','assets/ep4.jpg',[],slideTint(10,100,100),'File corrupted'],['05','assets/ep5.jpg',[],slideTint(130,70,10),'Echo only'],['06','assets/ep6.jpg',[],slideTint(140,15,35),'Signal weak'],['07','assets/ep7.jpg',[],slideTint(30,50,120,.6),'Signal lost']].map(([n,pg,r,t,sg])=>{const sl=lockSlide(n,pg,r,t,sg);sl.querySelector('.sil').style.filter=`brightness(.3) contrast(1.5) sepia(1) hue-rotate(${HUE[n]}deg) saturate(2) blur(1.5px)`;sl.querySelectorAll('.sil.g').forEach((g,i)=>{g.style.filter=`brightness(.85) contrast(1.35) sepia(1) hue-rotate(${HUE[n]+(i?35:0)}deg) saturate(2.6)`;g.style.opacity='.9';});return sl;});
   const s8=el('div','slide');s8.append(t);
-  const s9=lockSlide('09',3,[1548,676,948,688],'linear-gradient(180deg,rgba(90,10,25,.5),rgba(5,7,13,.92))','Something is watching');
+  const s9=el('div','slide');{const L9=sil(5,62,42,1240,1330,'linear-gradient(180deg,rgba(60,10,30,.25),rgba(5,7,13,.9))');L9[0].style.filter='brightness(.8) contrast(1.1)';s9.append(...L9);const t9=el('div','ttl','The Gate 9:');t9.append(el('em','','The Cage of Light'));s9.append(t9);}
   const s10=lockSlide('10',1,[1492,52,1008,568],'linear-gradient(180deg,rgba(10,70,70,.5),rgba(5,7,13,.92))','Transmission incoming');
-  const EP8=TEST?0:past.length;
+  const EP8=TEST?0:past.length,EP9=EP8+1;
   const hl=el('div','swh l','‹'),hr=el('div','swh r','›');
   if(TEST){
     car.append(s8);
@@ -1538,8 +1539,8 @@ function title(editName=false){
     s8.append(hl,hr);
   }
   let curEp=EP8;const paint=()=>{
-    if(typeof go!=='undefined')go.classList.toggle('locked',curEp!==EP8);
-    trayEpisode=curEp===EP8?8:curEp+1;
+    if(typeof go!=='undefined'){go.classList.toggle('locked',curEp!==EP8&&curEp!==EP9);if(!TEST&&curEp===EP9){const e=S.e9;go.textContent=e&&e.ch>0&&e.ch<3?`Continue · paragraph ${e.ch+1} ▸`:'Start ▸';}else if(curEp===EP8&&student)go.textContent=S.checkpoint?.chapter===S.ch?(S.ch===4?'Continue · finale ▸':`Continue · paragraph ${S.ch+1} ▸`):S.ch>0&&S.ch<4?`Continue · paragraph ${S.ch+1} ▸`:'Start ▸';}
+    trayEpisode=curEp+1;
     renderTray();
   };
   if(!TEST)car.addEventListener('scroll',()=>{if(!car.clientWidth)return;const n=Math.round(car.scrollLeft/car.clientWidth);if(n!==curEp){curEp=n;paint();Snd.init();sfx('tick');hl.remove();hr.remove();}},{passive:true});
@@ -1553,7 +1554,7 @@ function title(editName=false){
     try{
       await syncStudent();
       go.textContent=S.checkpoint?'Continue ▸':'Start ▸';
-      tl.remove();startChapter(S.ch>=4&&!S.checkpoint?0:S.ch,true);
+      tl.remove();if(curEp===EP9&&!TEST){const e=e9S();startEp9(e.ch>=3?0:e.ch,true);}else startChapter(S.ch>=4&&!S.checkpoint?0:S.ch,true);
     }catch(error){
       go.textContent='Retry cloud load';
       cloudFailure(error);
@@ -1563,7 +1564,7 @@ function title(editName=false){
   const cloudStatus=el('div','sm','');cloudStatus.id='cloud-status';cloudStatus.setAttribute('role','status');cloudStatus.hidden=true;
   wrap.append(nameArea,cloudStatus,go);
   const startGame=go.onclick;
-  go.addEventListener('click',e=>{if(curEp!==EP8){e.stopImmediatePropagation();e.preventDefault();}},true);paint();
+  go.addEventListener('click',e=>{if(curEp!==EP8&&curEp!==EP9){e.stopImmediatePropagation();e.preventDefault();}},true);paint();
   function showGreeting(){
     const greeting=el('div','student-greeting','Welcome, ');
     const player=el('button','student-name-link',student.name);
@@ -1620,7 +1621,7 @@ function title(editName=false){
   micBtn.classList.add('hide');
 }
 function startChapter(i,resume=false){
-  trayEpisode=8;renderTray();
+  E9ON=false;trayEpisode=8;renderTray();
   T.skipChoice=null;T.force=null;practiceAgain=[];
   const t=$('#title');if(t)t.remove();stage.style.touchAction='';
   RUN++;Mic.off();Snd.theme(false);setStatic(0);panelView=null;$('#ret').style.display='none';document.querySelectorAll('.pin').forEach(p=>p.remove());Snd.humOff();
@@ -1659,6 +1660,7 @@ if(TEST){const sk=document.createElement('button');sk.id='skip';sk.textContent='
   t0=setTimeout(()=>{hb.classList.remove('ask');hb.innerHTML=hb.dataset.ic;},2800);};}
 ['pointerdown','keydown','touchstart'].forEach(ev=>addEventListener(ev,()=>{Snd.init();Snd.resume();if(document.querySelector('#title'))Snd.theme(true);},{passive:true}));
 renderTray();title();
+{const m=location.search.match(/[?&]e9=(\d)/);if(m&&student){const run=()=>{$('#title')?.remove();startEp9(+m[1],false);};setTimeout(run,600);}}
 </script>
 </body>
 </html>
