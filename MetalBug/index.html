@@ -221,6 +221,7 @@ html,body{margin:0;height:100%;background:#05070d;color:var(--paper);font-family
 <div id="teacher"><div class="sheet"><button class="x" id="tx">Close ✕</button><div id="tbody"></div></div></div>
 
 <script src="ep9.js?v=2"></script>
+<script src="dash.js?v=2"></script>
 <script>
 'use strict';
 /* =========================================================
@@ -1562,7 +1563,7 @@ function title(editName=false){
   };
   const nameArea=el('div','student-name-area');
   const cloudStatus=el('div','sm','');cloudStatus.id='cloud-status';cloudStatus.setAttribute('role','status');cloudStatus.hidden=true;
-  wrap.append(nameArea,cloudStatus,go);
+  wrap.append(nameArea,cloudStatus,go);if(typeof dashButton==='function')wrap.append(dashButton());
   const startGame=go.onclick;
   go.addEventListener('click',e=>{if(curEp!==EP8&&curEp!==EP9){e.stopImmediatePropagation();e.preventDefault();}},true);paint();
   function showGreeting(){
