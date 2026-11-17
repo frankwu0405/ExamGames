@@ -10,6 +10,7 @@
 #dash{position:fixed;inset:0;z-index:60;background:#05070e;display:flex;flex-direction:column}
 #dash iframe{border:0;width:100%;height:38dvh;flex:none;background:#05070e;transition:height .4s}
 #dash.pw iframe{height:30dvh}
+#dash.base iframe{height:52dvh}
 #dash.wake iframe{height:100dvh;position:absolute;inset:0}
 #dash.wake .dp{display:none}
 #dash .wk{position:absolute;left:0;right:0;bottom:calc(26px + env(safe-area-inset-bottom));text-align:center;z-index:3;pointer-events:none;font:400 24px var(--hd);letter-spacing:.08em;color:#fff;text-shadow:0 2px 0 #000,0 0 14px #2cc8ff;animation:wkp 1.6s ease-in-out infinite}
@@ -139,6 +140,14 @@
 #dash .caught .lost i:after{content:'✕';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#ff3b4e;font:400 36px var(--hd);filter:none}
 #dash .toast{position:fixed;left:12px;right:12px;top:calc(56px + env(safe-area-inset-top));z-index:85;background:var(--paper);color:var(--ink);border:3px solid #000;box-shadow:4px 4px 0 #000;font:700 15px/1.3 var(--bd);padding:8px 12px;text-align:center;transition:opacity .4s;pointer-events:none;display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap}
 #dash .toast i{width:34px;height:34px;border:2px solid #000;background:#0b1a22 center/cover}
+#dash .seg{display:flex;flex:none;border:3px solid #000;box-shadow:3px 3px 0 #000}
+#dash .seg button{flex:1;border:0;background:#141a33;color:#7f8bbd;font:400 21px var(--hd);letter-spacing:.07em;padding:7px 0 6px}
+#dash .seg button+button{border-left:3px solid #000}
+#dash .seg button.on{background:var(--paper);color:var(--ink)}
+#dash .holdc{position:fixed;left:12px;right:12px;top:calc(54px + env(safe-area-inset-top));z-index:85;background:var(--paper);color:var(--ink);border:3px solid #000;box-shadow:4px 4px 0 #000;padding:8px 12px;pointer-events:none}
+#dash .holdc h3{font:400 24px/1 var(--hd);letter-spacing:.04em;margin:0 0 3px}
+#dash .holdc p{font:700 13px/1.3 var(--bd);margin:0}
+#dash .lvl{flex:none;font:700 12px var(--bd);letter-spacing:.08em;color:#9aa7d6;text-align:center}
 #dash .cov{position:fixed;inset:0;z-index:61;background:#000;opacity:0;pointer-events:none;transition:opacity .35s}
 `;document.head.append(s);})();
 
@@ -151,6 +160,25 @@ const RELIC_INFO={
  drone:{n:'Scout drone',lore:'It stopped in the middle of a search. Kip says it was looking for a gate.'},
  obelisk:{n:'Obelisk shard',lore:'Cut with no tool Kip knows. The edges hum.'}
 };
+/* the secret base: decorate inside, build scrap weapons outside. A relic is the star piece of some of them. */
+const BASE_ITEMS=[
+ {id:'sign',v:'in',name:'Neon Sign',cost:8,desc:'Every base needs a name.'},
+ {id:'bench',v:'in',name:'Workbench',cost:12,desc:'Scrap table, a generator and a work lamp.'},
+ {id:'bunk',v:'in',name:'Bunk Tent',cost:10,desc:'Somewhere to sleep between missions.'},
+ {id:'chest',v:'in',name:'Stash Chest',cost:12,desc:'Where the shiny things go.'},
+ {id:'map',v:'in',name:'City Map',cost:16,desc:'A live map of the ruined city.'},
+ {id:'rack',v:'in',name:'Blaster Rack',cost:14,desc:'Spare blasters, ready to grab.'},
+ {id:'amber',v:'in',name:'Amber Display',cost:6,relic:'amber',desc:'A stand for the amber. Tap it to pick it up and turn it.'},
+ {id:'lamp',v:'in',name:'Lamp Stand',cost:6,relic:'lamp',desc:'The lamp glows on a crate. Tap it to hold it.'},
+ {id:'helmet',v:'in',name:'Helmet Mount',cost:6,relic:'helmet',desc:'Hang the pilot helmet on the wall. Tap it to hold it.'},
+ {id:'blaster',v:'out',name:'Scrap Blaster',cost:14,desc:'Crates, a barrel and a salvaged blaster. Tap to fire.'},
+ {id:'twin',v:'out',name:'Twin Laser',cost:24,relic:'obelisk',desc:'Two barrels, powered by the obelisk shard.'},
+ {id:'sentry',v:'out',name:'Sentry Drone',cost:20,relic:'drone',desc:'The scout drone, rebuilt to guard the yard.'},
+ {id:'dish',v:'out',name:'Radar Dish',cost:10,desc:'Watches the sky for Watchers.'},
+ {id:'wall',v:'out',name:'Scrap Wall',cost:8,desc:'A fence made of salvage.'},
+ {id:'light',v:'out',name:'Searchlight',cost:12,desc:'Sweeps the yard all night.'}
+];
+const BASE_RANKS=[[14,'Fortress'],[10,'Stronghold'],[6,'Safe house'],[3,'Hideout'],[0,'Scrap heap']];
 const GATE_SAY={
  hello:['Fix the gate? I sell the parts. You bring bug parts.','Parts for parts. Fair trade.'],
  short:['Not enough yet. Go earn some.','Too light. Come back with more.'],
@@ -161,7 +189,7 @@ const GATE_SAY={
  bad:['Not quite. Listen again.','Close. Check each sound.','Careful now.']
 };
 const gPick=a=>a[Math.floor(Math.random()*a.length)];
-function gateState(){if(!S.gate)S.gate={mask:0};const g=S.gate;if(g.energy==null){g.energy=0;g.t=Date.now();}if(!g.wl)g.wl={};if(!g.opens)g.opens=0;if(!g.ms)g.ms={};if(!g.seal)g.seal={};if(!g.kip)g.kip={own:{},fuse:0,paint:{}};if(!g.loot)g.loot={};if(!g.loot.relics)g.loot.relics={};if(!g.loot.cnt)g.loot.cnt={};return g;}
+function gateState(){if(!S.gate)S.gate={mask:0};const g=S.gate;if(g.energy==null){g.energy=0;g.t=Date.now();}if(!g.wl)g.wl={};if(!g.opens)g.opens=0;if(!g.ms)g.ms={};if(!g.seal)g.seal={};if(!g.kip)g.kip={own:{},fuse:0,paint:{}};if(!g.base)g.base={built:{}};if(!g.loot)g.loot={};if(!g.loot.relics)g.loot.relics={};if(!g.loot.cnt)g.loot.cnt={};return g;}
 function dashButton(){
   const b=el('button','go alt','🔧 Gate workshop');b.style.cssText+=';font-size:22px;padding:8px 10px';
   b.onclick=()=>{Snd.init();Snd.resume();openDash();};return b;
@@ -189,7 +217,8 @@ function openDash(){
   const tint=i=>K.paint[GATES[i].ep]||GATES[i].tint;
   const relics=()=>G.loot.relics;
   const GATE_SCENE={8:'tower',9:'tower'};
-  const rank=()=>{const sc=GATES.filter((_,i)=>built(i)).length*3+Object.keys(relics()).length+Object.keys(K.own).length;return sc>=14?'Gatekeeper':sc>=9?'Gate mechanic':sc>=4?'Tinkerer':'Scrapper';};
+  const nBuilt=()=>Object.keys(G.base.built).length;
+  const rank=()=>BASE_RANKS.find(r=>nBuilt()>=r[0])[1];
   G.cards=G.cards||{};
   let gi=GATES.findIndex((_,i)=>!gateOn(i));if(gi<0)gi=GATES.length-1;
   const d=el('div','');d.id='dash';
@@ -201,12 +230,15 @@ function openDash(){
   const frSrc=i=>'gate/index.html?embed=1&loc='+GATES[i].loc+'&beyond='+GATES[i].bey+'&parts=0&charge='+pwr(i).toFixed(2)+'&color='+tint(i)+'&v=12';
   function loadGate(i){if(frLoc===i)return false;frLoc=i;ready=false;fr.src=frSrc(i);return true;}
   loadGate(gi);
+  let held=null;
   const onMsg=e=>{
     if(e.source!==fr.contentWindow)return;
-    if(e.data==='gate-ready'&&!ready){ready=true;post({mask:gmask(frLoc),anim:false,charge:curE,color:tint(frLoc)});if(d.classList.contains('wake'))wake();if(afterExit){const f=afterExit;afterExit=null;setTimeout(()=>{f.style.opacity=0;setTimeout(()=>f.remove(),600);},350);}uncover();}
+    if(e.data==='gate-ready'&&!ready){ready=true;if(frLoc==='base'){uncover();return;}post({mask:gmask(frLoc),anim:false,charge:curE,color:tint(frLoc)});if(d.classList.contains('wake'))wake();if(afterExit){const f=afterExit;afterExit=null;setTimeout(()=>{f.style.opacity=0;setTimeout(()=>f.remove(),600);},350);}uncover();}
     else if(e.data==='gate-tap'){if(d.classList.contains('wake'))stepThrough();}
     else if(e.data==='gate-entered'){arrive();}
     else if(e.data&&e.data.swipe){swipe(e.data.swipe);}
+    else if(e.data&&e.data.baseFire){sfx('zap');}
+    else if(e.data&&typeof e.data==='object'&&'baseHold' in e.data){const id=e.data.baseHold;dropCard();if(id){held=id;showCard(id);sfx('tick');}else held=null;}
     else if(e.data&&e.data.thumbs){const first=!thumbs;thumbs=e.data.thumbs;if(first&&tab==='gates'&&!d.classList.contains('pw')&&!d.classList.contains('wake'))gatesView();}
   };
   addEventListener('message',onMsg);
@@ -223,9 +255,9 @@ function openDash(){
   const rampCharge=(from,to,ms=900)=>{curE=to;const t0=performance.now();(function f(){if(!d.isConnected)return;const k=Math.min(1,(performance.now()-t0)/ms);post({charge:from+(to-from)*k});if(k<1)requestAnimationFrame(f);})();};
 
   /* ---------- tabs ---------- */
-  const TABS=[['gates','GATES'],['relics','RELICS']];
-  TABS.forEach(([k,t])=>{const b=el('button','tbb',t);b.dataset.k=k;b.onclick=()=>{if(tab===k&&!d.classList.contains('pw'))return;sfx('tick');({gates:gatesView,relics:relicsView})[k]();};tb.append(b);});
-  const setTab=k=>{tab=k;[...tb.children].forEach(b=>b.classList.toggle('on',b.dataset.k===k));d.classList.remove('pw');dp.replaceChildren();dp.onpointerdown=dp.onpointerup=null;dp.scrollTop=0;backFn=()=>d.remove();};
+  const TABS=[['gates','GATES'],['base','BASE'],['relics','RELICS']];
+  TABS.forEach(([k,t])=>{const b=el('button','tbb',t);b.dataset.k=k;b.onclick=()=>{if(tab===k&&!d.classList.contains('pw'))return;sfx('tick');({gates:gatesView,base:baseView,relics:relicsView})[k]();};tb.append(b);});
+  const setTab=k=>{if(held){held=null;dropCard();}d.classList.toggle('base',k==='base');if(k!=='base'&&frLoc==='base'){frLoc=-1;loadGate(gi);}tab=k;[...tb.children].forEach(b=>b.classList.toggle('on',b.dataset.k===k));d.classList.remove('pw');dp.replaceChildren();dp.onpointerdown=dp.onpointerup=null;dp.scrollTop=0;backFn=()=>d.remove();};
 
   /* ---------- GATES: pick a gate, then build it, power it, go through ---------- */
   const state=i=>!built(i)?'BUILD '+pop(gmask(i))+'/8':!lit2(i)?'POWER '+Math.round(pwr(i)*100)+'%':sealed(i)?'SEALED':'OPEN';
@@ -356,6 +388,34 @@ function openDash(){
     });
   }
 
+  /* ---------- BASE: the hideout. inside = decorations, outside = scrap weapons ---------- */
+  let bview='in',cardEl2=null;
+  const dropCard=()=>{if(cardEl2){cardEl2.remove();cardEl2=null;}};
+  const showCard=id=>{const i=RELIC_INFO[id];if(!i)return;cardEl2=el('div','holdc');cardEl2.append(el('h3','',i.n),el('p','',i.lore+'  Drag to spin it. Tap to put it back.'));d.append(cardEl2);};
+  function baseSrc(){return 'gate/index.html?embed=1&base=1&view='+bview+'&built='+Object.keys(G.base.built).join(',')+'&v=1';}
+  function baseView(msg){
+    setTab('base');dp.append(head(true));
+    if(frLoc!=='base'){frLoc='base';ready=false;fr.src=baseSrc();}
+    const sg=el('div','seg');[['in','INSIDE'],['out','OUTSIDE']].forEach(([k,t])=>{const b=el('button',bview===k?'on':'',t);b.onclick=()=>{if(bview===k)return;bview=k;sfx('whoosh');post({baseView:k});baseView();};sg.append(b);});dp.append(sg);
+    const R=relics();
+    BASE_ITEMS.filter(it=>it.v===bview).forEach(it=>{
+      const built=!!G.base.built[it.id],have=!it.relic||!!R[it.relic];
+      const row=el('div','bn'+(have||built?'':' lock'));
+      const ic=el('div','ic');if(it.relic&&R[it.relic]&&R[it.relic]!=='x')ic.style.backgroundImage='url('+R[it.relic]+')';else ic.textContent=it.relic?(have?'◆':'?'):it.name[0];
+      const tx=el('div','tx');tx.append(el('h4','',it.name),el('p','',have||built?it.desc:'Needs the '+RELIC_INFO[it.relic].n+'. Find it through a gate.'));
+      row.append(ic,tx);
+      if(built)row.append(el('div','buy ok','BUILT'));
+      else if(!have)row.append(el('div','buy no','LOCKED'));
+      else{const b=el('button','buy'+((S.parts||0)<it.cost?' poor':''),'🔧'+it.cost);b.onclick=()=>{
+        if((S.parts||0)<it.cost){b.classList.add('shake');setTimeout(()=>b.classList.remove('shake'),400);sfx('buzz');talk(gPick(GATE_SAY.short));return;}
+        S.parts-=it.cost;G.base.built[it.id]=1;save();refreshBal();sfx('card');setTimeout(()=>sfx('pin'),350);post({baseBuilt:[it.id]});
+        baseView('Built. '+it.name+'.');};row.append(b);}
+      dp.append(row);
+    });
+    const n=nBuilt();
+    talk(msg||(n===0?'Bare walls. Bring parts and I will make it ours.':bview==='in'?'Drag to look around. Tap a relic to pick it up.':'Tap a weapon to fire it. Drag to look around.'));
+  }
+
   /* ---------- RELICS: the shelf. tap one to look at it ---------- */
   let relSel=null;
   function relicsView(){
@@ -375,6 +435,7 @@ function openDash(){
       tx.append(el('h3','',have?info.n:'Not found yet'));
       tx.append(el('p','',have?info.lore:'Somewhere in the ruined city. Look for a glint.'));
       if(have){
+        const bi=BASE_ITEMS.find(b=>b.relic===id);if(bi){const bt=el('button','cta',G.base.built[bi.id]?'In your base':'Put it in the base');bt.onclick=()=>{bview=bi.v;baseView();};tx.append(bt);}
         tx.append(el('p','sm','Found '+(G.loot.cnt[id]||1)+' time'+((G.loot.cnt[id]||1)>1?'s':'')));
       }
       ins.append(big,tx);dp.append(ins);

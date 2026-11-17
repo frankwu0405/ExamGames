@@ -209,6 +209,7 @@ async function e9Once(cfg){
     E.open=st;save();
   }
   /* settle */
+  let R0pay=0;
   const judged=st.h+st.m,acc=judged?st.h/judged:0,avg=st.n?st.ms/st.n:0;
   let stars=acc>=.95?3:acc>=.85?2:acc>=.6?1:0;
   if(stars===3&&cfg.fast&&avg>cfg.fast)stars=2;
@@ -217,8 +218,9 @@ async function e9Once(cfg){
   const gain=Math.max(0,stars-prev.stars),bestPts=Math.max(prev.pts,st.pts),newBest=st.pts>prev.pts&&prev.pts>0;
   E.best[cfg.id]={stars:Math.max(stars,prev.stars),pts:bestPts};
   E.open=null;save();
-  if(stars===3&&prev.stars<3)earn(1);
-  return await e9Result(cfg,{st,stars,acc,gain,prev,newBest,avg});
+  /* pays like Episode 8: every new star is worth 3 parts, a clean replay still pays 1, a first 3-star adds a bonus */
+  {const pay=gain*3+(stars>=2?1:0)+(stars===3&&prev.stars<3?2:0);if(pay)earn(pay);R0pay=pay;}
+  return await e9Result(cfg,{st,stars,acc,gain,prev,newBest,avg,pay:R0pay});
 }
 function e9Result(cfg,R){
   return new Promise(res=>{
@@ -234,6 +236,7 @@ function e9Result(cfg,R){
     row('Best streak',String(st.best));
     row('Score',st.pts.toLocaleString()+(R.newBest?' · NEW BEST!':R.prev.pts?' · best '+R.prev.pts.toLocaleString():''));
     if(R.gain)row('New stars',('+'+R.gain+' ★'));
+    if(R.pay)row('Parts earned','🔧 +'+R.pay);
     play.append(wrap);
     let msg='';
     if(st.ass)msg='Easier mode was on, so 1 star is the most. Go again and beat it clean.';

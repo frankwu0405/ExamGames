@@ -12,3 +12,6 @@ arts/ (collectible artifacts in the peek scene; textures downscaled):
  - helmet.glb (DamagedHelmet): 'Battle Damaged Sci-fi Helmet' by theblueturtle_, CC BY 4.0.
  - amber.glb (MosquitoInAmber): model by Loic Norgeot, mosquito scan by Geoffrey Marchal (Sketchfab), CC BY 4.0.
  - drone and obelisk reuse robot_flyer.glb and obelisk.glb above (CC0).
+
+base (secret hideout scene): turret.glb, turret_double.glb, robot_flyer_gun.glb, hangar.glb, fence.glb, generator_large.glb, target.glb,
+ blaster_a/c/f/k/n.glb, coin.glb and friends: CC0 low-poly models (Kenney / Quaternius) via @netforge/asset-library-files, restyled at runtime.
