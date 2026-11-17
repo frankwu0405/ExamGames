@@ -225,7 +225,7 @@ html,body{margin:0;height:100%;background:#05070d;color:var(--paper);font-family
 <div id="teacher"><div class="sheet"><button class="x" id="tx">Close ✕</button><div id="tbody"></div></div></div>
 
 <script src="ep9.js?v=2"></script>
-<script src="dash.js?v=8"></script>
+<script src="dash.js?v=9"></script>
 <script>
 'use strict';
 /* =========================================================
@@ -1204,7 +1204,7 @@ function cardEl(c,{idle=false,tilt=true,max=16,spin=false}={}){
   const w=el('div','tcard'+(idle?' idle':''));w.style.setProperty('--m',`url(${CARD[c]})`);
   const inn=el('div','in'),im=el('img');im.src=CARD[c];im.alt=c;im.draggable=false;
   const sh=el('div','sh'),gl=el('div','gl');[sh,gl].forEach(x=>{x.style.webkitMaskImage=x.style.maskImage=`url(${CARD[c]})`;});
-  const fr=el('div','fr');fr.append(im,sh,gl);const bk=el('div','bk'),bi=el('img');bi.src='assets/card-back.webp';bi.alt='';bi.draggable=false;bk.append(bi);inn.append(fr,bk);w.append(inn);
+  const fr=el('div','fr');fr.append(im,sh,gl);const bk=el('div','bk'),bi=el('img');bi.src='assets/card-back.webp?v=2';bi.alt='';bi.draggable=false;bk.append(bi);inn.append(fr,bk);w.append(inn);
   if(spin){w.classList.add('spin');let ry=0,rx=0,px=null,vx=0,lt=0;
     const put=()=>{w.style.setProperty('--ry',ry+'deg');w.style.setProperty('--rx',rx+'deg');};
     w.addEventListener('pointerdown',e=>{try{w.setPointerCapture(e.pointerId);}catch(_){}px=e.clientX;vx=0;lt=performance.now();w.classList.add('drag');});
