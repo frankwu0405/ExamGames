@@ -151,14 +151,6 @@ const RELIC_INFO={
  drone:{n:'Scout drone',lore:'It stopped in the middle of a search. Kip says it was looking for a gate.'},
  obelisk:{n:'Obelisk shard',lore:'Cut with no tool Kip knows. The edges hum.'}
 };
-/* Kip builds things out of relics. A relic is the blueprint; bug parts pay for the work. */
-const BENCH=[
- {id:'scan',name:'Lamp Scanner',relic:'lamp',cost:12,desc:'Hidden finds throw a beam of light you can see through the fog.'},
- {id:'cloak',name:'Shadow Cloak',relic:'helmet',cost:16,desc:'Torch beams reach a third shorter. Guards notice you slower.'},
- {id:'fuse',name:'Decoy Drone',relic:'drone',cost:6,max:3,desc:'Takes one catch for you. Carry up to 3.'},
- {id:'paint_gold',name:'Amber Paint',relic:'amber',cost:8,desc:'Your gates glow gold.'},
- {id:'paint_green',name:'Obelisk Glow',relic:'obelisk',cost:8,desc:'Your gates glow green.'}
-];
 const GATE_SAY={
  hello:['Fix the gate? I sell the parts. You bring bug parts.','Parts for parts. Fair trade.'],
  short:['Not enough yet. Go earn some.','Too light. Come back with more.'],
@@ -231,8 +223,8 @@ function openDash(){
   const rampCharge=(from,to,ms=900)=>{curE=to;const t0=performance.now();(function f(){if(!d.isConnected)return;const k=Math.min(1,(performance.now()-t0)/ms);post({charge:from+(to-from)*k});if(k<1)requestAnimationFrame(f);})();};
 
   /* ---------- tabs ---------- */
-  const TABS=[['gates','GATES'],['relics','RELICS'],['bench','BENCH']];
-  TABS.forEach(([k,t])=>{const b=el('button','tbb',t);b.dataset.k=k;b.onclick=()=>{if(tab===k&&!d.classList.contains('pw'))return;sfx('tick');({gates:gatesView,relics:relicsView,bench:benchView})[k]();};tb.append(b);});
+  const TABS=[['gates','GATES'],['relics','RELICS']];
+  TABS.forEach(([k,t])=>{const b=el('button','tbb',t);b.dataset.k=k;b.onclick=()=>{if(tab===k&&!d.classList.contains('pw'))return;sfx('tick');({gates:gatesView,relics:relicsView})[k]();};tb.append(b);});
   const setTab=k=>{tab=k;[...tb.children].forEach(b=>b.classList.toggle('on',b.dataset.k===k));d.classList.remove('pw');dp.replaceChildren();dp.onpointerdown=dp.onpointerup=null;dp.scrollTop=0;backFn=()=>d.remove();};
 
   /* ---------- GATES: pick a gate, then build it, power it, go through ---------- */
@@ -288,12 +280,8 @@ function openDash(){
   function readyPanel(msg){
     const i=gi,s=sealed(i);
     const go=el('button','pwr',s?'🔒 BREAK THE SEAL':'▶ ENTER GATE '+GATES[i].ep);go.onclick=()=>{if(s)breakSeal(i);else{wake();}};dp.append(go);
-    const have=['cyan'===GATES[i].tint?'cyan':GATES[i].tint];
-    const ps=[GATES[i].tint];if(K.own.paint_gold)ps.push('gold');if(K.own.paint_green)ps.push('green');
-    if(ps.length>1){const r=el('div','pnts');r.append(el('span','','GLOW'));const COL={cyan:'#2cc8ff',violet:'#b55cff',gold:'#ffb92e',green:'#3dff9a'};
-      ps.forEach(c=>{const b=el('button','pn'+(tint(i)===c?' on':''));b.style.background=COL[c];b.onclick=()=>{K.paint[GATES[i].ep]=c;save();post({color:c});sfx('tick');gatesView();};r.append(b);});dp.append(r);}
     const sv=silverBtn();if(sv)dp.append(sv);
-    talk(msg||(s?'The guards sealed her. Remember one card to break it.':GATES[i].night?'This one is darker. Guards walk faster. Take a drone.':'Open. Go and find what is out there.'));
+    talk(msg||(s?'The guards sealed her. Remember one card to break it.':GATES[i].night?'This one is darker. Guards walk faster. ':'Open. Go and find what is out there.'));
   }
   async function breakSeal(i){
     if(busy)return;
@@ -387,34 +375,11 @@ function openDash(){
       tx.append(el('h3','',have?info.n:'Not found yet'));
       tx.append(el('p','',have?info.lore:'Somewhere in the ruined city. Look for a glint.'));
       if(have){
-        const bi=BENCH.find(b=>b.relic===id),own=bi&&(bi.max?K.fuse>0:K.own[bi.id]);
         tx.append(el('p','sm','Found '+(G.loot.cnt[id]||1)+' time'+((G.loot.cnt[id]||1)>1?'s':'')));
-        if(bi){const bt=el('button','cta',own&&!bi.max?'Built: '+bi.name:'Kip can build: '+bi.name);bt.onclick=()=>benchView();tx.append(bt);}
       }
       ins.append(big,tx);dp.append(ins);
       talk(have?'Look at that. Hold it up to the light.':'Not found yet. Go through a gate and look.');
     }else talk(n===0?'Nothing yet. Go through a gate and find something.':n===RELICS.length?'Every relic. The whole shelf. Tap one.':'Tap one to look closer. '+n+' of '+RELICS.length+'.');
-  }
-
-  /* ---------- BENCH: Kip builds from relics. This is where bug parts keep being useful. ---------- */
-  function benchView(){
-    setTab('bench');dp.append(head(true));
-    const R=relics();
-    BENCH.forEach(it=>{
-      const have=!!R[it.relic],cnt=it.max?K.fuse:(K.own[it.id]?1:0),full=it.max?cnt>=it.max:cnt>0;
-      const row=el('div','bn'+(have?'':' lock'));
-      const ic=el('div','ic');if(have&&R[it.relic]!=='x')ic.style.backgroundImage='url('+R[it.relic]+')';else ic.textContent=have?'◆':'?';
-      const tx=el('div','tx');tx.append(el('h4','',it.name+(it.max?'  ×'+cnt:'')),el('p','',have?it.desc:'Needs: '+RELIC_INFO[it.relic].n+'. Find one.'));
-      row.append(ic,tx);
-      if(!have){const b=el('div','buy no','LOCKED');row.append(b);}
-      else if(full&&!it.max){row.append(el('div','buy ok','BUILT'));}
-      else if(full){row.append(el('div','buy ok','FULL'));}
-      else{const b=el('button','buy'+((S.parts||0)<it.cost?' poor':''),'🔧'+it.cost);b.onclick=()=>{
-        if((S.parts||0)<it.cost){b.classList.add('shake');setTimeout(()=>b.classList.remove('shake'),400);sfx('buzz');talk(gPick(GATE_SAY.short));return;}
-        S.parts-=it.cost;if(it.max)K.fuse++;else K.own[it.id]=1;save();refreshBal();sfx('card');setTimeout(()=>sfx('pin'),300);benchView();talk(it.max?'One more drone. Do not waste it.':'Built. '+it.name+'. Use it well.');};row.append(b);}
-      dp.append(row);
-    });
-    talk(Object.keys(R).length?'Relics are my blueprints. Parts are my pay.':'Bring me something from the city and I can build with it.');
   }
 
   /* ---------- WAKE: the whole screen is the gate; tap it to go through ---------- */
@@ -462,7 +427,7 @@ function openDash(){
     /* pre-warm the scene behind the flash */
     pk=document.createElement('iframe');pk.className='pkf';
     const night=!!GATES[cur].night;
-    pk.src='gate/index.html?embed=1&peek='+GATE_SCENE[GATES[cur].ep]+'&have='+(night?'':Object.keys(relics()).join(','))+'&scan='+(K.own.scan?1:0)+'&cloak='+(K.own.cloak?1:0)+'&fuse='+(K.fuse|0)+'&night='+(night?1:0)+'&v=6';
+    pk.src='gate/index.html?embed=1&peek='+GATE_SCENE[GATES[cur].ep]+'&have='+(night?'':Object.keys(relics()).join(','))+'&night='+(night?1:0)+'&v=7';
     pk.style.cssText='position:fixed;inset:0;width:100%;height:100%;border:0;z-index:65;opacity:0;transition:opacity .9s;background:#000';
     d.append(pk);
   }
@@ -479,12 +444,12 @@ function openDash(){
     const carry={};const nC=()=>Object.keys(carry).length;
     const out=el('button','wkb','Abandon');out.style.cssText+=';right:12px;z-index:80;position:fixed';
     const cnt=el('b','wkb','');cnt.style.cssText+=';left:12px;z-index:80;position:fixed;padding:5px 10px';
-    const upd=()=>{cnt.textContent='Carrying '+nC()+' · Vault '+Object.keys(relics()).length+'/'+RELICS.length+(K.fuse?' · 🛸×'+K.fuse:'');};upd();
+    const upd=()=>{cnt.textContent='Carrying '+nC()+' · Vault '+Object.keys(relics()).length+'/'+RELICS.length;};upd();
     d.append(cnt,out);
     let done=false;
     const onm=e=>{if(!pk||e.source!==pk.contentWindow)return;const m=e.data||{};
       if(m.peekCollected&&m.id&&!carry[m.id]){carry[m.id]=m.thumb||'x';sfx('good');upd();toast('Got the '+m.peekCollected+'. It is only yours if you get back through the gate.');}
-      else if(m.peekFuse){if(K.fuse>0)K.fuse--;save();upd();sfx('zap');toast('The decoy drone took the hit. '+(K.fuse|0)+' left.');}
+      else if(m.peekPing)sfx('buzz');
       else if(m.peekCaught)caughtScreen();
       else if(m.peekExit){const r=bank();leave(r);}};
     addEventListener('message',onm);
