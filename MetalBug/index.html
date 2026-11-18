@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#0d1220">
-<meta name="gate-build" content="20261117-airdrop-1">
+<meta name="gate-build" content="20261118-airdrop-2">
 <title>The Gate 8: The Empty Room</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Lexend:wght@500;700;800&display=swap" rel="stylesheet">
@@ -227,9 +227,9 @@ html,body{margin:0;height:100%;background:#05070d;color:var(--paper);font-family
 <div id="teacher"><div class="sheet"><button class="x" id="tx">Close ✕</button><div id="tbody"></div></div></div>
 
 <script src="ep9.js?v=5"></script>
-<script src="dash.js?v=21"></script>
+<script src="dash.js?v=22"></script>
 <script src="scenes.js?v=3"></script>
-<script src="airdrop.js?v=1"></script>
+<script src="airdrop.js?v=2"></script>
 <script>
 'use strict';
 /* =========================================================
@@ -1593,7 +1593,7 @@ function title(editName=false){
   };
   const nameArea=el('div','student-name-area');
   const cloudStatus=el('div','sm','');cloudStatus.id='cloud-status';cloudStatus.setAttribute('role','status');cloudStatus.hidden=true;
-  wrap.append(nameArea,cloudStatus,go);if(typeof dashButton==='function')wrap.append(dashButton());if(typeof airdropButton==='function')wrap.append(airdropButton());
+  wrap.append(nameArea,cloudStatus,go);if(typeof dashButton==='function')wrap.append(dashButton());
   const startGame=go.onclick;
   go.addEventListener('click',e=>{if(curEp!==EP8&&curEp!==EP9){e.stopImmediatePropagation();e.preventDefault();}},true);paint();
   function showGreeting(){
@@ -1689,7 +1689,7 @@ if(TEST){const sk=document.createElement('button');sk.id='skip';sk.textContent='
   if(hb.classList.contains('ask')){clearTimeout(t0);hb.classList.remove('ask');hb.innerHTML=hb.dataset.ic;Snd.init();title();return;}
   hb.dataset.ic=hb.innerHTML;hb.classList.add('ask');hb.textContent='HOME? ✓';
   t0=setTimeout(()=>{hb.classList.remove('ask');hb.innerHTML=hb.dataset.ic;},2800);};}
-['pointerdown','keydown','touchstart'].forEach(ev=>addEventListener(ev,()=>{Snd.init();Snd.resume();if(document.querySelector('#title')&&!document.querySelector('#airdrop'))Snd.theme(true);},{passive:true}));
+['pointerdown','keydown','touchstart'].forEach(ev=>addEventListener(ev,()=>{Snd.init();Snd.resume();if(document.querySelector('#title')&&!document.querySelector('#dash'))Snd.theme(true);},{passive:true}));
 renderTray();title();
 {const m=location.search.match(/[?&]e9=(\d)/);if(m&&student){const run=()=>{$('#title')?.remove();startEp9(+m[1],false);};setTimeout(run,600);}}
 </script>

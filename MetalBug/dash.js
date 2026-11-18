@@ -194,7 +194,7 @@ function dashButton(){
   const b=el('button','go alt','🔧 Gate workshop');b.style.cssText+=';font-size:22px;padding:8px 10px';
   b.onclick=()=>{Snd.init();Snd.resume();openDash();};return b;
 }
-function openDash(){
+function openDash(initialTab='gates'){
   document.querySelector('#dash')?.remove();
   const G=gateState(),K=G.kip;
   const force=/[?&]force=1/.test(location.search);
@@ -250,14 +250,20 @@ function openDash(){
   const head=withBal=>{const k=el('div','kip');k.append(P_KIP());say=el('div','say','');k.append(say);if(withBal){const b=el('div','bal','');b.append(document.createTextNode('🔧 '+(S.parts||0)),el('small','',rank()));k.append(b);}return k;};
   const toast=(txt,thumbList)=>{const t=el('div','toast','');if(thumbList)thumbList.forEach(u=>{const i=el('i');if(u&&u!=='x')i.style.backgroundImage='url('+u+')';t.append(i);});t.append(document.createTextNode(txt));d.append(t);setTimeout(()=>{t.style.opacity=0;setTimeout(()=>t.remove(),500);},2600);};
   let cov=null;const cover=()=>{if(!cov){cov=el('div','cov');d.append(cov);}void cov.offsetWidth;cov.style.opacity=1;};const uncover=()=>{if(cov){const c=cov;cov=null;setTimeout(()=>{c.style.opacity=0;setTimeout(()=>c.remove(),500);},300);}};
+  let airCleanup=null;
   let backFn=()=>d.remove();
   const pb=el('button','wkb pb','◂');pb.style.left='12px';pb.onclick=()=>backFn();d.append(pb);
   const rampCharge=(from,to,ms=900)=>{curE=to;const t0=performance.now();(function f(){if(!d.isConnected)return;const k=Math.min(1,(performance.now()-t0)/ms);post({charge:from+(to-from)*k});if(k<1)requestAnimationFrame(f);})();};
 
   /* ---------- tabs ---------- */
-  const TABS=[['gates','GATES'],['base','BASE'],['relics','RELICS']];
-  TABS.forEach(([k,t])=>{const b=el('button','tbb',t);b.dataset.k=k;b.onclick=()=>{if(tab===k&&!d.classList.contains('pw'))return;sfx('tick');({gates:gatesView,base:baseView,relics:relicsView})[k]();};tb.append(b);});
-  const setTab=k=>{if(held){held=null;dropCard();}d.classList.toggle('base',k==='base');if(k!=='base'&&frLoc==='base'){frLoc=-1;loadGate(gi);}tab=k;[...tb.children].forEach(b=>b.classList.toggle('on',b.dataset.k===k));d.classList.remove('pw');dp.replaceChildren();dp.onpointerdown=dp.onpointerup=null;dp.scrollTop=0;backFn=()=>d.remove();};
+  const TABS=[['gates','GATES'],['base','BASE'],['relics','RELICS'],['airdrop','AIRDROP']];
+  TABS.forEach(([k,t])=>{const b=el('button','tbb',t);b.dataset.k=k;b.onclick=()=>{if(tab===k&&!d.classList.contains('pw'))return;sfx('tick');({gates:gatesView,base:baseView,relics:relicsView,airdrop:airdropView})[k]();};tb.append(b);});
+  const setTab=k=>{airCleanup?.();airCleanup=null;if(held){held=null;dropCard();}d.classList.toggle('base',k==='base');d.classList.toggle('air',k==='airdrop');if(k!=='base'&&frLoc==='base'||k!=='airdrop'&&frLoc==='airdrop'){frLoc=-1;loadGate(gi);}tab=k;[...tb.children].forEach(b=>b.classList.toggle('on',b.dataset.k===k));d.classList.remove('pw');dp.replaceChildren();dp.onpointerdown=dp.onpointerup=null;dp.scrollTop=0;backFn=()=>d.remove();};
+  function airdropView(){
+    setTab('airdrop');frLoc='airdrop';ready=false;
+    if(typeof mountAirdrop==='function')airCleanup=mountAirdrop({d,dp,fr,head,talk,close:()=>{airCleanup?.();airCleanup=null;d.remove();},setBack:fn=>backFn=fn});
+  }
+  new MutationObserver((_,observer)=>{if(!d.isConnected){airCleanup?.();airCleanup=null;observer.disconnect();}}).observe(document.body,{childList:true});
 
   /* ---------- GATES: pick a gate, then build it, power it, go through ---------- */
   const state=i=>!built(i)?'BUILD '+pop(gmask(i))+'/8':!lit2(i)?'POWER '+Math.round(pwr(i)*100)+'%':sealed(i)?'SEALED':'OPEN';
@@ -535,6 +541,6 @@ function openDash(){
         if(r&&r.n)toast(r.setDone?'Full set! The shelf is complete. +'+r.gain+' 🔧':'+'+r.gain+' 🔧 banked',r.thumbs);else if(r)toast('You came back empty-handed.');},520);}
     out.onclick=()=>{if(done)return;if(nC()&&!confirm('Abandon the run? You lose what you are carrying.'))return;leave(null);};
   }
-  gatesView();
+  if(initialTab==='airdrop')airdropView();else gatesView();
   if(typeof location!=='undefined'&&/[?&]wake=1/.test(location.search))wake();
 }

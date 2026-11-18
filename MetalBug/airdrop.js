@@ -98,250 +98,168 @@ function pickWords(size,set,stats,random=Math.random){
   const sample=(pool,count)=>pool.map(word=>({word,score:Math.pow(random(),1/(1+Math.min(4,stats[word]?.misses||0)))})).sort((a,b)=>b.score-a.score).slice(0,count).map(x=>x.word);
   return randomized(size===30?SETS.flatMap(group=>sample(group,5)):sample(ALL,10),random);
 }
+function kindFor(word,index,size){return size===60?'echo':['hunt','build',WORDS[word].chunks.includes('·')?'connect':'build','echo'][index%4];}
 function newRun(size,set,stats,random=Math.random){
-  if(![10,30,60].includes(size)||!Number.isInteger(set)||set< -1||set>5)throw Error('Invalid drop');
-  const words=pickWords(size,set,stats,random);
-  const queue=words.map((w,i)=>({w,kind:size===60?'recall':i%4===0&&WORDS[w].base?'forge':i%4===1?'repair':i%4===2?'memory':i%4===3?'dispatch':'recall',assisted:false,attempts:0,retry:0}));
-  return {size,set,words,queue,cursor:0,verified:[],parked:[],latch:0,tokens:0,started:Date.now(),completed:false};
+ if(![10,30,60].includes(size)||!Number.isInteger(set)||set< -1||set>5)throw Error('Invalid drop');
+ const words=pickWords(size,set,stats,random);
+ return {engine:2,size,set,words,queue:words.map((w,i)=>({w,kind:kindFor(w,i,size),assisted:false,attempts:0,retry:0})),cursor:0,verified:[],parked:[],latch:0,tokens:0,streak:0,started:Date.now(),completed:false};
 }
 function advance(run,passed,independent){
-  const task=run.queue[run.cursor];if(!task)return;
-  if(passed&&independent){
-    if(!run.verified.includes(task.w))run.verified.push(task.w);
-    run.parked=run.parked.filter(w=>w!==task.w);
-  }else if(task.retry<2){
-    const next={w:task.w,kind:'recall',assisted:false,attempts:0,retry:task.retry+1};
-    run.queue.splice(Math.min(run.queue.length,run.cursor+4),0,next);
-  }else if(!run.parked.includes(task.w))run.parked.push(task.w);
-  run.cursor++;
-  if(run.cursor>=run.queue.length)run.completed=true;
+ const task=run.queue[run.cursor];if(!task)return;
+ if(passed&&independent){if(!run.verified.includes(task.w))run.verified.push(task.w);run.parked=run.parked.filter(w=>w!==task.w);}
+ else if(!task.filler&&task.retry<2){
+  const tail=run.queue.slice(run.cursor+1),need=Math.max(0,3-tail.length);
+  if(need)run.queue.push(...run.words.filter(w=>w!==task.w&&!tail.some(t=>t.w===w)).slice(0,need).map(w=>({w,kind:'echo',assisted:false,attempts:0,retry:2,filler:true})));
+  run.queue.splice(Math.min(run.queue.length,run.cursor+4),0,{w:task.w,kind:'echo',assisted:false,attempts:0,retry:task.retry+1});
+ }
+ else if(!task.filler&&!run.verified.includes(task.w)&&!run.parked.includes(task.w))run.parked.push(task.w);
+ run.cursor++;run.completed=run.cursor>=run.queue.length;
 }
-const clean=text=>text.trim().toLowerCase();
-// Small pure surface for regression tests; does not touch the main game.
-window.GateAirdrop={SETS,WORDS,ALL,freshState,rewardWord,pickWords,newRun,advance,clean};
-
-const style=document.createElement('style');style.textContent=`
-.airdrop-entry{border:0;border-top:1px dashed #44516e;background:transparent;color:var(--teal);display:flex;gap:10px;align-items:center;text-align:left;padding:9px 4px 3px;cursor:pointer;font:700 13px var(--bd)}
-.airdrop-entry .ad-icon{width:27px;height:27px;flex:none}.airdrop-entry span{flex:1}.airdrop-entry small{font:400 22px var(--hd);color:var(--yellow)}
-#airdrop{--ad-accent:#65eedb;position:fixed;inset:0;z-index:65;max-width:560px;margin:auto;background:#080e18;color:var(--paper);font-family:var(--bd);display:flex;flex-direction:column;isolation:isolate;overflow:hidden}
-#airdrop *{box-sizing:border-box}#airdrop button{cursor:pointer;font-family:var(--bd);touch-action:manipulation}#airdrop button:focus-visible,#airdrop input:focus-visible,#airdrop select:focus-visible{outline:3px solid var(--yellow);outline-offset:3px}
-#airdrop .ad-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:calc(12px + env(safe-area-inset-top)) 16px 10px;z-index:3;background:#080e18}
-#airdrop .ad-top small{font:700 10px var(--bd);letter-spacing:.18em;color:#89a6b8}#airdrop .ad-back,#airdrop .ad-sound{border:1px solid #47546a;color:var(--paper);background:transparent;padding:8px 10px;font-size:12px;min-height:36px}
-#airdrop .ad-back{border:0;padding-left:0}#airdrop .ad-balance{font:400 23px var(--hd);letter-spacing:.04em;color:var(--yellow);margin-left:auto}
-#airdrop .ad-scroll{overflow-y:auto;min-height:0;flex:1;padding-bottom:calc(22px + env(safe-area-inset-bottom));scrollbar-width:thin}
-#airdrop .ad-scene{height:235px;position:relative;overflow:hidden;perspective:650px;background:radial-gradient(ellipse at 50% 85%,#193342 0,transparent 60%),linear-gradient(#09111f,#101c2a)}
-#airdrop .ad-scene:before{content:'';position:absolute;inset:0;background:radial-gradient(#7de2dd88 1px,transparent 1px) 0 0/67px 43px;opacity:.4;pointer-events:none}
-#airdrop .ad-ground{position:absolute;left:-50%;right:-50%;bottom:-70px;height:170px;background:repeating-linear-gradient(0deg,transparent 0 25px,#31636a44 26px 27px),repeating-linear-gradient(90deg,transparent 0 35px,#31636a44 36px 37px);transform:rotateX(62deg);border-top:1px solid #56bcb766}
-#airdrop .ad-orbit{position:absolute;width:230px;height:68px;border:1px solid #58e1cf55;border-radius:50%;left:50%;bottom:15px;transform:translateX(-50%);box-shadow:0 0 24px #24caba22,inset 0 0 20px #24caba22}
-#airdrop .ad-scan{position:absolute;inset:0;background:linear-gradient(transparent 45%,#7df4e41a 50%,transparent 55%);background-size:100% 200%;animation:adScan 5s linear infinite;pointer-events:none}
-@keyframes adScan{to{background-position:0 200%}}
-#airdrop .ad-freq{position:absolute;left:17px;top:15px;font:700 9px/1.7 var(--bd);letter-spacing:.18em;color:#6c9baf}#airdrop .ad-freq i{display:inline-block;width:5px;height:5px;background:var(--ad-accent);border-radius:50%;margin-right:5px;box-shadow:0 0 10px var(--ad-accent)}
-#airdrop .ad-altitude{position:absolute;right:17px;top:15px;text-align:right;font:700 9px/1.7 var(--bd);letter-spacing:.14em;color:#6c9baf}
-#airdrop .ad-cargo{position:absolute;width:126px;height:108px;left:calc(50% - 63px);bottom:38px;transform-style:preserve-3d;transform:rotateX(-12deg) rotateY(-25deg);animation:adFloat 4s ease-in-out infinite;touch-action:none;cursor:grab}
-#airdrop .ad-cargo.dragging{animation:none}#airdrop .ad-cargo:before{content:'';position:absolute;left:0;top:-24px;width:126px;height:25px;background:repeating-linear-gradient(90deg,#344d58 0 25px,#151e2c 26px 31px);transform-origin:bottom;transform:skewX(-40deg);border:3px solid #050a12}
-#airdrop .ad-cargo:after{content:'';position:absolute;right:-24px;top:-12px;width:25px;height:108px;background:linear-gradient(90deg,#152332,#263e49);transform:skewY(-43deg);border:3px solid #050a12;z-index:-1}
-#airdrop .ad-face{position:absolute;inset:0;background:linear-gradient(125deg,#526672,#253745 55%,#172636);border:4px solid #050a12;box-shadow:inset 0 0 0 3px #7f96a144,0 10px 25px #0008;border-radius:5px;display:flex;align-items:center;justify-content:center}
-#airdrop .ad-face:before,#airdrop .ad-face:after{content:'';position:absolute;width:13px;top:-3px;bottom:-3px;background:repeating-linear-gradient(135deg,#deb354 0 8px,#1b2635 9px 16px);border-left:2px solid #080e18;border-right:2px solid #080e18}#airdrop .ad-face:before{left:10px}#airdrop .ad-face:after{right:10px}
-#airdrop .ad-core{width:46px;height:46px;background:#06121d;border:3px solid #09101a;transform:rotate(45deg);box-shadow:0 0 0 2px var(--ad-accent),0 0 22px #65eedb55;display:grid;place-items:center}#airdrop .ad-core b{transform:rotate(-45deg);font:400 29px var(--hd);color:var(--ad-accent)}
-#airdrop .ad-cargo.open .ad-face{transform:translateY(-22px) rotate(-8deg);transition:transform .6s}#airdrop .ad-cargo.open{filter:drop-shadow(0 0 22px #6ff3d5)}
-@keyframes adFloat{0%,100%{transform:translateY(0) rotateX(-12deg) rotateY(-25deg)}50%{transform:translateY(-8px) rotateX(-10deg) rotateY(-15deg)}}
-#airdrop .ad-title{font:400 52px/.9 var(--hd);letter-spacing:.035em;margin:0;transform:rotate(-2deg);text-shadow:3px 3px #000}#airdrop .ad-title em{font-style:normal;color:var(--ad-accent)}
-#airdrop .ad-copy{padding:0 20px;margin-top:-6px;position:relative}#airdrop .ad-eyebrow{font:700 10px var(--bd);letter-spacing:.18em;color:#8fa3ba;margin:0 0 10px}
-#airdrop .ad-radio{margin:18px 0;display:flex;gap:9px;align-items:center}#airdrop .ad-portrait{width:42px;height:42px;flex:none;border:2px solid #000;border-radius:50%;object-fit:cover;background:#27374b}#airdrop .ad-radio p{margin:0;font:500 13px/1.5 var(--bd);color:#c3d0dc}#airdrop .ad-radio b{display:block;color:var(--ad-accent);font-size:9px;letter-spacing:.16em;margin-bottom:2px}
-#airdrop .ad-manifest{padding:0 18px;display:grid;gap:10px}#airdrop .ad-drop{position:relative;display:grid;grid-template-columns:55px 1fr auto;align-items:center;text-align:left;gap:10px;border:2px solid #000;border-left:5px solid var(--tone);padding:13px 14px;background:linear-gradient(115deg,#1e2b3c,#14202f);color:var(--paper);box-shadow:4px 4px #000;transform:rotate(-.6deg)}
-#airdrop .ad-drop:nth-child(2){transform:rotate(.5deg)}#airdrop .ad-drop:nth-child(3){transform:rotate(-.3deg)}#airdrop .ad-drop .ad-num{font:400 43px/1 var(--hd);color:var(--tone)}#airdrop .ad-drop strong{font:400 24px/1 var(--hd);letter-spacing:.055em;display:block}#airdrop .ad-drop small{display:block;color:#b2c1d0;font-size:10px;margin-top:5px}#airdrop .ad-drop .ad-arrow{font:400 25px system-ui,sans-serif;color:var(--tone)}
-#airdrop .ad-foot{padding:17px 20px 0;font:500 11px/1.6 var(--bd);color:#90a5ba}#airdrop .ad-foot button{border:0;background:none;color:var(--ad-accent);padding:0;text-decoration:underline dotted;font-size:inherit}
-#airdrop .ad-primary{display:block;width:100%;border:3px solid #000;padding:12px 15px;background:var(--yellow);color:#0d1220;box-shadow:4px 4px #000;font:400 25px var(--hd);letter-spacing:.05em;text-align:left;clip-path:polygon(0 0,100% 0,calc(100% - 12px) 100%,0 100%)}
-#airdrop .ad-secondary{display:block;width:100%;border:1px dashed #52627b;background:transparent;color:var(--paper);padding:11px 13px;font:700 13px var(--bd);margin-top:12px;text-align:left}
-#airdrop .ad-setup{padding:20px}#airdrop .ad-setup p{font:500 13px/1.6 var(--bd);color:#b2c1d0}#airdrop .ad-select{display:block;width:100%;border:1px solid #476071;background:#122333;color:#fff;padding:13px 10px;font:500 14px var(--bd);margin:18px 0}
-#airdrop .ad-wordlist{display:flex;gap:6px;flex-wrap:wrap;margin:15px 0 22px}#airdrop .ad-wordlist span{font:500 11px var(--bd);padding:4px 7px;background:#1b2b3b;color:#b9ccd9;border:1px solid #33485a}
-#airdrop .ad-mission{display:flex;flex-direction:column;min-height:0;flex:1;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom)}
-#airdrop .ad-mission .ad-scene{height:148px;min-height:148px;flex:none}#airdrop .ad-mission .ad-cargo{transform:scale(.7);bottom:15px;animation:adFloatSmall 4s ease-in-out infinite}#airdrop .ad-mission .ad-orbit{bottom:3px;width:180px;height:40px}
-@keyframes adFloatSmall{0%,100%{transform:scale(.7) translateY(0) rotateY(-20deg)}50%{transform:scale(.7) translateY(-7px) rotateY(-10deg)}}
-#airdrop .ad-progress{position:absolute;bottom:12px;left:16px;color:#a9bfcf;font:700 11px var(--bd)}#airdrop .ad-progress strong{display:block;font:400 28px var(--hd);color:var(--ad-accent);margin-bottom:3px}#airdrop .ad-latches{position:absolute;right:15px;bottom:16px;display:flex;gap:4px;align-items:flex-end}#airdrop .ad-latches i{display:block;width:6px;height:14px;background:#263b4d;border:1px solid #416071;transform:skewY(-20deg)}#airdrop .ad-latches i.on{background:var(--ad-accent);box-shadow:0 0 8px #65eedb77}
-#airdrop .ad-prompt{padding:10px 18px 0;flex:none}#airdrop .ad-taskhead{display:flex;align-items:center;justify-content:space-between;gap:6px}#airdrop .ad-mode{color:var(--yellow);font:400 23px var(--hd);letter-spacing:.05em}#airdrop .ad-count{font:700 9px var(--bd);letter-spacing:.12em;color:#8fa3ba}
-#airdrop .ad-clue{font:500 16px/1.5 var(--bd);margin:10px 0;color:var(--paper);min-height:44px}#airdrop .ad-clue u{color:var(--ad-accent);text-underline-offset:5px}
-#airdrop .ad-base{font:700 25px/1.4 var(--bd);letter-spacing:.07em;color:#b8cad7;background:#142333;padding:10px 12px;border-bottom:3px solid #476173;display:block;width:fit-content;transform:rotate(-1deg)}
-#airdrop .ad-memory{font:700 25px/1.4 var(--bd);color:var(--ad-accent);padding:6px 0;overflow-wrap:anywhere}
-#airdrop .ad-inputrow{display:flex;align-items:center;gap:8px}#airdrop .ad-input{width:100%;min-width:0;min-height:52px;border:0;border-bottom:3px solid var(--ad-accent);border-radius:0;background:#152638;color:#fff;font:700 25px var(--bd);padding:8px 10px;letter-spacing:.04em;appearance:none;caret-color:var(--yellow)}#airdrop .ad-input::placeholder{font-size:14px;letter-spacing:.04em;color:#7691aa}
-#airdrop .ad-listen{min-width:44px;height:44px;border:1px solid #496576;color:var(--ad-accent);background:#122333;font-size:20px;display:grid;place-items:center}#airdrop .ad-listen svg{width:23px;height:23px}
-#airdrop .ad-feedback{font:700 13px/1.5 var(--bd);min-height:26px;padding:6px 0;color:var(--yellow)}#airdrop .ad-feedback.ad-good{color:#7dff8a}#airdrop .ad-correction{font:700 21px/1.6 var(--bd);letter-spacing:.05em;overflow-wrap:anywhere;color:#b8c6d3}#airdrop .ad-correction mark{background:#ffd23f;color:#0d1220;padding:0 2px;border-radius:2px}
-#airdrop .ad-tools{display:flex;gap:14px;justify-content:space-between;align-items:center;min-height:27px}#airdrop .ad-tools button{border:0;background:transparent;color:#a4b6cb;font:500 11px var(--bd);padding:4px 0;text-decoration:underline dotted}
-#airdrop .ad-keyboard{padding:10px 7px 12px;margin-top:auto;flex:none;background:#0b1421}#airdrop .ad-keyrow{display:flex;justify-content:center;gap:4px;margin:0 0 5px}#airdrop .ad-keyrow button{flex:1;min-width:0;max-width:48px;height:43px;border:1px solid #43556b;border-bottom:3px solid #060d17;border-radius:4px;background:#243448;color:#edf5ff;font:700 17px var(--bd);padding:0;box-shadow:0 2px #0003}#airdrop .ad-keyrow button:active{background:#44667b;transform:translateY(1px)}#airdrop .ad-keyrow .ad-delete{flex:1.5;max-width:65px;background:#172737;font-size:19px}#airdrop .ad-submit{width:100%;border:2px solid #000;min-height:46px;background:var(--yellow);color:#0d1220;font:400 23px var(--hd);letter-spacing:.07em;box-shadow:2px 2px #000}#airdrop button:disabled{opacity:.45;cursor:default}
-#airdrop .ad-note{padding:18px 20px;font:500 13px/1.7 var(--bd);color:#b7c9d8}#airdrop .ad-stamp{display:inline-block;margin:16px 0 10px;border:3px solid var(--ad-accent);color:var(--ad-accent);padding:5px 11px;font:400 28px var(--hd);letter-spacing:.12em;transform:rotate(-8deg)}
-#airdrop .ad-stats{display:flex;gap:20px;margin:18px 0}#airdrop .ad-stats b{display:block;font:400 33px var(--hd);color:var(--yellow)}#airdrop .ad-stats small{font:500 10px var(--bd);color:#a3b5c7}
-#airdrop .ad-toast{position:absolute;left:50%;bottom:25px;transform:translateX(-50%);padding:10px 15px;background:var(--yellow);color:#0d1220;z-index:8;box-shadow:4px 4px #000;border:2px solid #000;font:700 13px var(--bd);white-space:nowrap;pointer-events:none}
-@media(max-height:710px){#airdrop .ad-mission .ad-scene{height:105px;min-height:105px}#airdrop .ad-keyrow button{height:37px}#airdrop .ad-clue{margin:5px 0;min-height:32px;font-size:15px}#airdrop .ad-prompt{padding-top:6px}#airdrop .ad-keyboard{padding-top:7px}#airdrop .ad-feedback{padding:4px 0;min-height:23px}#airdrop .ad-cargo{bottom:25px}}
-@media(prefers-reduced-motion:reduce){#airdrop *,#airdrop *:before,#airdrop *:after{animation:none!important;transition:none!important}}
-`;document.head.append(style);
-const cargoIcon='<svg class="ad-icon" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 10Q16-5 29 10L16 21ZM3 10h26M10 10l6 11 6-11M10 22h12v8H10zM16 21v9"/></svg>';
-const speakerIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 9h4l5-4v14l-5-4H3zM16 8q5 4 0 8M19 5q8 7 0 14"/></svg>';
-function node(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;}
-function button(text,cls,action){const b=node('button',cls,text);b.type='button';b.onclick=action;return b;}
-function state(){if(!S.airdrop||S.airdrop.version!==1)S.airdrop=freshState();return S.airdrop;}
-window.airdropButton=function(){
-  const b=button('','airdrop-entry',async()=>{
-    if(!student){document.querySelector('.student-input')?.focus();return;}
-    if(b.disabled)return;b.disabled=true;
-    try{await syncStudent();openAirdrop();}catch(error){cloudFailure(error);}finally{b.disabled=false;}
-  });
-  b.innerHTML=cargoIcon;const tx=node('span','','Incoming airdrop');tx.append(node('small','','10 / 30 / 60'));b.append(tx,node('b','','↗'));
-  return b;
+function migrateRun(run){
+ if(!run||run.engine===2||run.completed)return run;
+ const remaining=run.words.filter(w=>!run.verified.includes(w));
+ run.queue=remaining.map((w,i)=>({w,kind:kindFor(w,i,run.size),assisted:false,attempts:0,retry:0}));run.cursor=0;run.engine=2;run.streak=0;run.parked=[];return run;
+}
+function letterTray(word,echo,random=Math.random){
+ if(echo)return 'abcdefghijklmnopqrstuvwxyz'.split('').map((text,i)=>({id:i,text}));
+ const letters=word.split('');const distractors='aeioubdmpst';for(let i=0;i<3;i++)letters.push(distractors[Math.floor(random()*distractors.length)]);
+ return randomized(letters,random).map((text,id)=>({text,id}));
+}
+const clean=s=>s.trim().toLowerCase();
+window.GateAirdrop={SETS,WORDS,ALL,freshState,rewardWord,pickWords,newRun,advance,migrateRun,letterTray,clean};
+// DOM begins here. The same workshop shell, back arrow, portrait and tabs own navigation.
+const assets=new URL('airdrop/',document.currentScript.src);
+const link=document.createElement('link');link.rel='stylesheet';link.href=new URL('airdrop.css?v=2',assets);document.head.append(link);
+const ICON={
+ speaker:'<path d="M3 9h4l5-4v14l-5-4H3zM16 8q5 4 0 8M19 5q8 7 0 14"/>',
+ play:'<path d="m8 4 13 8-13 8z"/>',back:'<path d="m15 5-8 7 8 7"/>',
+ undo:'<path d="M7 8h9a6 6 0 1 1-5 10M7 3 2 8l5 5"/>',
+ eye:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+ check:'<path d="m4 12 5 5L21 5"/>',pause:'<path d="M8 4v16M16 4v16"/>',
+ home:'<path d="m2 11 10-9 10 9M5 9v12h14V9M10 21v-8h4v8"/>',
+ bolt:'<path d="m14 2-9 12h6l-1 8 9-12h-6z"/>',
+ settings:'<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="10" cy="18" r="2"/>',
+ clock:'<circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 3"/>'
 };
-function openAirdrop(){
-  if(document.getElementById('airdrop'))return;
-  const a=state(),player=student.id,wasTheme=Snd.themeWant,previous=document.activeElement;
-  Snd.init();Snd.resume();Snd.theme(false);
-  const shell=node('section');shell.id='airdrop';shell.setAttribute('role','dialog');shell.setAttribute('aria-modal','true');shell.setAttribute('aria-label','Incoming airdrop spelling mission');shell.tabIndex=-1;
-  const app=document.getElementById('app'),wasInert=app.inert;app.inert=true;
-  document.body.append(shell);shell.focus();
-  let screen='menu',epoch=0,feedbackTimer=null,speechTimer=null,currentInput=null,submitAction=null,closeAction=null;
-  const live=()=>shell.isConnected&&student?.id===player;
-  const persist=()=>{if(live())save();};
-  function sound(name){if(live())sfx(name);}
-  function stopSpeech(){clearTimeout(speechTimer);try{window.speechSynthesis?.cancel();}catch(_){}}
-  function say(text){
-    stopSpeech();if(S.muted)return;
-    if(!window.speechSynthesis||!window.SpeechSynthesisUtterance){toast('Ask your teacher to read this prompt.');return;}
-    const u=new SpeechSynthesisUtterance(text);u.lang='en-US';u.rate=.82;window.speechSynthesis.speak(u);
+const svg=name=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+ICON[name]+'</svg>';
+function n(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e;}
+function b(text,cls,fn){const e=n('button',cls,text);e.type='button';e.onclick=fn;return e;}
+function ib(name,label,fn,cls=''){const e=b('','air-icon '+cls,fn);e.innerHTML=svg(name);e.setAttribute('aria-label',label);return e;}
+window.mountAirdrop=function(host){
+ const {d,dp,fr,head,talk,setBack}=host;
+ if(!S.airdrop||S.airdrop.version!==1)S.airdrop=freshState();
+ const a=S.airdrop;migrateRun(a.run);
+ const wasTheme=Snd.themeWant;Snd.theme(false);
+ let active=true,page='menu',epoch=0,taskCleanup=null,speechTimer=null,taskTimer=null,selectedSize=10,selectedSet=-1;
+ const player=student?.id;let sceneReady=false,sceneState={type:'view',mode:'menu',size:10};
+ const live=()=>active&&d.isConnected&&student?.id===player;
+ const persist=()=>{if(live())save();};
+ const post=payload=>{if(sceneReady)fr.contentWindow?.postMessage({airdrop:payload},location.origin);};
+ const view=payload=>{sceneState={...sceneState,...payload,type:'view'};post(sceneState);};
+ const onMessage=e=>{if(!live()||e.source!==fr.contentWindow||e.origin!==location.origin||!e.data?.airdrop)return;const m=e.data.airdrop;if('ready'in m){sceneReady=m.ready;if(m.ready)post(sceneState);}if(m.choose&&page==='menu')setup(m.choose);};
+ window.addEventListener('message',onMessage);
+ fr.title='3D airdrop landing pad';fr.src=new URL('index.html?v=2',assets).href;
+ function stopSpeech(){clearTimeout(speechTimer);try{speechSynthesis.cancel();}catch{}}
+ function say(text){stopSpeech();if(S.muted||!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance(text);u.lang='en-US';u.rate=.83;speechSynthesis.speak(u);}
+ function voice(text){const stamp=epoch;speechTimer=setTimeout(()=>{if(live()&&epoch===stamp)say(text);},160);}
+ function reset(next){epoch++;clearTimeout(taskTimer);stopSpeech();taskCleanup?.();taskCleanup=null;page=next;dp.replaceChildren();dp.scrollTop=0;d.classList.toggle('pw',next==='task');d.classList.toggle('air-task',next==='task');setBack(next==='menu'?host.close:menu);}
+ function intro(text){dp.append(head(true));talk(text);}
+ function littleStatus(text){const e=n('div','air-status',text);e.setAttribute('role','status');e.setAttribute('aria-live','polite');return e;}
+ function menu(){
+  reset('menu');view({mode:'menu',open:false,arrive:false});intro('Pick a drop. Let’s crack it.');
+  const title=n('div','air-heading');title.append(n('span','','AIR DROP'),ib('settings','Practice settings',settings));dp.append(title);
+  const row=n('div','air-sizes');[[10,'QUICK'],[30,'MIX'],[60,'CHALLENGE']].forEach(([size,label])=>{const e=b('','air-size',()=>setup(size));e.append(n('strong','',String(size)),n('small','',label));if(a.completed[size])e.append(n('i','','✓'));row.append(e);});dp.append(row);
+  if(a.run&&!a.run.completed){const resume=b('','air-resume',()=>task());resume.append(ibPlaceholder('play'),n('strong','',a.run.verified.length+' / '+a.run.size),n('span','','CONTINUE'));dp.append(resume);}
+  const day=a.daily.day===taipeiDay()?a.daily:{paid:0,words:[]};const foot=n('div','air-allowance');foot.append(n('span','','🔧 '+day.paid+' / 6'));const bars=n('span','air-mini');for(let i=0;i<6;i++)bars.append(n('i',i<day.paid?'on':''));foot.append(bars);dp.append(foot);
+ }
+ function ibPlaceholder(name){const e=n('span','air-symbol');e.innerHTML=svg(name);return e;}
+ function settings(){reset('settings');intro('Small rewards. Lots of practice.');view({mode:'menu'});
+  const detail=n('div','air-settings');detail.append(n('h3','','For the teacher'),n('p','','10 different words spelled without hints earn 1 part. Maximum 6 parts per Taiwan calendar day; repeats do not pay again.'),n('p','','Target hunting, chunk connections and limited letter trays are learning rounds. Each word returns later on the full alphabet board before it can count as recalled.'),n('p','','All 60 words are available. Thirty-word drops sample five words from each school set. The challenge covers every word. Pause or stop at any time.'),b('Back','cta',menu));dp.append(detail);
+ }
+ function setup(size){
+  if(![10,30,60].includes(size))return;selectedSize=size;selectedSet=-1;reset('setup');view({mode:'task',size,open:false,arrive:true});intro(size===60?'The whole shipment. Hear it. Spell it.':'A little hunt. A little building. Then spell it.');
+  const title=n('div','air-heading',size+' WORDS');dp.append(title);
+  const sample=n('div','air-samples');['hunt','connect','build','echo'].slice(size===60?3:0).forEach((k,i)=>{const e=n('div','air-sample');e.append(n('strong','',k==='hunt'?'◎':k==='connect'?'a—b':k==='build'?'a b c':'🔊'),n('small','',k==='hunt'?'FIND':k==='connect'?'LINK':k==='build'?'BUILD':'SPELL'));sample.append(e);});dp.append(sample);
+  if(size===10){const sets=n('div','air-setpick');const groupLabel=n('div','air-micro','PACKET');sets.append(groupLabel);[-1,0,1,2,3,4,5].forEach(i=>{const e=b(i<0?'↻':String(i+1),i<0?'on':'',()=>{selectedSet=i;[...sets.querySelectorAll('button')].forEach(btn=>btn.classList.toggle('on',btn===e));preview.textContent=i<0?'':SETS[i].slice(0,3).join(' · ')+' …';});e.setAttribute('aria-label',i<0?'Mixed words':'School set '+(i+1));sets.append(e);});const preview=n('div','air-setpreview');dp.append(sets,preview);}
+  if(a.run&&!a.run.completed)dp.append(n('div','air-micro','New drop replaces your paused run. Parts stay.'));
+  const go=b('','air-go',()=>{a.run=newRun(selectedSize,selectedSet,a.stats);persist();sfx('whoosh');view({mode:'task',size:selectedSize,arrive:true,progress:0});task();});go.append(ibPlaceholder('play'),n('span','','LET’S GO'));dp.append(go);
+ }
+ function reward(run,word,independent){
+  const stat=a.stats[word]||(a.stats[word]={exact:0,misses:0,helped:0});if(independent)stat.exact++;else stat.helped++;
+  if(!independent)return 0;const gain=rewardWord(a,word,taipeiDay());S.parts=(S.parts||0)+gain;run.tokens+=gain;partsEl.lastChild.textContent=S.parts;return gain;
+ }
+ function task(){
+  const run=a.run;if(!run)return menu();if(run.completed)return result();
+  const latch=Math.floor(run.verified.length/10);if(latch>run.latch){run.latch=latch;persist();return checkpoint();}
+  reset('task');const stamp=epoch,t=run.queue[run.cursor],w=WORDS[t.w];view({mode:'task',size:run.size,progress:run.verified.length/run.size,streak:run.streak,open:false,arrive:false});
+  const top=n('div','air-tasktop');top.append(ib('pause','Pause drop',pause),n('strong','',run.verified.length+' / '+run.size));const charge=n('div','air-charge');for(let i=0;i<5;i++)charge.append(n('i',i<(run.streak||0)%5?'on':''));top.append(charge,ib('speaker','Hear the word',()=>say(w.word)));dp.append(top);
+  const name=n('div','air-taskname',({hunt:'FIND THE SIGNAL',connect:'CONNECT THE WORD',build:'BUILD IT',echo:'SPELL IT'})[t.kind]);dp.append(name);
+  const feedback=littleStatus('');feedback.classList.add('air-feedback');
+  let locked=false,chosen=t.selected||[],options=t.options;
+  const independent=()=>t.kind==='echo'&&!t.assisted;
+  function success(){
+   if(locked||!live()||stamp!==epoch)return;locked=true;
+   const exact=independent(),gain=reward(run,t.w,exact);run.streak=exact?(run.streak||0)+1:run.streak||0;
+   advance(run,true,exact);if(run.completed&&run.verified.length===run.size&&!run.stamped){a.completed[run.size]=(a.completed[run.size]||0)+1;run.stamped=true;}persist();
+   top.querySelector('strong').textContent=run.verified.length+' / '+run.size;
+   [...charge.children].forEach((bar,i)=>bar.classList.toggle('on',i<((run.streak||0)%5||((run.streak||0)>0?5:0))));
+   name.textContent=exact?'LOCKED IN!':'NICE!';feedback.textContent=gain?'+1 🔧':exact?'✓':'↻';feedback.classList.add('good');post({type:'correct',streak:run.streak});if(exact&&run.streak%5===0){post({type:'launch'});feedback.textContent='⚡ '+run.streak;}sfx(exact?'good':'pin');
+   dp.classList.add('air-win');taskTimer=setTimeout(()=>{dp.classList.remove('air-win');if(live()&&stamp===epoch)task();},650);
   }
-  function laterSpeech(text){const token=epoch;speechTimer=setTimeout(()=>{if(live()&&epoch===token)say(text);},180);}
-  function reset(next){epoch++;clearTimeout(feedbackTimer);stopSpeech();screen=next;currentInput=null;submitAction=null;closeAction=null;shell.replaceChildren();}
-  function close(){
-    persist();reset('closed');shell.remove();app.inert=wasInert;document.removeEventListener('keydown',onKey);
-    if(wasTheme)Snd.theme(true);if(previous?.isConnected)previous.focus();
+  function wrong(){
+   if(locked)return;t.assisted=true;t.attempts++;run.streak=0;const st=a.stats[t.w]||(a.stats[t.w]={exact:0,misses:0,helped:0});st.misses++;persist();sfx('tap');feedback.classList.remove('good');feedback.textContent='Try again';name.classList.remove('air-nudge');void name.offsetWidth;name.classList.add('air-nudge');
+   if(t.attempts>=2)showWord();
   }
-  function header(back=close,label='Back to game'){
-    const top=node('header','ad-top');const b=button('‹ '+label,'ad-back',back);top.append(b,node('small','','KIP / AIR FREIGHT'));
-    const bal=node('b','ad-balance','◆ '+(S.parts||0));bal.setAttribute('aria-label',(S.parts||0)+' parts');top.append(bal);
-    const mute=button(S.muted?'♪ off':'♪ on','ad-sound',()=>{Snd.setMuted(!S.muted);mute.textContent=S.muted?'♪ off':'♪ on';if(S.muted)stopSpeech();});mute.setAttribute('aria-label','Toggle sound');top.append(mute);shell.append(top);return top;
+  function showWord(){t.assisted=true;persist();feedback.replaceChildren(n('strong','air-answer',w.word));voice(w.word);}
+  function helpRow(){const row=n('div','air-help');row.append(ib('eye','Show the word',showWord),ib('speaker','Hear a sentence',()=>say(w.sentence)),ib('clock','Practise this word later',()=>{if(locked)return;locked=true;advance(run,false,false);persist();task();}));dp.append(row);}
+  if(t.kind==='hunt'){
+   if(!options){options=randomized([w.word,w.damaged,ALL.find(other=>other!==w.word&&other.length===w.word.length)||'signal']);if(new Set(options).size!==3)options=[w.word,w.damaged,'signal'];t.options=options;persist();}
+   const arena=n('div','air-hunt');const cross=n('span','air-cross','⌖');arena.append(cross);
+   options.forEach((word,i)=>{const pod=b(word,'air-pod pod'+i,()=>{if(locked)return;post({type:'snap'});if(word===w.word){pod.classList.add('hit');success();}else{pod.classList.add('miss');wrong();}});pod.setAttribute('aria-label','Target '+word);arena.append(pod);});dp.append(arena,feedback);helpRow();
+  }else{
+   const echo=t.kind==='echo',chunks=t.kind==='connect';
+   if(!options){options=chunks?randomized(w.chunks.split('·').concat([WORDS[ALL.find(other=>other!==w.word&&WORDS[other].chunks.includes('·'))].chunks.split('·')[0]])).map((text,id)=>({id,text})):letterTray(w.word,echo);t.options=options;persist();}
+   const ports=n('div','air-ports');ports.setAttribute('aria-label','Your spelling');dp.append(ports);
+   const arena=n('div',chunks?'air-circuit':echo?'air-alphabet':'air-salvage');arena.setAttribute('aria-label',chunks?'Word chunks':echo?'Alphabet letter tiles':'Loose letter tiles');
+   let wires=null;if(chunks){wires=document.createElementNS('http://www.w3.org/2000/svg','svg');wires.setAttribute('class','air-wires');arena.append(wires);}
+   const getOption=id=>options.find(o=>o.id===id);
+   const answer=()=>chosen.map(id=>getOption(id)?.text||'').join('');
+   function paint(){
+    t.selected=chosen;persist();ports.replaceChildren();
+    chosen.forEach((id,index)=>{const tile=b(getOption(id).text,'air-letter inport',()=>{if(locked)return;chosen.splice(index,1);paint();sfx('tap');});tile.setAttribute('aria-label','Remove '+getOption(id).text);ports.append(tile);});
+    if(!chosen.length)ports.append(n('span','air-ghost',echo?'? ? ?':'↓'));
+    arena.querySelectorAll('button').forEach(el=>{const id=Number(el.dataset.id),used=chosen.includes(id);el.disabled=!echo&&used;el.classList.toggle('used',used);});
+    if(wires){wires.replaceChildren();const ns='http://www.w3.org/2000/svg';const path=document.createElementNS(ns,'polyline');const rect=arena.getBoundingClientRect();path.setAttribute('points',chosen.map(id=>{const el=arena.querySelector('[data-id="'+id+'"]'),r=el.getBoundingClientRect();return (r.left-rect.left+r.width/2)+','+(r.top-rect.top+r.height/2);}).join(' '));wires.append(path);}
+   }
+   function pick(id){if(locked||answer().length>=22)return;if(!echo&&chosen.includes(id))return;chosen.push(id);paint();sfx('tick');post({type:'snap'});}
+   options.forEach((option,i)=>{const tile=b(option.text,'air-letter'+(chunks?' chunk':''),()=>pick(option.id));tile.dataset.id=option.id;tile.setAttribute('aria-label',(chunks?'Chunk ':'Letter ')+option.text);
+    if(chunks){tile.style.setProperty('--x',[12,57,10,58,34][i%5]+'%');tile.style.setProperty('--y',[9,15,61,64,36][i%5]+'%');}
+    // Tap and drag both work; nothing requires dexterity or speed.
+    let drag=null;
+    tile.onpointerdown=e=>{if(locked)return;drag={x:e.clientX,y:e.clientY};tile.setPointerCapture?.(e.pointerId);};
+    tile.onpointermove=e=>{if(!drag||Math.hypot(e.clientX-drag.x,e.clientY-drag.y)<10)return;tile.style.transform='translate('+(e.clientX-drag.x)+'px,'+(e.clientY-drag.y)+'px) scale(1.1)';tile.classList.add('drag');};
+    tile.onpointerup=e=>{if(!drag)return;const moved=Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>10;tile.style.transform='';tile.classList.remove('drag');drag=null;if(moved){e.preventDefault();tile.onclick=null;const r=ports.getBoundingClientRect();if(e.clientY>=r.top-25&&e.clientY<=r.bottom+25)pick(option.id);setTimeout(()=>{tile.onclick=()=>pick(option.id);},0);}};
+    tile.onpointercancel=()=>{drag=null;tile.style.transform='';tile.classList.remove('drag');};arena.append(tile);
+   });dp.append(arena,feedback);
+   const actions=n('div','air-actions');actions.append(ib('undo','Undo last tile',()=>{if(locked)return;chosen.pop();paint();sfx('tap');}));
+   const check=ib('check','Launch code',()=>{if(locked||!chosen.length)return;if(answer()===w.word)success();else wrong();},'air-launch');actions.append(check);dp.append(actions);helpRow();paint();
   }
-  function scene(size=10,opened=false,run=null){
-    const sc=node('div','ad-scene');sc.append(node('div','ad-ground'),node('div','ad-orbit'));
-    const freq=node('div','ad-freq');freq.append(node('i'),document.createTextNode('CARGO LINK / 08'),node('br'),document.createTextNode('SIGNAL ACQUIRED'));
-    const alt=node('div','ad-altitude','SUPPLY DROP');alt.append(node('br'),document.createTextNode(size+' CODES'));sc.append(freq,alt);
-    const crate=node('div','ad-cargo'+(opened?' open':'')),face=node('div','ad-face'),core=node('div','ad-core');core.append(node('b','',opened?'✓':String(size)));face.append(core);crate.append(face);sc.append(crate,node('div','ad-scan'));
-    // The supply is an object to inspect, rather than a static questionnaire header.
-    let drag=null;crate.onpointerdown=e=>{drag={x:e.clientX};crate.classList.add('dragging');crate.setPointerCapture?.(e.pointerId);};
-    crate.onpointermove=e=>{if(drag)crate.style.transform='rotateY('+Math.max(-65,Math.min(65,(e.clientX-drag.x)*.6))+'deg) scale('+(run?.7:1)+')';};
-    const release=()=>{drag=null;crate.classList.remove('dragging');crate.style.transform='';};crate.onpointerup=crate.onpointercancel=release;
-    if(run){const p=node('div','ad-progress');p.append(node('strong','',run.verified.length+' / '+run.size),document.createTextNode('codes restored'));sc.append(p);
-      const latches=node('div','ad-latches');for(let i=0;i<Math.ceil(run.size/10);i++)latches.append(node('i',run.verified.length>=(i+1)*10?'on':''));sc.append(latches);}
-    return sc;
-  }
-  function radio(parent,text){const r=node('div','ad-radio'),portrait=node('div','ad-portrait');portrait.style.cssText='background:url(assets/p1.jpg) 56% 82%/700% auto;border-radius:50%;';const tx=node('p');tx.append(node('b','','KIP · RADIO'),document.createTextNode(text));r.append(portrait,tx);parent.append(r);}
-  function toast(text){shell.querySelector('.ad-toast')?.remove();const n=node('div','ad-toast',text);n.setAttribute('role','status');shell.append(n);setTimeout(()=>n.remove(),1800);}
-  function menu(){
-    reset('menu');header();const body=node('div','ad-scroll');shell.append(body);body.append(scene(60));
-    const copy=node('div','ad-copy');copy.append(node('p','ad-eyebrow','AN UNMARKED SHIPMENT HAS ARRIVED'));
-    const title=node('h1','ad-title');title.append('SPECIAL ',node('em','','DELIVERY'));copy.append(title);radio(copy,'Delivery’s here. Codes are scrambled. Pick a crate.');body.append(copy);
-    const manifest=node('div','ad-manifest');
-    if(a.run&&!a.run.completed){const resume=button('Continue your '+a.run.size+'-word drop ▸','ad-primary',()=>mission());manifest.append(resume);}
-    const specs=[[10,'SCOUT DROP','A quick practice packet','#65eedb'],[30,'CARGO DROP','Mixed practice · six school sets','#ffd23f'],[60,'HEAVY DROP','Every word · spelling-bee challenge','#bca2ff']];
-    specs.forEach(([n,name,desc,tone])=>{const b=button('','ad-drop',()=>setup(n));b.style.setProperty('--tone',tone);b.append(node('span','ad-num',String(n)));const tx=node('span');tx.append(node('strong','',name),node('small','',desc+(a.completed[n]?' · CLEARED ✓':'')));b.append(tx,node('span','ad-arrow','↗'));manifest.append(b);});body.append(manifest);
-    const foot=node('div','ad-foot');const d=a.daily.day===taipeiDay()?a.daily:{paid:0,words:[]};foot.append(document.createTextNode('Today: '+d.paid+' / 6 parts · '),button('How payouts work','',()=>rules()));body.append(foot);
-  }
-  function rules(){reset('rules');header(menu,'Airdrops');const body=node('div','ad-scroll'),note=node('div','ad-note');note.append(node('h1','ad-title','SMALL CARGO. REAL PRACTICE.'),node('p','','Every 10 different words spelled without help earns 1 part. Up to 6 parts per day, across all drops. Repeating the same words today does not pay again.'),node('p','','Fixing a label helps you learn it. That word comes back later with its answer hidden. Hints, repairs and mistakes never take parts away.'),node('p','','All 60 words are available. Thirty-word drops include five words from each school set. Sixty-word drops include every word.'),node('p','','Progress saves after every answer. Pause whenever you need. There is no countdown and no microphone requirement.'),button('Choose a drop ▸','ad-primary',menu));body.append(note);shell.append(body);}
-  function setup(size){
-    reset('setup');header(menu,'Airdrops');const body=node('div','ad-scroll');body.append(scene(size));const box=node('div','ad-setup');box.append(node('h1','ad-title',size+' WORD DROP'),node('p','',size===60?'Every word. Shuffled. Hear it, then spell it.':'Build, repair, remember. Then spell each code without help.'));
-    let set=-1;
-    if(size===10){const label=node('label','ad-eyebrow','CHOOSE YOUR PACKET');const select=node('select','ad-select');select.setAttribute('aria-label','Ten-word practice set');select.append(new Option('Mixed · choose for me','-1'));SETS.forEach((words,i)=>select.append(new Option('Set '+(i+1)+' · '+words[0]+' … '+words.at(-1),String(i))));label.append(select);box.append(label);
-      const preview=node('div','ad-wordlist');preview.setAttribute('aria-label','Words in this school set');const paint=()=>{set=Number(select.value);preview.replaceChildren(...(set<0?[]:SETS[set].map(w=>node('span','',w))));};select.onchange=paint;box.append(preview);}
-    if(a.run&&!a.run.completed){box.append(node('p','','Your current '+a.run.size+'-word drop is paused. Starting a new one replaces that run; word practice records and parts stay saved.'));box.append(button('Continue current drop','ad-secondary',()=>mission()));}
-    box.append(button('Receive drop ▸','ad-primary',()=>{a.run=newRun(size,set,a.stats);persist();sound('whoosh');mission();}));body.append(box);shell.append(body);
-  }
-  function keyboard(parent,input,submit){
-    const kb=node('div','ad-keyboard');parent.append(kb);
-    function insert(text){if(input.disabled)return;input.focus({preventScroll:true});const start=input.selectionStart??input.value.length,end=input.selectionEnd??start;if(text==='⌫'){input.setRangeText('',start===end?Math.max(0,start-1):start,end,'end');}else if(input.value.length<24)input.setRangeText(text,start,end,'end');input.dispatchEvent(new Event('input'));sound('tick');}
-    ['qwertyuiop','asdfghjkl','zxcvbnm'].forEach((letters,i)=>{const row=node('div','ad-keyrow');if(i===1)row.style.padding='0 14px';[...letters].forEach(letter=>row.append(button(letter,'',()=>insert(letter))));if(i===2){const del=button('⌫','ad-delete',()=>insert('⌫'));del.setAttribute('aria-label','Backspace');row.append(del);}kb.append(row);});
-    const check=button('CHECK CODE ▸','ad-submit',submit);kb.append(check);return check;
-  }
-  function mission(){
-    const run=a.run;if(!run){menu();return;}if(run.completed){result();return;}
-    // A paid latch is checkpointed separately, so refresh cannot repeat rewards.
-    const latch=Math.floor(run.verified.length/10);
-    if(latch>run.latch&&!run.completed){run.latch=latch;persist();checkpoint();return;}
-    reset('mission');const token=epoch;header(()=>pause(),'Pause');
-    const task=run.queue[run.cursor],entry=WORDS[task.w];
-    const area=node('div','ad-mission');area.append(scene(run.size,false,run));shell.append(area);
-    const prompt=node('div','ad-prompt'),heading=node('div','ad-taskhead');heading.append(node('span','ad-mode',{forge:'WORD FORGE',repair:'DAMAGED LABEL',memory:'ECHO SCANNER',dispatch:'CARGO DISPATCH',recall:task.retry?'SIGNAL RETRY':'DECODE BY EAR'}[task.kind]),node('span','ad-count',task.retry?'BACK FROM THE REPAIR BELT':'NO TIMER'));prompt.append(heading);
-    const clue=node('div','ad-clue');
-    if(task.kind==='forge'){clue.append(node('span','ad-base',entry.base+' → ?'));}
-    else if(task.kind==='repair'){clue.textContent='Fix the damaged label.';}
-    else if(task.kind==='dispatch'){const bits=entry.sentence.split(new RegExp('('+entry.word+')','i'));bits.forEach((bit,i)=>clue.append(i%2?node('u','','_____'):document.createTextNode(bit)));}
-    else clue.textContent=task.kind==='memory'?'Scan it. Hide it. Remember it.':'Listen. Spell the code.';
-    prompt.append(clue);
-    const row=node('div','ad-inputrow'),input=node('input','ad-input');input.type='text';input.inputMode='none';input.autocomplete='off';input.autocapitalize='none';input.spellcheck=false;input.maxLength=24;input.setAttribute('autocorrect','off');input.setAttribute('aria-label','Spell the code');input.placeholder='type the code';
-    input.value=task.draft??(task.kind==='forge'?entry.base:task.kind==='repair'?entry.damaged:'');
-    const listen=button('','ad-listen',()=>say(entry.word));listen.innerHTML=speakerIcon;listen.setAttribute('aria-label','Hear the word again');row.append(input,listen);prompt.append(row);
-    const feedback=node('div','ad-feedback');feedback.setAttribute('role','status');feedback.setAttribute('aria-live','polite');prompt.append(feedback);
-    const tools=node('div','ad-tools');const example=button('Use it in a sentence','',()=>say(entry.sentence));tools.append(example);
-    const hint=button('Show the spelling','',()=>reveal());tools.append(hint);prompt.append(tools);area.append(prompt);
-    let locked=false,scanVisible=task.kind==='memory'&&!task.scanned;
-    const submit=()=>{
-      if(locked||scanVisible||!live()||token!==epoch)return;
-      const answer=clean(input.value);if(!answer){feedback.textContent='Listen, then enter a code.';say(entry.word);return;}
-      if(answer===entry.word){
-        locked=true;input.disabled=true;check.disabled=true;feedback.classList.add('ad-good');sound('pin');
-        const independent=(task.kind==='recall'||task.kind==='dispatch')&&!task.assisted;
-        feedback.textContent=independent?'CODE RESTORED ✓':'LABEL REPAIRED · recall it again later';
-        const stat=a.stats[task.w]||(a.stats[task.w]={exact:0,misses:0,helped:0});
-        if(independent)stat.exact++;else stat.helped++;
-        let gain=0;
-        if(independent){gain=rewardWord(a,task.w,taipeiDay());run.tokens+=gain;S.parts=(S.parts||0)+gain;}
-        advance(run,true,independent);
-        if(run.completed&&run.verified.length===run.size&&!run.stamped){a.completed[run.size]=(a.completed[run.size]||0)+1;run.stamped=true;}
-        persist();
-        if(gain){partsEl.lastChild.textContent=S.parts;shell.querySelector('.ad-balance').textContent='◆ '+S.parts;toast('+1 part · 10 different codes');sound('coin');}
-        feedbackTimer=setTimeout(()=>{if(live()&&token===epoch)mission();},500);
-      }else{
-        task.attempts++;task.assisted=true;task.draft=input.value;
-        const stat=a.stats[task.w]||(a.stats[task.w]={exact:0,misses:0,helped:0});stat.misses++;persist();
-        sound('tap');feedback.classList.remove('ad-good');feedback.replaceChildren(node('span','','Compare, then repair: '));
-        const correction=node('div','ad-correction');[...entry.word].forEach((letter,i)=>correction.append(node(answer[i]===letter?'span':'mark','',letter)));feedback.append(correction);
-        if(answer.length>entry.word.length)feedback.append(node('span','','Remove the extra letters, too.'));
-        hint.textContent='Read the word again';
-        if(task.attempts>=2&&!tools.querySelector('.ad-park'))tools.append(button('Practise later','ad-park',()=>{if(locked)return;locked=true;advance(run,false,false);persist();mission();}));
-      }
-    };
-    const check=keyboard(area,input,submit);currentInput=input;submitAction=submit;
-    input.oninput=()=>{input.value=input.value.replace(/[^a-zA-Z]/g,'').toLowerCase().slice(0,24);task.draft=input.value;persist();};
-    function reveal(){
-      if(locked)return;task.assisted=true;persist();feedback.textContent=entry.chunks.replaceAll('·',' · ');say(entry.word);hint.textContent='Spelling shown · try it';
-    }
-    if(scanVisible){
-      task.assisted=true;input.disabled=true;check.disabled=true;
-      const memory=node('div','ad-memory',entry.chunks.replaceAll('·',' · '));clue.append(memory);
-      const hide=button('HIDE SIGNAL ▸','ad-secondary',()=>{memory.remove();hide.remove();clue.textContent='Signal hidden. Spell it from memory.';task.scanned=true;scanVisible=false;input.disabled=false;check.disabled=false;persist();input.focus({preventScroll:true});});clue.append(hide);
-    }
-    closeAction=pause;
-    laterSpeech(entry.word);
-  }
-  function checkpoint(){
-    reset('checkpoint');header(()=>pause(),'Pause');const run=a.run,body=node('div','ad-scroll');body.append(scene(run.size,true,run));const box=node('div','ad-setup');box.append(node('p','ad-eyebrow','LATCH '+Math.floor(run.verified.length/10)+' RELEASED'),node('h1','ad-title','SIGNAL STRONGER.'),node('p','',run.verified.length+' codes restored. Take a breath. The next packet is ready.'),button('Keep decoding ▸','ad-primary',()=>mission()),button('Save & return to airdrops','ad-secondary',menu));body.append(box);shell.append(body);sound('card');
-  }
-  function pause(){
-    reset('pause');header(menu,'Airdrops');const body=node('div','ad-scroll');body.append(scene(a.run.size,false,a.run));const box=node('div','ad-setup');box.append(node('h1','ad-title','CARGO SECURED.'),node('p','','Your exact place is saved. No rush.'),button('Continue decoding ▸','ad-primary',()=>mission()),button('Back to game','ad-secondary',close));body.append(box);shell.append(body);persist();
-  }
-  function result(){
-    reset('result');const run=a.run;if(!run)return menu();
-    if(run.verified.length===run.size&&!run.stamped){a.completed[run.size]=(a.completed[run.size]||0)+1;run.stamped=true;persist();}
-    header(menu,'Airdrops');const body=node('div','ad-scroll');body.append(scene(run.size,true,run));const box=node('div','ad-setup');box.append(node('span','ad-stamp',run.parked.length?'CARGO RECOVERED':'CLEARED ✓'),node('h1','ad-title','GOOD DELIVERY.'));
-    const stats=node('div','ad-stats');[[run.verified.length+'/'+run.size,'codes recalled'],['+'+run.tokens,'parts earned']].forEach(([n,t])=>{const cell=node('div');cell.append(node('b','',n),node('small','',t));stats.append(cell);});box.append(stats);
-    if(run.parked.length){box.append(node('p','',run.parked.length+' labels need another look. They are saved on the repair belt.'),button('Retry those labels ▸','ad-primary',()=>{const words=run.parked.slice();run.queue.push(...randomized(words).map(w=>({w,kind:'recall',assisted:false,attempts:0,retry:0})));run.completed=false;persist();mission();}));}
-    else box.append(node('p','','The lock is open. The shipment is yours.'));
-    box.append(button('Choose another drop ▸',run.parked.length?'ad-secondary':'ad-primary',menu),button('Back to game','ad-secondary',close));body.append(box);shell.append(body);sound('card');
-  }
-  function onKey(e){
-    if(!live())return;
-    if(e.key==='Escape'){e.preventDefault();(closeAction||close)();return;}
-    if(e.key==='Tab'){
-      const controls=[...shell.querySelectorAll('button:not(:disabled),input:not(:disabled),select')].filter(n=>n.offsetParent!==null);
-      const first=controls[0],last=controls.at(-1);if(!first)return;
-      if(e.shiftKey&&(document.activeElement===first||document.activeElement===shell)){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}return;
-    }
-    if(screen==='mission'&&e.key==='Enter'&&document.activeElement===currentInput){e.preventDefault();submitAction?.();}
-  }
-  document.addEventListener('keydown',onKey);menu();
-}
+  setBack(pause);voice(w.word);
+ }
+ function checkpoint(){
+  reset('checkpoint');view({mode:'reward',size:a.run.size,open:true,arrive:false});post({type:'launch'});intro('Latch open! Send the next packet?');
+  const rings=n('div','air-checkpoint');rings.append(n('strong','',a.run.verified.length+' / '+a.run.size),n('span','','✓'));dp.append(rings);
+  const go=b('','air-go',task);go.append(ibPlaceholder('play'),n('span','','NEXT PACKET'));dp.append(go,ib('home','Pause and return to drops',menu));sfx('card');
+ }
+ function pause(){reset('pause');view({mode:'task',size:a.run.size});intro('Saved. Your cargo can wait.');const p=n('div','air-checkpoint');p.append(ibPlaceholder('pause'),n('strong','',a.run.verified.length+' / '+a.run.size));dp.append(p);const go=b('','air-go',task);go.append(ibPlaceholder('play'),n('span','','CONTINUE'));dp.append(go,b('AIR DROPS','air-outline',menu));persist();}
+ function result(){
+  reset('result');const r=a.run;view({mode:'reward',size:r.size,open:true,arrive:false});post({type:'launch'});intro(r.parked.length?'Good work. A few codes need another look.':'That’s our delivery!');
+  dp.append(n('div','air-resultstamp',r.parked.length?'RECOVERED':'CLEARED!'));
+  const row=n('div','air-resultstats');[[r.verified.length+'/'+r.size,'🔊'],['+'+r.tokens,'🔧']].forEach(([v,icon])=>{const cell=n('div');cell.append(n('strong','',v),n('span','',icon));row.append(cell);});dp.append(row);
+  if(r.parked.length)dp.append(b('↻ '+r.parked.length,'air-outline',()=>{r.queue.push(...randomized(r.parked).map(w=>({w,kind:'echo',assisted:false,attempts:0,retry:0})));r.completed=false;persist();task();}));
+  const go=b('','air-go',menu);go.append(ibPlaceholder('play'),n('span','','ANOTHER DROP'));dp.append(go);sfx('card');
+ }
+ persist();menu();
+ return ()=>{active=false;epoch++;clearTimeout(taskTimer);stopSpeech();taskCleanup?.();window.removeEventListener('message',onMessage);dp.classList.remove('air-win');d.classList.remove('air-task');fr.title='3D gate';if(wasTheme)Snd.theme(true);};
+};
 })();

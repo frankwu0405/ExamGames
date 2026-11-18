@@ -1,0 +1,12 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild scene.source.js --bundle --minify --outfile=scene.bundle.js --legal-comments=eof && node pack-scene.cjs"
+  },
+  "devDependencies": {
+    "three": "0.187.0",
+    "esbuild": "0.28.2",
+    "acorn": "8.19.0"
+  }
+}
