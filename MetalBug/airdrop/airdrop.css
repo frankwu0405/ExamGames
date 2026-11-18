@@ -62,3 +62,37 @@
 #dash.air .air-inkpreview{font-size:13px;min-height:19px}
 #dash.air .air-inkactions+[hidden]{display:none}
 @media(max-height:740px){#dash.air.air-task iframe{height:13dvh;min-height:72px}#dash.air.air-task .dp{gap:7px}#dash.air .air-inkarea,#dash.air .air-inkpaper{min-height:150px}#dash.air .air-inkpaper{flex-basis:190px;max-height:190px}#dash.air .air-inkghost{font-size:110px}}
+/* Three clean words per payout; wrong-letter attempts have a quiet counter. */
+#dash.air .air-errorcount{font:700 12px/1 var(--bd);color:#f4a6a6;white-space:nowrap}
+#dash.air .air-charge i{width:15px;height:22px}
+#dash.air .air-picturecredits{display:inline-block;color:#9aa7d6;font:500 12px var(--bd);margin-top:15px;text-underline-offset:3px}
+/* Picture clues occupy the existing cargo stage, preserving the writing area. */
+#dash.air.air-task iframe{opacity:.22}
+#dash.air .air-clue{position:absolute;top:0;left:65px;right:20px;height:max(100px,19dvh);z-index:2;pointer-events:none;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:4px 0 12px;box-sizing:border-box;gap:1px}
+#dash.air .air-clueart{display:flex;align-items:center;justify-content:center;position:relative;height:calc(100% - 27px);min-height:55px;width:100%;max-width:330px;gap:4px}
+#dash.air .air-clueimage{display:block;width:min(19dvh,110px);height:min(19dvh,110px);max-width:40%;max-height:100%;aspect-ratio:1;flex:none;background-repeat:no-repeat;filter:drop-shadow(0 4px 8px #0005)}
+#dash.air .air-clueimage.photo{border-radius:9px;box-shadow:0 2px 12px #0005;filter:none}
+#dash.air .clue-photo .air-clueimage{width:min(19dvh,140px);height:min(19dvh,140px);max-width:90%}
+#dash.air .air-cluecaption{font:600 13px/1.2 var(--bd);text-align:center;color:#fff;max-width:330px;text-shadow:0 2px 3px #000,0 0 8px #000;padding:0 2px;flex:none}
+#dash.air .clue-compare .air-clueimage:first-child{transform:scale(.62);opacity:.85}
+#dash.air .clue-levels .air-clueimage{width:min(15dvh,90px);height:min(15dvh,90px)}
+#dash.air .clue-levels .air-clueimage:first-child{transform:scale(.55);opacity:.6}
+#dash.air .clue-levels .air-clueimage:nth-child(2){transform:scale(.76);opacity:.8}
+#dash.air .clue-number .air-clueimage{width:65px;height:65px;opacity:.7}
+#dash.air .air-cluenumber{font:400 clamp(24px,6vw,42px)/1 var(--hd);color:var(--yellow);text-shadow:3px 3px #000;white-space:nowrap}
+#dash.air .clue-motion .air-clueimage{animation:airCruise 2s ease-in-out infinite}
+#dash.air .clue-detour:after{content:'↪';font:400 60px/1 var(--bd);color:var(--teal)}
+#dash.air .clue-empty .air-clueimage:nth-child(2){position:absolute;width:35px;height:35px;left:calc(50% - 84px);bottom:20px}
+#dash.air .clue-empty .air-clueimage:last-child{margin-left:30px}
+#dash.air .clue-empty:after{content:'→';position:absolute;left:calc(50% - 10px);font-size:27px;color:var(--teal)}
+@keyframes airCruise{50%{transform:translateX(12px)}}
+@media(max-height:740px){#dash.air .air-clue{height:max(72px,13dvh);padding-bottom:10px;left:60px;right:8px}#dash.air .air-clueimage{width:65px;height:65px}#dash.air .clue-photo .air-clueimage{width:74px;height:74px}#dash.air .air-cluecaption{font-size:11px}#dash.air .air-cluenumber{font-size:27px}}
+@media(orientation:landscape) and (max-height:520px){#dash.air .air-clue{position:relative;left:auto;right:auto;height:90px;order:-1;padding:3px 50px 0;flex:none}}
+/* Keep every sprite square, even when the stage is short. */
+#dash.air .air-clue{--clue-size:clamp(55px,calc(19dvh - 45px),110px)}
+#dash.air .air-clueimage{width:var(--clue-size);height:var(--clue-size);max-width:none;max-height:none}
+#dash.air .clue-photo .air-clueimage{width:var(--clue-size);height:var(--clue-size);max-width:none}
+#dash.air .clue-levels .air-clueimage{width:min(21vw,var(--clue-size));height:min(21vw,var(--clue-size))}
+#dash.air .clue-empty .air-clueimage{width:min(85px,var(--clue-size));height:min(85px,var(--clue-size))}
+#dash.air .clue-empty .air-clueimage:nth-child(2){width:28px;height:28px}
+@media(max-height:740px){#dash.air .air-clue{--clue-size:clamp(45px,calc(13dvh - 35px),74px)}}

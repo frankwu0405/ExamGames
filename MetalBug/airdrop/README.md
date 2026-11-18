@@ -37,8 +37,19 @@ retries can be parked without blocking the activity.
 Progress, exact question position, statistics and reward receipts remain
 under `S.airdrop`, using the existing profile/cloud save. Earlier airdrop runs
 migrate without clearing verified words, earned parts or the daily reward ledger.
-Rewards remain one part per ten distinct unaided words, capped at six per Taiwan
-calendar day across runs; assisted rounds and same-day repeats cannot farm parts.
+Rewards now use a three-clean-word combo: each group of three pays two parts,
+then the count returns to zero. The old daily cap and distinct-word ledger are
+not used for payouts. Practice in a new run can earn again. A task settlement
+receipt prevents refresh/duplicate events from paying twice; repeated spacer
+words already verified in that run do not add to the combo. Earlier balances
+and earned parts are preserved.
+
+An incorrect or unreadable letter attempt increments the run's error count and
+that word's `stats.misses`, marks that word assisted, and resets the combo. A
+corrected word with an error cannot start a combo; it returns for clean recall.
+Guided rounds are neutral, but errors in them still reset the combo. Revealing
+spelling, skipping or replacing an unfinished drop also resets it. Pausing and
+resuming preserve the combo and exact letter position.
 
 Run `node MetalBug/airdrop.test.cjs` from the repository root for the data,
 scheduling, migration, resume and reward regression checks.
@@ -58,13 +69,16 @@ Trace guides, expected letters, words and context are excluded. The model output
 all 47 EMNIST classes. Upper/lowercase probabilities are folded; an identical
 round zero shape is treated as O, while other digit predictions cannot pass.
 The predicted letter must be top-ranked, with probability >= 0.65 and a >= 0.20
-margin. Low-confidence predictions stay on the pad; they never advance a slot.
+margin. Low-confidence predictions never advance a slot; they are cleared as rejected attempts.
 These thresholds do not make recognition perfect. I/l and unusual handwriting
 can be ambiguous; the interface suggests a capital letter. It is spelling
 practice, not a handwriting-quality assessment.
 
 Recognition waits 550 ms after the last stroke, or runs immediately when ✓ is
-pressed. Wrong or incomplete letters remain editable. Tiny marks and dense
+pressed. A wrong or unreadable attempt waits an extra 450 ms for a possible dot/crossbar,
+then clears automatically and counts once as incorrect. New ink cancels that
+pending result, so a delayed rejection cannot erase a new stroke. Manual clear
+settles a pending rejection immediately; reader/download failures are not scored. Tiny marks and dense
 scribbling are filtered before inference. Only one inference runs at a time;
 only the latest queued request is retained. Ink revisions discard stale results,
 including results from a previous letter in doubled-letter words.
@@ -90,3 +104,21 @@ yeogaa, EMNIST by Cohen, Afshar, Tapson and van Schaik / NIST SD19.
 Source (project declared MIT):
 https://github.com/BryanDhaniel/Handwriting-Recognition-with-EMNIST-and-CNN/tree/6f3456cad42cd56c987d367fa225285619c92e47
 ONNX Runtime Web is MIT, copyright Microsoft Corporation.
+
+## Picture clues
+
+Every one of the 60 words has a picture clue and short context caption, in the
+existing cargo stage. The writing pad keeps its space. Concrete actions and
+objects use curated photographs from Wikimedia Commons and Pexels; remaining
+concepts use finished Microsoft Fluent illustrations or small visual comparisons.
+Spelling is not printed in the caption. The clues are part of the question, so
+viewing one is not a hint penalty. Math words use exact number relationships.
+
+All runtime image files are hosted here in `clues/objects.webp` and
+`clues/photos.webp`, not hotlinked. Each sprite is kept square so resizing cannot
+stretch it. Full photographs were retained when resized. Source pages, authors,
+per-photo licenses and the Microsoft MIT notice are in `clues/CREDITS.md` and
+`clues/LICENSE-Microsoft.txt`, also linked from the teacher's settings screen.
+`word-clues.test.cjs` checks all-word coverage, sprite coordinates, local image
+paths and attribution coverage. The model integration check also covers automatic
+rejection clearing, cancelled partial-stroke rejections, and real combo payouts.

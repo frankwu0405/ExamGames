@@ -3,7 +3,7 @@
   "type": "module",
   "scripts": {
     "build": "esbuild scene.source.js --bundle --minify --outfile=scene.bundle.js --legal-comments=eof && node pack-scene.cjs",
-    "test": "node ../airdrop.test.cjs && node ink.test.cjs && node letter.test.cjs",
+    "test": "node ../airdrop.test.cjs && node ink.test.cjs && node letter.test.cjs && node word-clues.test.cjs",
     "test:ink-integration": "node ink.integration.cjs"
   },
   "devDependencies": {

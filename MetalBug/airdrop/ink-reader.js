@@ -67,7 +67,7 @@ function createPad(container,{key,ghost='',onChange=()=>{},onRead=()=>{},onState
   ctx.clearRect(0,0,width,height);ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#18243b';ctx.lineWidth=Math.max(2.6,rect.width*.014)*scale;
   for(const stroke of strokes){if(!stroke.length)continue;ctx.beginPath();ctx.moveTo(stroke[0][0]*width,stroke[0][1]*height);for(const [x,y]of stroke.slice(1))ctx.lineTo(x*width,y*height);if(stroke.length===1)ctx.lineTo(stroke[0][0]*width+.2,stroke[0][1]*height+.2);ctx.stroke();}
  }
- function changed(){revision++;clearTimeout(timer);draw();saveDraft();onChange(!!bounds(strokes));if(reader.state==='ready'&&bounds(strokes))timer=setTimeout(read,550);}
+ function changed(){revision++;clearTimeout(timer);draw();saveDraft();onChange(!!bounds(strokes));if(reader.state==='ready'&&strokes.length)timer=setTimeout(read,550);}
  function snapshot(){history.push(strokes.map(s=>s.map(p=>p.slice())));if(history.length>20)history.shift();}
  function locationFor(e){const r=canvas.getBoundingClientRect();return [Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))];}
  function erase(point){strokes=strokes.filter(stroke=>!stroke.some(([x,y])=>Math.hypot((x-point[0])*canvas.clientWidth,(y-point[1])*canvas.clientHeight)<17));}
@@ -102,7 +102,7 @@ function createPad(container,{key,ghost='',onChange=()=>{},onRead=()=>{},onState
   try{const prediction=await recognize(data);if(!destroyed&&version===revision&&active===null){onState('ready');onRead(prediction);}}
   catch(error){if(!destroyed&&version===revision){onRead(null);onState('error');}}
  }
- const unsubscribe=subscribe(state=>{if(destroyed)return;onState(state);if(state==='ready'&&bounds(strokes)){clearTimeout(timer);timer=setTimeout(read,150);}});
+ const unsubscribe=subscribe(state=>{if(destroyed)return;onState(state);if(state==='ready'&&strokes.length){clearTimeout(timer);timer=setTimeout(read,150);}});
  const resize=new ResizeObserver(draw);resize.observe(wrap);draw();onChange(!!bounds(strokes));
  return {
   hasInk:()=>!!bounds(strokes),
