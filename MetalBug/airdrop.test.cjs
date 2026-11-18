@@ -10,8 +10,8 @@ for(const size of [10,30,60]){
  if(size===30)for(const group of A.SETS)assert.equal(r.words.filter(w=>group.includes(w)).length,5);
  if(size===60)assert.ok(r.queue.every(t=>['ink','ink_context'].includes(t.kind)));
  const state=A.freshState();let parts=0,attempts=0;
- while(!r.completed){const t=r.queue[r.cursor],independent=['ink','ink_context'].includes(t.kind)&&!t.assisted;parts+=A.settleWord(state,t,independent&&!r.verified.includes(t.w));A.advance(r,true,independent);assert.ok(++attempts<200);}
- assert.equal(r.verified.length,size);assert.equal(parts,Math.floor(size/3)*2);assert.equal(state.combo.count,size%3);assert.equal(new Set(r.verified).size,size);
+ while(!r.completed){const t=r.queue[r.cursor],independent=['ink','ink_context'].includes(t.kind)&&!t.assisted;parts+=A.settleWord(state,t,!t.assisted&&!t.errors);A.advance(r,true,independent);assert.ok(++attempts<200);}
+ assert.equal(r.verified.length,size);assert.equal(parts,Math.floor(attempts/3)*2);assert.equal(state.combo.count,attempts%3);assert.equal(new Set(r.verified).size,size);
  assert.equal(A.settleWord(state,r.queue[0],true),0);
  const copy=JSON.parse(JSON.stringify(r));assert.equal(copy.cursor,copy.queue.length);
 }
@@ -36,7 +36,7 @@ const bank=A.letterTray('beginning',false);for(const ch of new Set('beginning'))
 assert.equal(source.includes("node('input'"),false);assert.equal(source.includes("inputMode"),false);
 assert.throws(()=>A.newRun(20,-1,{}));assert.throws(()=>A.newRun(10,9,{}));
 const html=fs.readFileSync(__dirname+'/index.html','utf8');for(const m of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))if(m[1].trim())new vm.Script(m[1]);
-assert.ok(html.includes('src="airdrop.js?v=5"'));
+assert.ok(html.includes('src="airdrop.js?v=6"'));
 console.log('PASS: all 60 words; set coverage; 10/30/60 completion; delayed recalls; bounded retries; JSON resume; combo payouts; duplicate settlement; mistake resets; no obsolete cap; script syntax.');
 
 // Version 2 upgrades keep the exact pending question and reward receipts.

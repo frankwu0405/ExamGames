@@ -26,9 +26,9 @@ w.S.airdrop.combo.count=2;draw(strokes.b);await read();assert.equal(run.cursor,q
 // True letter-by-letter classification: a partial word never counts as success.
 for(const [i,ch]of [...'moving'].entries()){draw(strokes[ch]);if(i===0)await new Promise(r=>setTimeout(r,650));else await read();assert.equal(task.letters.length,i+1);if(i<5)assert.equal(run.cursor,q);}
 assert.equal(run.cursor,q+1);assert.equal(run.verified.length,0);assert.equal(w.S.parts,0);assert.ok(run.queue.slice(run.cursor).some(t=>t.w==='moving'));assert.ok(posted.filter(m=>m.type==='read').every(m=>Object.keys(m).sort().join(',')==='height,id,pixels,type,width'));
-cleanup();task=run.queue[run.cursor];task.w='begged';task.letters=[];cleanup=w.mountAirdrop(host);dp.querySelector('.air-resume').click();await new Promise(r=>setTimeout(r,10));
+cleanup();task=run.queue[run.cursor];task.w='begged';task.kind='ink_copy';task.letters=[];cleanup=w.mountAirdrop(host);dp.querySelector('.air-resume').click();await new Promise(r=>setTimeout(r,10));
 draw([[[.25,.85],[.25,.15]]]);await read();draw([strokes.b[0].slice(1),strokes.b[1]]);await read();assert.equal(task.letters.length,1);assert.equal(run.incorrect,3);for(const ch of 'eg'){draw(strokes[ch]);await read();}assert.equal(task.letters.length,3);const savedCursor=run.cursor;cleanup();cleanup=w.mountAirdrop(host);dp.querySelector('.air-resume').click();assert.equal(dp.querySelectorAll('.air-wordslots .done').length,3);assert.equal(run.cursor,savedCursor);
-for(const ch of 'ged'){draw(strokes[ch]);await read();}assert.equal(task.letters.length,6);assert.equal(run.cursor,savedCursor+1);assert.ok(run.verified.includes('begged'));assert.equal(w.S.airdrop.combo.count,1);cleanup();
+for(const ch of 'ged'){draw(strokes[ch]);await read();}assert.equal(task.letters.length,6);assert.equal(run.cursor,savedCursor+1);assert.equal(run.verified.includes('begged'),false);assert.equal(w.S.airdrop.combo.count,1);cleanup();
 for(const word of ['owner','power']){
  task=run.queue[run.cursor];task.w=word;task.letters=[];cleanup=w.mountAirdrop(host);dp.querySelector('.air-resume').click();for(const ch of word){draw(strokes[ch]);await read();}assert.ok(run.verified.includes(word));cleanup();
 }

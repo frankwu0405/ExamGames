@@ -193,7 +193,7 @@ window.mountAirdrop=function(host){
  function settings(){reset('settings');intro('Ready when you are.');view({mode:'menu'});
   const detail=n('div','air-settings');
   detail.append(n('h3','','INK READER'),n('p','','One letter at a time. Correct letters lock in automatically. ✓ reads your letter; it cannot skip it.'));
-  const status=littleStatus(''),enable=b('LOAD READER','air-go',()=>AirdropInk.enable());detail.append(enable,status,n('p','','Three clean words earn two parts, then the combo restarts. Errors, skips and revealed answers reset it. Guided rounds do not add to it.'),b('Back','air-outline',menu));const credits=n('a','air-picturecredits','Picture credits');credits.href=new URL('clues/CREDITS.md',assets);credits.target='_blank';credits.rel='noopener';detail.append(credits);dp.append(detail);
+  const status=littleStatus(''),enable=b('LOAD READER','air-go',()=>AirdropInk.enable());detail.append(enable,status,n('p','','Three clean words earn two parts, then the combo restarts. Errors, skips and revealed answers reset it.'),b('Back','air-outline',menu));const credits=n('a','air-picturecredits','Picture credits');credits.href=new URL('clues/CREDITS.md',assets);credits.target='_blank';credits.rel='noopener';detail.append(credits);dp.append(detail);
   taskCleanup=AirdropInk.subscribe((state,progress)=>{status.textContent=state==='ready'?'✓ Ready':state==='loading'?'Downloading… '+progress+'%':state==='error'?'Reader unavailable. Retry to continue.':'';enable.hidden=state==='ready'||state==='loading';enable.textContent=state==='error'?'TRY AGAIN':'LOAD READER';});
 
  }
@@ -207,7 +207,7 @@ window.mountAirdrop=function(host){
  }
  function reward(run,t,independent){
   const stat=a.stats[t.w]||(a.stats[t.w]={exact:0,misses:0,helped:0});if(independent)stat.exact++;else stat.helped++;
-  const gain=settleWord(a,t,independent&&!run.verified.includes(t.w));S.parts=(S.parts||0)+gain;run.tokens+=gain;partsEl.lastChild.textContent=S.parts;return gain;
+  const gain=settleWord(a,t,!t.assisted&&!t.errors);S.parts=(S.parts||0)+gain;run.tokens+=gain;partsEl.lastChild.textContent=S.parts;return gain;
  }
 
  function task(){

@@ -40,14 +40,14 @@ migrate without clearing verified words, earned parts or the daily reward ledger
 Rewards now use a three-clean-word combo: each group of three pays two parts,
 then the count returns to zero. The old daily cap and distinct-word ledger are
 not used for payouts. Practice in a new run can earn again. A task settlement
-receipt prevents refresh/duplicate events from paying twice; repeated spacer
-words already verified in that run do not add to the combo. Earlier balances
+receipt prevents refresh/duplicate events from paying twice. Each clean word
+round counts, including the built-in guided rounds and later recall rounds. Earlier balances
 and earned parts are preserved.
 
 An incorrect or unreadable letter attempt increments the run's error count and
 that word's `stats.misses`, marks that word assisted, and resets the combo. A
 corrected word with an error cannot start a combo; it returns for clean recall.
-Guided rounds are neutral, but errors in them still reset the combo. Revealing
+Built-in guided rounds count when completed cleanly; errors in them reset the combo. Revealing
 spelling, skipping or replacing an unfinished drop also resets it. Pausing and
 resuming preserve the combo and exact letter position.
 
