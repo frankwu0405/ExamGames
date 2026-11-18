@@ -1,13 +1,41 @@
 # Airdrop spelling side mission
 
-Entry: Gate workshop → AIRDROP. The workshop continues to own its back arrow,
-portrait, balance, bottom tabs and main layout. `mountAirdrop()` installs a view
-and returns a cleanup function; it does not modify chapter, card, gate or relic state.
+Entry: Gate workshop → AIRDROP. The workshop retains its navigation, portrait,
+balance and layout. `mountAirdrop()` returns a cleanup function without changing
+chapter, card, gate or relic state.
 
-The activity uses the same CC0 Kenney/Quaternius crate, chest, speeder, generator
-and barrel models already hosted in `../gate/props/`. Attribution and licensing:
-`../gate/props/CREDITS.txt` and `../gate/props/CC0-1.0.txt`.
-Three.js and its included Meshopt decoder retain their bundled license notices.
+All 10-, 30- and 60-word packages now use scrambled-letter pools, including
+reviews. There are no handwriting rounds, tracing, recognition workers or model
+downloads in the active page.
+
+## Letter pools
+
+Each pool contains every required letter, including repeated letters, plus four
+distinct extra letters absent from the target word. Tiles have unique identities
+and are shuffled. Tap tiles to build the answer; tap a filled slot, undo or clear
+to revise it. Check becomes available when all slots are filled and accepts only
+the exact spelling. A wrong submission records an error, clears the answer and
+reshuffles the pool.
+
+All 60 words have picture clues and spoken words/sentences. Pictures are not
+penalized hints. The eye button reveals the next unfilled letter without filling
+it, counts one error, resets the combo and marks the word assisted. Reopening the
+same letter hint does not charge twice. Assisted words return for clean practice;
+bounded retries can be parked rather than blocking the activity.
+
+## Rewards and saved progress
+
+Three consecutive clean word rounds earn two parts, then the combo restarts.
+Errors, hints, skips and replacing an unfinished package break the combo. An
+assisted word cannot contribute until a later clean attempt. Settlement receipts
+prevent duplicate payouts on refresh. There is no daily payout cap.
+
+The existing profile/cloud save stores `S.airdrop`, exact question position, tile
+order, selected tile IDs, hints, statistics and reward receipts. Engine 6 converts
+all pending legacy activities into pools while preserving verified words, wallet,
+combo and current question position. Accepted handwriting prefixes become selected
+tiles; paid letter hints carry over. Existing valid pools retain their exact order
+and partial answer.
 
 ## Build the 3D scene
 
@@ -20,134 +48,21 @@ Third-party license notices are retained in `THIRD_PARTY_LICENSES.txt`.
 The default renderer is WebGL. A CPU canvas fallback projects the same glTF
 meshes when a graphics context is unavailable. Its simpler lighting is intentional.
 
-## Practice and persistence
+## Assets
 
-All 60 school words live in `../airdrop.js`. Ten-word runs may use one school
-set or a weighted mixture; thirty-word runs sample five per school set; sixty
-uses all words. Ten/thirty-word packets mix handwritten dictation, sentence
-clues, scrambled-letter spelling and occasional visual signal hunting. Sixty-word
-challenges mix handwriting and scrambled spelling. Automatic word-reveal,
-tracing and look-hide-copy rounds have been removed.
-
-Scrambled rounds contain every needed letter in its required quantity, plus four
-distinct letters not used by that word. Tiles are shuffled; each has a unique ID
-and can be used once. Tap a tile to fill the next slot; tap a filled slot to return
-it, or use undo/clear. Check is available only when every slot is filled and the
-constructed word must match exactly. A wrong submission clears the answer,
-reshuffles the pool, records one error and breaks the combo. Clean scrambled
-spelling verifies a word and counts toward the existing three-word combo.
-
-The one-letter hint remains optional and records an error; it never fills an
-accepted tile or a handwriting receipt. No correct word is printed automatically.
-Guided or helped answers return with at least three intervening tasks; bounded
-retries can be parked without blocking the activity.
-
-Progress, exact question position, statistics and reward receipts remain
-under `S.airdrop`, using the existing profile/cloud save. Earlier airdrop runs
-migrate without clearing verified words, earned parts or the daily reward ledger.
-Rewards now use a three-clean-word combo: each group of three pays two parts,
-then the count returns to zero. The old daily cap and distinct-word ledger are
-not used for payouts. Practice in a new run can earn again. A task settlement
-receipt prevents refresh/duplicate events from paying twice. Each clean word
-round counts, including the built-in guided rounds and later recall rounds. Earlier balances
-and earned parts are preserved.
-
-An incorrect or unreadable letter attempt increments the run's error count and
-that word's `stats.misses`, marks that word assisted, and resets the combo. A
-corrected word with an error cannot start a combo; it returns for clean recall.
-Built-in guided rounds count when completed cleanly; errors in them reset the combo. Revealing
-spelling, skipping or replacing an unfinished drop also resets it. Pausing and
-resuming preserve the combo and exact letter position.
-
-Run `node MetalBug/airdrop.test.cjs` from the repository root for the data,
-scheduling, migration, resume and reward regression checks.
-
-## Automatic single-letter recognition
-
-The reader starts automatically on entering a writing round. It uses a small
-EMNIST CNN through ONNX Runtime Web 1.21.0, in a dedicated single-thread WASM
-worker. The pinned model is approximately 1.5 MB, plus about 13 MB of runtime.
-Runtime files come from jsDelivr and the model from a pinned public GitHub
-commit. The model uses Cache Storage; runtime files use browser HTTP caching.
-There are no API keys, inference uploads or word-correction model downloads.
-If loading fails, recognition and rewards stay blocked with a retry control.
-
-Only a cropped, centered 28x28 image of the current letter is sent to the worker.
-Trace guides, expected letters, words and context are excluded. The model outputs
-all 47 EMNIST classes. Upper/lowercase probabilities are folded; an identical
-round zero shape is treated as O, while other digit predictions cannot pass.
-The predicted letter must be top-ranked, with probability >= 0.65 and a >= 0.20
-margin. Low-confidence predictions never advance a slot; they are cleared as rejected attempts.
-These thresholds do not make recognition perfect. I/l and unusual handwriting
-can be ambiguous; the interface suggests a capital letter. It is spelling
-practice, not a handwriting-quality assessment.
-
-Recognition waits 550 ms after the last stroke, or runs immediately when ✓ is
-pressed. A wrong or unreadable attempt waits an extra 450 ms for a possible dot/crossbar,
-then clears automatically and counts once as incorrect. New ink cancels that
-pending result, so a delayed rejection cannot erase a new stroke. Manual clear
-settles a pending rejection immediately; reader/download failures are not scored. Tiny marks and dense
-scribbling are filtered before inference. Only one inference runs at a time;
-only the latest queued request is retained. Ink revisions discard stale results,
-including results from a previous letter in doubled-letter words.
-
-Validated letter receipts are saved in the existing profile with every accepted
-letter. A refresh resumes the exact letter; raw ink drafts stay in localStorage,
-scoped by player/run/question/letter. They are not uploaded in the cloud save.
-Earlier runs retain their completed words and reward ledger.
+The scene uses the same CC0 Kenney/Quaternius models hosted in
+`../gate/props/`; see `CREDITS.txt` and `CC0-1.0.txt` there.
+All picture clues are locally hosted in `clues/objects.webp` and
+`clues/photos.webp`. Source pages, authors and photo licenses are listed in
+`clues/CREDITS.md`; Microsoft Fluent illustrations retain their MIT notice in
+`clues/LICENSE-Microsoft.txt`. Clue captions do not reveal target spelling.
 
 ## Verification
 
-`npm test` runs data/scheduling/rewards, stroke capture, queue/stale-result and
-strict letter-validation regressions. After `npm install`,
-`npm run test:ink-integration` rasterizes real stroke fixtures, runs the actual
-model with the WASM backend, and drives the real DOM handlers through wrong
-ink, automatic acceptance, repeated letters and mid-word resume. Its model is
-cached locally; `AIRDROP_LETTER_MODEL` may point to an existing model file.
-Device/browser network loading and child handwriting still need an actual-device
-tryout; desktop WASM timing is not a mobile speed guarantee.
-
-Recognition model credits: Bryan Dhaniel / Monacrh, model training credited to
-yeogaa, EMNIST by Cohen, Afshar, Tapson and van Schaik / NIST SD19.
-Source (project declared MIT):
-https://github.com/BryanDhaniel/Handwriting-Recognition-with-EMNIST-and-CNN/tree/6f3456cad42cd56c987d367fa225285619c92e47
-ONNX Runtime Web is MIT, copyright Microsoft Corporation.
-
-## Picture clues
-
-Every one of the 60 words has a picture clue and short context caption, in the
-existing cargo stage. The writing pad keeps its space. Concrete actions and
-objects use curated photographs from Wikimedia Commons and Pexels; remaining
-concepts use finished Microsoft Fluent illustrations or small visual comparisons.
-Spelling is not printed in the caption. The clues are part of the question, so
-viewing one is not a hint penalty. Math words use exact number relationships.
-
-All runtime image files are hosted here in `clues/objects.webp` and
-`clues/photos.webp`, not hotlinked. Each sprite is kept square so resizing cannot
-stretch it. Full photographs were retained when resized. Source pages, authors,
-per-photo licenses and the Microsoft MIT notice are in `clues/CREDITS.md` and
-`clues/LICENSE-Microsoft.txt`, also linked from the teacher's settings screen.
-`word-clues.test.cjs` checks all-word coverage, sprite coordinates, local image
-paths and attribution coverage. The model integration check also covers automatic
-rejection clearing, cancelled partial-stroke rejections, and real combo payouts.
-
-## One-letter hint
-
-The eye button in a writing round reveals only the next unfilled letter, both in
-the active slot and as a faint guide on the pad. It records exactly one incorrect
-attempt, resets the combo, and marks that word assisted. The child must still
-write and have that letter recognized; the hint never fills an accepted receipt.
-It does not reveal subsequent letters. After the letter is accepted, the guide
-is cleared and the hint becomes available for the next letter. The current
-letter's hint marker survives refresh, so the same hint is not charged twice.
-The button is disabled when that letter is already revealed. Pending reads and rejections are invalidated when the hint is used.
-
-## Saved question upgrade
-
-Engine 5 converts unfinished tracing/memory questions into scrambled spelling at
-the same queue position. Completed words, wallet/reward receipts, the combo and
-progress on handwriting questions are retained. The replaced tracing question
-starts with an empty tile answer. Future questions in older sixty-word runs also
-include scrambled rounds; the active handwriting question is left intact. Tile
-order, selected tile IDs and paid hint positions are saved on each edit, so a
-refresh restores the exact scrambled question and partial answer.
+After `npm install`, run `npm test` from this directory. Checks cover all package
+sizes and 60 words, solvable shuffled pools, duplicate letters, exact grading,
+error and hint handling, combo payouts, legacy migrations and exact resume.
+The DOM integration check exercises the active controls, picture clues, wrong
+submissions, paid hints, partial-answer resume, rewards and pool-only retries
+without recognition dependencies. Device touch layout still needs a real-device
+tryout. Older handwriting implementation files remain archived and unreferenced.
