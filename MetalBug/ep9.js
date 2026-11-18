@@ -619,7 +619,47 @@ async function e9end(){
   const h=el('div','hook');h.append('Who is ');h.append(el('em','','the man with the crown'));h.append('?');play.append(h);
   const b=el('button','go','Home ▸');b.onclick=()=>{Snd.init();title();};play.append(b);
 }
+let e9UnlockPending=null;
+function ep9Unlocked(){return S.episodeUnlocks?.ep9===true;}
+function requestEp9Unlock(){
+  if(ep9Unlocked())return Promise.resolve(true);
+  if(!student)return Promise.resolve(false);
+  if(e9UnlockPending)return e9UnlockPending;
+  const account=student,previous=document.activeElement;
+  e9UnlockPending=new Promise(resolve=>{
+    const overlay=el('div','save-overlay'),dialog=el('section','save-dialog');
+    dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');
+    dialog.setAttribute('aria-labelledby','ep9-lock-title');
+    const heading=el('h2','','Episode 9 locked');heading.id='ep9-lock-title';
+    const form=el('form',''),input=el('input','student-input');
+    input.type='password';input.placeholder='Teacher password';input.autocomplete='off';
+    input.setAttribute('aria-label','Teacher password');input.required=true;
+    input.style.cssText='border:2px solid #000;margin:18px 0 12px';
+    const error=el('p','save-caption','');error.setAttribute('role','status');
+    const unlock=el('button','save-choice');unlock.type='submit';unlock.append(el('strong','','Unlock ▸'));
+    const cancel=el('button','save-cancel','Back');cancel.type='button';
+    const finish=ok=>{document.removeEventListener('keydown',keyboard);overlay.remove();previous?.focus();e9UnlockPending=null;resolve(ok);};
+    form.onsubmit=event=>{
+      event.preventDefault();
+      if(student!==account){finish(false);return;}
+      if(input.value!=='thegateep9'){error.textContent='Try again.';input.value='';input.focus();return;}
+      S.episodeUnlocks={...S.episodeUnlocks,ep9:true};save();finish(true);
+    };
+    cancel.onclick=()=>finish(false);
+    function keyboard(event){
+      if(event.key==='Escape'){event.preventDefault();finish(false);}
+      if(event.key==='Tab'){
+        if(event.shiftKey&&document.activeElement===input){event.preventDefault();cancel.focus();}
+        else if(!event.shiftKey&&document.activeElement===cancel){event.preventDefault();input.focus();}
+      }
+    }
+    form.append(input,error,unlock,cancel);dialog.append(heading,form);overlay.append(dialog);document.body.append(overlay);
+    document.addEventListener('keydown',keyboard);input.focus();
+  });
+  return e9UnlockPending;
+}
 function startEp9(i,resume=false){
+  if(!ep9Unlocked()){const account=student;requestEp9Unlock().then(ok=>{if(ok&&student===account)startEp9(i,resume);});return;}
   E9ON=true;trayEpisode=9;renderTray();
   if(!SHOT.e9_tower)Object.assign(SHOT,E9_SHOT);
   e9S();
@@ -637,3 +677,4 @@ function startEp9(i,resume=false){
   const flows=[e9p1,e9p2,e9p3,e9p4,e9end];const run=RUN;
   flows[i]().then(()=>{if(run!==RUN)return;if(i<4){S.e9.ch=i+1;save();startEp9(i+1);}}).catch(e=>{if(e!=='cancel')console.error(e);});
 }
+

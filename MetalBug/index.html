@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#0d1220">
-<meta name="gate-build" content="20261118-airdrop-10">
+<meta name="gate-build" content="20261118-ep9-lock-1">
 <title>The Gate 8: The Empty Room</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Lexend:wght@500;700;800&display=swap" rel="stylesheet">
@@ -226,7 +226,7 @@ html,body{margin:0;height:100%;background:#05070d;color:var(--paper);font-family
 </div>
 <div id="teacher"><div class="sheet"><button class="x" id="tx">Close ✕</button><div id="tbody"></div></div></div>
 
-<script src="ep9.js?v=5"></script>
+<script src="ep9.js?v=6"></script>
 <script src="dash.js?v=22"></script>
 <script src="scenes.js?v=3"></script>
 <script src="airdrop/word-clues.js?v=1"></script>
@@ -1571,7 +1571,7 @@ function title(editName=false){
     s8.append(hl,hr);
   }
   let curEp=EP8;const paint=()=>{
-    if(typeof go!=='undefined'){go.classList.toggle('locked',curEp!==EP8&&curEp!==EP9);if(!TEST&&curEp===EP9){const e=S.e9;go.textContent=e&&e.ch>0&&e.ch<4?`Continue · paragraph ${e.ch+1} ▸`:'Start ▸';}else if(curEp===EP8&&student)go.textContent=S.checkpoint?.chapter===S.ch?(S.ch===4?'Continue · finale ▸':`Continue · paragraph ${S.ch+1} ▸`):S.ch>0&&S.ch<4?`Continue · paragraph ${S.ch+1} ▸`:'Start ▸';}
+    if(typeof go!=='undefined'){go.classList.toggle('locked',curEp!==EP8&&curEp!==EP9);if(!TEST&&curEp===EP9){const e=S.e9;go.textContent=!ep9Unlocked()?'Unlock episode ▸':e&&e.ch>0&&e.ch<4?`Continue · paragraph ${e.ch+1} ▸`:'Start ▸';}else if(curEp===EP8&&student)go.textContent=S.checkpoint?.chapter===S.ch?(S.ch===4?'Continue · finale ▸':`Continue · paragraph ${S.ch+1} ▸`):S.ch>0&&S.ch<4?`Continue · paragraph ${S.ch+1} ▸`:'Start ▸';}
     trayEpisode=curEp+1;
     renderTray();
   };
@@ -1586,6 +1586,7 @@ function title(editName=false){
     try{
       await syncStudent();
       go.textContent=S.checkpoint?'Continue ▸':'Start ▸';
+      if(curEp===EP9&&!TEST&&!await requestEp9Unlock()){paint();return;}
       tl.remove();if(curEp===EP9&&!TEST){const e=e9S();startEp9(e.ch>=4?0:e.ch,true);}else startChapter(S.ch>=4&&!S.checkpoint?0:S.ch,true);
     }catch(error){
       go.textContent='Retry cloud load';
@@ -1606,7 +1607,7 @@ function title(editName=false){
     greeting.append(player,'!');
     nameArea.replaceChildren(greeting);
     go.textContent=S.checkpoint?.chapter===S.ch?(S.ch===4?'Continue · finale ▸':`Continue · paragraph ${S.ch+1} ▸`):S.ch>0&&S.ch<4?`Continue · paragraph ${S.ch+1} ▸`:'Start ▸';
-    go.onclick=startGame;
+    go.onclick=startGame;paint();
     if((S.ch>0||S.checkpoint)&&!wrap.querySelector('.alt')){
       const restart=el('button','go alt','From the start');
       restart.style.fontSize='22px';
