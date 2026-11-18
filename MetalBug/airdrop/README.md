@@ -24,13 +24,21 @@ meshes when a graphics context is unavailable. Its simpler lighting is intention
 
 All 60 school words live in `../airdrop.js`. Ten-word runs may use one school
 set or a weighted mixture; thirty-word runs sample five per school set; sixty
-uses all words. Four of five initial rounds use letter-by-letter handwriting:
-dictation, sentence dictation, faint tracing, and a brief look-hide-write round.
-Occasional signal hunting adds a change of pace; sixty-word challenges use
-independent dictation throughout. Each recognized letter must match the next
-letter before it docks. The checkmark requests recognition; it cannot award
-success. The word-completion path verifies a full set of letter receipts, not
-just the existence of ink. Tracing and hints are guided practice, not mastery.
+uses all words. Ten/thirty-word packets mix handwritten dictation, sentence
+clues, scrambled-letter spelling and occasional visual signal hunting. Sixty-word
+challenges mix handwriting and scrambled spelling. Automatic word-reveal,
+tracing and look-hide-copy rounds have been removed.
+
+Scrambled rounds contain every needed letter in its required quantity, plus four
+distinct letters not used by that word. Tiles are shuffled; each has a unique ID
+and can be used once. Tap a tile to fill the next slot; tap a filled slot to return
+it, or use undo/clear. Check is available only when every slot is filled and the
+constructed word must match exactly. A wrong submission clears the answer,
+reshuffles the pool, records one error and breaks the combo. Clean scrambled
+spelling verifies a word and counts toward the existing three-word combo.
+
+The one-letter hint remains optional and records an error; it never fills an
+accepted tile or a handwriting receipt. No correct word is printed automatically.
 Guided or helped answers return with at least three intervening tasks; bounded
 retries can be parked without blocking the activity.
 
@@ -132,5 +140,14 @@ write and have that letter recognized; the hint never fills an accepted receipt.
 It does not reveal subsequent letters. After the letter is accepted, the guide
 is cleared and the hint becomes available for the next letter. The current
 letter's hint marker survives refresh, so the same hint is not charged twice.
-The button is disabled when that letter is already revealed, including tracing
-rounds. Pending reads and rejections are invalidated when the hint is used.
+The button is disabled when that letter is already revealed. Pending reads and rejections are invalidated when the hint is used.
+
+## Saved question upgrade
+
+Engine 5 converts unfinished tracing/memory questions into scrambled spelling at
+the same queue position. Completed words, wallet/reward receipts, the combo and
+progress on handwriting questions are retained. The replaced tracing question
+starts with an empty tile answer. Future questions in older sixty-word runs also
+include scrambled rounds; the active handwriting question is left intact. Tile
+order, selected tile IDs and paid hint positions are saved on each edit, so a
+refresh restores the exact scrambled question and partial answer.

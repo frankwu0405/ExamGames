@@ -98,3 +98,9 @@
 @media(max-height:740px){#dash.air .air-clue{--clue-size:clamp(45px,calc(13dvh - 35px),74px)}}
 
 #dash.air .air-inkhelp .air-icon:disabled{opacity:.3;cursor:default}
+
+#dash.air .air-tileports{gap:5px;min-height:58px;padding:7px 4px}
+#dash.air .air-tileports .air-letter{min-width:23px;min-height:36px;padding:3px;font-size:22px}
+#dash.air .air-tileports .empty{background:#263c51;color:var(--yellow);box-shadow:none;border:1px dashed #7890aa;opacity:1}
+#dash.air .air-salvage .air-letter:disabled{opacity:.17;cursor:default}
+#dash.air .air-inkactions .air-stamp:disabled{opacity:.3;cursor:default}
