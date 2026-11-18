@@ -122,3 +122,15 @@ per-photo licenses and the Microsoft MIT notice are in `clues/CREDITS.md` and
 `word-clues.test.cjs` checks all-word coverage, sprite coordinates, local image
 paths and attribution coverage. The model integration check also covers automatic
 rejection clearing, cancelled partial-stroke rejections, and real combo payouts.
+
+## One-letter hint
+
+The eye button in a writing round reveals only the next unfilled letter, both in
+the active slot and as a faint guide on the pad. It records exactly one incorrect
+attempt, resets the combo, and marks that word assisted. The child must still
+write and have that letter recognized; the hint never fills an accepted receipt.
+It does not reveal subsequent letters. After the letter is accepted, the guide
+is cleared and the hint becomes available for the next letter. The current
+letter's hint marker survives refresh, so the same hint is not charged twice.
+The button is disabled when that letter is already revealed, including tracing
+rounds. Pending reads and rejections are invalidated when the hint is used.

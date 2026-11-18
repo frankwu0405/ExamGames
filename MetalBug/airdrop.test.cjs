@@ -36,7 +36,7 @@ const bank=A.letterTray('beginning',false);for(const ch of new Set('beginning'))
 assert.equal(source.includes("node('input'"),false);assert.equal(source.includes("inputMode"),false);
 assert.throws(()=>A.newRun(20,-1,{}));assert.throws(()=>A.newRun(10,9,{}));
 const html=fs.readFileSync(__dirname+'/index.html','utf8');for(const m of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))if(m[1].trim())new vm.Script(m[1]);
-assert.ok(html.includes('src="airdrop.js?v=6"'));
+assert.ok(html.includes('src="airdrop.js?v=7"'));
 console.log('PASS: all 60 words; set coverage; 10/30/60 completion; delayed recalls; bounded retries; JSON resume; combo payouts; duplicate settlement; mistake resets; no obsolete cap; script syntax.');
 
 // Version 2 upgrades keep the exact pending question and reward receipts.

@@ -32,5 +32,16 @@ for(const ch of 'ged'){draw(strokes[ch]);await read();}assert.equal(task.letters
 for(const word of ['owner','power']){
  task=run.queue[run.cursor];task.w=word;task.letters=[];cleanup=w.mountAirdrop(host);dp.querySelector('.air-resume').click();for(const ch of word){draw(strokes[ch]);await read();}assert.ok(run.verified.includes(word));cleanup();
 }
-assert.equal(w.S.parts,2);assert.equal(w.S.airdrop.combo.count,0);cleanup=w.mountAirdrop(host);assert.equal(w.S.parts,2);dp.querySelector('.air-resume').click();w.S.airdrop.combo.count=2;dp.querySelector('[aria-label="Show the spelling"]').click();assert.equal(w.S.airdrop.combo.count,0);w.S.airdrop.combo.count=2;const beforeSkip=run.cursor;dp.querySelector('[aria-label="Practise this word later"]').click();assert.equal(w.S.airdrop.combo.count,0);assert.equal(run.cursor,beforeSkip+1);assert.equal(w.S.parts,2);cleanup();dom.window.close();console.log('PASS: real rendered strokes → WASM → UI: automatic wrong-ink clearing and one error per attempt; three clean words pay two; full matching sequence required; helped word queued for recall; no target sent to model.');
+assert.equal(w.S.parts,2);assert.equal(w.S.airdrop.combo.count,0);
+// One-letter hints charge exactly once, persist across refresh, and never pass ink.
+task=run.queue[run.cursor];task.w='moving';task.kind='ink';task.letters=[];cleanup=w.mountAirdrop(host);dp.querySelector('.air-resume').click();
+const beforeHint=run.incorrect;w.S.airdrop.combo.count=2;
+draw(strokes.b);await read(); // A pending rejection must not double-charge the hint.
+let hint=dp.querySelector('[aria-label="Hint one letter (+1 error)"]');hint.click();
+assert.equal(run.incorrect,beforeHint+1);assert.equal(w.S.airdrop.combo.count,0);assert.equal(task.letters.length,0);assert.equal(dp.querySelector('.air-modelword').textContent,'');assert.equal(dp.querySelector('.air-inkghost').textContent,'m');assert.equal(dp.querySelector('.air-wordslots .current').textContent,'m');
+hint.click();assert.equal(run.incorrect,beforeHint+1);await new Promise(r=>setTimeout(r,500));assert.equal(run.incorrect,beforeHint+1);
+cleanup();cleanup=w.mountAirdrop(host);dp.querySelector('.air-resume').click();hint=dp.querySelector('[aria-label="Hint one letter (+1 error)"]');assert.equal(hint.disabled,true);assert.equal(dp.querySelector('.air-inkghost').textContent,'m');hint.click();assert.equal(run.incorrect,beforeHint+1);
+draw(strokes.m);await read();assert.equal(task.letters.length,1);assert.equal(dp.querySelector('.air-inkghost').textContent,'');assert.equal(hint.disabled,false);hint.click();assert.equal(run.incorrect,beforeHint+2);assert.equal(dp.querySelector('.air-inkghost').textContent,'o');
+for(const ch of 'oving'){draw(strokes[ch]);await read();}assert.equal(w.S.parts,2);assert.equal(w.S.airdrop.combo.count,0);assert.equal(run.verified.includes('moving'),false);cleanup();
+cleanup=w.mountAirdrop(host);dp.querySelector('.air-resume').click();w.S.airdrop.combo.count=2;const beforeSkip=run.cursor;dp.querySelector('[aria-label="Practise this word later"]').click();assert.equal(w.S.airdrop.combo.count,0);assert.equal(run.cursor,beforeSkip+1);assert.equal(w.S.parts,2);cleanup();dom.window.close();console.log('PASS: real rendered strokes → WASM → UI: automatic wrong-ink clearing and one error per attempt; three clean words pay two; full matching sequence required; helped word queued for recall; one-letter hints charge once, survive refresh and require real writing; no target sent to model.');
 })().catch(e=>{console.error(e);process.exitCode=1;});

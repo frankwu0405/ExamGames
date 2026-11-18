@@ -144,7 +144,7 @@ const clean=s=>s.trim().toLowerCase();
 window.GateAirdrop={SETS,WORDS,ALL,freshState,ensureCombo,breakCombo,settleWord,recordError,pickWords,newRun,advance,migrateRun,letterTray,clean};
 // DOM begins here. The same workshop shell, back arrow, portrait and tabs own navigation.
 const assets=new URL('airdrop/',document.currentScript.src);
-const link=document.createElement('link');link.rel='stylesheet';link.href=new URL('airdrop.css?v=5',assets);document.head.append(link);
+const link=document.createElement('link');link.rel='stylesheet';link.href=new URL('airdrop.css?v=6',assets);document.head.append(link);
 const ICON={
  speaker:'<path d="M3 9h4l5-4v14l-5-4H3zM16 8q5 4 0 8M19 5q8 7 0 14"/>',
  play:'<path d="m8 4 13 8-13 8z"/>',back:'<path d="m15 5-8 7 8 7"/>',
@@ -246,7 +246,7 @@ window.mountAirdrop=function(host){
    AirdropInk.enable();
    t.letters=AirdropLetters.receipts(t,w.word);persist();
    let pad,hasInk=false,rejectionTimer=null,pendingBad=null,readerState=AirdropInk.reader.state;
-   const trace=t.kind==='ink_copy';let revealed=trace;
+   const trace=t.kind==='ink_copy';let hintLetter;
    name.textContent=trace?'TRACE EACH LETTER':'SPELL IT';
    dp.append(n('div','air-writeprompt','Tap 🔊. Write one letter at a time.'));
    const modelWord=n('div','air-modelword',trace||t.kind==='ink_memory'?w.word:'');dp.append(modelWord);
@@ -257,8 +257,10 @@ window.mountAirdrop=function(host){
    const retryReader=b('RETRY READER','air-outline',()=>AirdropInk.enable(true));retryReader.hidden=true;
    const index=()=>t.letters.length;
    const key=()=>player+':'+run.started+':'+run.cursor+':'+t.w+':letter:'+index();
+   const ghost=()=>trace||t.letterHint===index()?w.word[index()]||'':'';
    function paintSlots(){
-    slots.replaceChildren();for(let i=0;i<w.word.length;i++){const tile=n('span',i<index()?'done':i===index()?'current':'',i<index()?t.letters[i].letter:'');tile.setAttribute('aria-label',i<index()?'Letter '+(i+1)+': '+t.letters[i].letter:i===index()?'Write letter '+(i+1):'Letter '+(i+1));slots.append(tile);}
+    slots.replaceChildren();for(let i=0;i<w.word.length;i++){const tile=n('span',i<index()?'done':i===index()?'current':'',i<index()?t.letters[i].letter:i===index()&&t.letterHint===i?w.word[i]:'');tile.setAttribute('aria-label',i<index()?'Letter '+(i+1)+': '+t.letters[i].letter:i===index()?'Write letter '+(i+1):'Letter '+(i+1));slots.append(tile);}
+    if(hintLetter)hintLetter.disabled=locked||trace||index()>=w.word.length||t.letterHint===index();
    }
    function updateCheck(){check.disabled=locked||!hasInk||readerState!=='ready';}
 
@@ -266,7 +268,7 @@ window.mountAirdrop=function(host){
     clearTimeout(rejectionTimer);rejectionTimer=null;
     if(!pendingBad||locked||!live()||stamp!==epoch)return;
     const label=pendingBad.letter;pendingBad=null;recordError(a,run,t);persist();paintErrors();
-    pad.next(key(),revealed?w.word[index()]:'');feedback.classList.remove('good');feedback.textContent=t.errors>=2?'Try a capital letter':label?'↻ '+label.toUpperCase():'↻ Try again';sfx('tap');
+    pad.next(key(),ghost());feedback.classList.remove('good');feedback.textContent=t.errors>=2?'Try a capital letter':label?'↻ '+label.toUpperCase():'↻ Try again';sfx('tap');
    }
    function rejectSoon(prediction){
     clearTimeout(rejectionTimer);pendingBad=prediction||{};
@@ -275,7 +277,7 @@ window.mountAirdrop=function(host){
     rejectionTimer=setTimeout(rejectNow,450);
    }
    pad=AirdropInk.createPad(arena,{
-    key:key(),ghost:trace?w.word[index()]:'',
+    key:key(),ghost:ghost(),
     onChange:ink=>{hasInk=ink;if(readerState==='unclear'&&AirdropInk.reader.state==='ready')readerState='ready';updateCheck();},
     onRead:prediction=>{
      if(locked||!live()||stamp!==epoch)return;
@@ -285,7 +287,7 @@ window.mountAirdrop=function(host){
      persist();paintSlots();sfx('tick');post({type:'snap'});
      feedback.textContent='✓ '+prediction.letter.toUpperCase();feedback.classList.add('good');
      if(AirdropLetters.complete(t,w.word)){pad.finish();success();return;}
-     pad.next(key(),revealed?w.word[index()]:'');
+     pad.next(key(),ghost());
     },
     onState:state=>{
      readerState=state;updateCheck();preview.classList.toggle('reading',state==='reading');
@@ -297,11 +299,16 @@ window.mountAirdrop=function(host){
     }
    });
    actions.append(ib('undo','Undo stroke',()=>{if(!locked)pad.undo();}),ib('eraser','Clear this letter',()=>{if(locked)return;if(pendingBad)rejectNow();else pad.clear();}),check);dp.append(actions,retryReader,feedback);
-   const hint=n('div','air-inkhelp');hint.append(ib('eye','Show the spelling',()=>{if(locked)return;t.assisted=true;breakCombo(a);paintErrors();revealed=true;modelWord.textContent=w.word;pad.setGhost(w.word[index()]);persist();say(w.word,true);}),ib('speaker','Hear a sentence',()=>say(w.sentence,true)),ib('clock','Practise this word later',()=>{
+   const hint=n('div','air-inkhelp');hintLetter=ib('eye','Hint one letter (+1 error)',()=>{
+    if(locked||trace||t.letterHint===index()||index()>=w.word.length)return;
+    clearTimeout(rejectionTimer);rejectionTimer=null;pendingBad=null;
+    t.letterHint=index();recordError(a,run,t);pad.next(key(),ghost());paintSlots();paintErrors();persist();
+    feedback.classList.remove('good');feedback.textContent='Hint: '+w.word[index()].toUpperCase()+' · +1 ×';sfx('tap');
+   });hint.append(hintLetter,ib('speaker','Hear a sentence',()=>say(w.sentence,true)),ib('clock','Practise this word later',()=>{
     if(locked)return;locked=true;pad.finish();t.assisted=true;run.streak=0;breakCombo(a);advance(run,false,false);persist();task();
    }));dp.append(hint);paintSlots();
    taskCleanup=()=>{clearTimeout(rejectionTimer);pad.destroy();};
-   if(t.kind==='ink_memory')taskTimer=setTimeout(()=>{if(live()&&stamp===epoch&&!revealed)modelWord.textContent='';},2200);
+   if(t.kind==='ink_memory')taskTimer=setTimeout(()=>{if(live()&&stamp===epoch&&!trace)modelWord.textContent='';},2200);
    // A refresh after the last validated letter can safely finish the saved word.
    if(AirdropLetters.complete(t,w.word)){pad.finish();success();}
 

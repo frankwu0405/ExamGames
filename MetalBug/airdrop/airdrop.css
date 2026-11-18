@@ -96,3 +96,5 @@
 #dash.air .clue-empty .air-clueimage{width:min(85px,var(--clue-size));height:min(85px,var(--clue-size))}
 #dash.air .clue-empty .air-clueimage:nth-child(2){width:28px;height:28px}
 @media(max-height:740px){#dash.air .air-clue{--clue-size:clamp(45px,calc(13dvh - 35px),74px)}}
+
+#dash.air .air-inkhelp .air-icon:disabled{opacity:.3;cursor:default}
