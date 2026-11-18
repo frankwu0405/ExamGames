@@ -98,27 +98,33 @@ function pickWords(size,set,stats,random=Math.random){
   const sample=(pool,count)=>pool.map(word=>({word,score:Math.pow(random(),1/(1+Math.min(4,stats[word]?.misses||0)))})).sort((a,b)=>b.score-a.score).slice(0,count).map(x=>x.word);
   return randomized(size===30?SETS.flatMap(group=>sample(group,5)):sample(ALL,10),random);
 }
-function kindFor(word,index,size){return size===60?'echo':['hunt','build',WORDS[word].chunks.includes('·')?'connect':'build','echo'][index%4];}
+function kindFor(word,index,size){return size===60?'ink':['ink','ink_copy','ink_context','ink_memory','hunt'][index%5];}
 function newRun(size,set,stats,random=Math.random){
  if(![10,30,60].includes(size)||!Number.isInteger(set)||set< -1||set>5)throw Error('Invalid drop');
  const words=pickWords(size,set,stats,random);
- return {engine:2,size,set,words,queue:words.map((w,i)=>({w,kind:kindFor(w,i,size),assisted:false,attempts:0,retry:0})),cursor:0,verified:[],parked:[],latch:0,tokens:0,streak:0,started:Date.now(),completed:false};
+ return {engine:3,size,set,words,queue:words.map((w,i)=>({w,kind:kindFor(w,i,size),assisted:false,attempts:0,retry:0})),cursor:0,verified:[],parked:[],latch:0,tokens:0,streak:0,started:Date.now(),completed:false};
 }
 function advance(run,passed,independent){
  const task=run.queue[run.cursor];if(!task)return;
  if(passed&&independent){if(!run.verified.includes(task.w))run.verified.push(task.w);run.parked=run.parked.filter(w=>w!==task.w);}
  else if(!task.filler&&task.retry<2){
   const tail=run.queue.slice(run.cursor+1),need=Math.max(0,3-tail.length);
-  if(need)run.queue.push(...run.words.filter(w=>w!==task.w&&!tail.some(t=>t.w===w)).slice(0,need).map(w=>({w,kind:'echo',assisted:false,attempts:0,retry:2,filler:true})));
-  run.queue.splice(Math.min(run.queue.length,run.cursor+4),0,{w:task.w,kind:'echo',assisted:false,attempts:0,retry:task.retry+1});
+  if(need)run.queue.push(...run.words.filter(w=>w!==task.w&&!tail.some(t=>t.w===w)).slice(0,need).map(w=>({w,kind:'ink',assisted:false,attempts:0,retry:2,filler:true})));
+  run.queue.splice(Math.min(run.queue.length,run.cursor+4),0,{w:task.w,kind:'ink',assisted:false,attempts:0,retry:task.retry+1});
  }
  else if(!task.filler&&!run.verified.includes(task.w)&&!run.parked.includes(task.w))run.parked.push(task.w);
  run.cursor++;run.completed=run.cursor>=run.queue.length;
 }
 function migrateRun(run){
- if(!run||run.engine===2||run.completed)return run;
- const remaining=run.words.filter(w=>!run.verified.includes(w));
- run.queue=remaining.map((w,i)=>({w,kind:kindFor(w,i,run.size),assisted:false,attempts:0,retry:0}));run.cursor=0;run.engine=2;run.streak=0;run.parked=[];return run;
+ if(!run||run.engine===3||run.completed)return run;
+ // Preserve the exact pending word, completed work and reward receipts.
+ if(run.engine===2){
+  run.queue.slice(run.cursor).forEach((t,i)=>{t.kind=t.retry||t.filler?'ink':kindFor(t.w,i,run.size);delete t.options;delete t.selected;});
+ }else{
+  const remaining=run.words.filter(w=>!run.verified.includes(w));
+  run.queue=remaining.map((w,i)=>({w,kind:kindFor(w,i,run.size),assisted:false,attempts:0,retry:0}));run.cursor=0;run.parked=[];
+ }
+ run.engine=3;run.streak=0;return run;
 }
 function letterTray(word,echo,random=Math.random){
  if(echo)return 'abcdefghijklmnopqrstuvwxyz'.split('').map((text,i)=>({id:i,text}));
@@ -129,7 +135,7 @@ const clean=s=>s.trim().toLowerCase();
 window.GateAirdrop={SETS,WORDS,ALL,freshState,rewardWord,pickWords,newRun,advance,migrateRun,letterTray,clean};
 // DOM begins here. The same workshop shell, back arrow, portrait and tabs own navigation.
 const assets=new URL('airdrop/',document.currentScript.src);
-const link=document.createElement('link');link.rel='stylesheet';link.href=new URL('airdrop.css?v=2',assets);document.head.append(link);
+const link=document.createElement('link');link.rel='stylesheet';link.href=new URL('airdrop.css?v=3',assets);document.head.append(link);
 const ICON={
  speaker:'<path d="M3 9h4l5-4v14l-5-4H3zM16 8q5 4 0 8M19 5q8 7 0 14"/>',
  play:'<path d="m8 4 13 8-13 8z"/>',back:'<path d="m15 5-8 7 8 7"/>',
@@ -139,6 +145,8 @@ const ICON={
  home:'<path d="m2 11 10-9 10 9M5 9v12h14V9M10 21v-8h4v8"/>',
  bolt:'<path d="m14 2-9 12h6l-1 8 9-12h-6z"/>',
  settings:'<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="10" cy="18" r="2"/>',
+ retry:'<path d="M4 10a8 8 0 1 1 1 8M4 3v7h7"/>',
+ eraser:'<path d="m15 3 7 7-11 11H6L2 17zM8 11l7 7M11 21h11"/>',
  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 3"/>'
 };
 const svg=name=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+ICON[name]+'</svg>';
@@ -173,13 +181,17 @@ window.mountAirdrop=function(host){
   const day=a.daily.day===taipeiDay()?a.daily:{paid:0,words:[]};const foot=n('div','air-allowance');foot.append(n('span','','🔧 '+day.paid+' / 6'));const bars=n('span','air-mini');for(let i=0;i<6;i++)bars.append(n('i',i<day.paid?'on':''));foot.append(bars);dp.append(foot);
  }
  function ibPlaceholder(name){const e=n('span','air-symbol');e.innerHTML=svg(name);return e;}
- function settings(){reset('settings');intro('Small rewards. Lots of practice.');view({mode:'menu'});
-  const detail=n('div','air-settings');detail.append(n('h3','','For the teacher'),n('p','','10 different words spelled without hints earn 1 part. Maximum 6 parts per Taiwan calendar day; repeats do not pay again.'),n('p','','Target hunting, chunk connections and limited letter trays are learning rounds. Each word returns later on the full alphabet board before it can count as recalled.'),n('p','','All 60 words are available. Thirty-word drops sample five words from each school set. The challenge covers every word. Pause or stop at any time.'),b('Back','cta',menu));dp.append(detail);
+ function settings(){reset('settings');intro('Ready when you are.');view({mode:'menu'});
+  const detail=n('div','air-settings');
+  detail.append(n('h3','','INK READER'),n('p','','On-device transcription. About 100 MB on first use. A teacher checks the ink with ✓; ↻ brings it back later.'));
+  const status=littleStatus(''),enable=b('ENABLE READER','air-go',()=>AirdropInk.enable());detail.append(enable,status,n('p','','10 different words recalled = 1 part. Maximum 6 parts a day. Hints return later.'),b('Back','air-outline',menu));dp.append(detail);
+  taskCleanup=AirdropInk.subscribe((state,progress)=>{status.textContent=state==='ready'?'✓ Ready':state==='loading'?'Downloading… '+progress+'%':state==='error'?'Reader unavailable. You can still write.':'';enable.hidden=state==='ready'||state==='loading';enable.textContent=state==='error'?'TRY AGAIN':'ENABLE READER';});
+
  }
  function setup(size){
-  if(![10,30,60].includes(size))return;selectedSize=size;selectedSet=-1;reset('setup');view({mode:'task',size,open:false,arrive:true});intro(size===60?'The whole shipment. Hear it. Spell it.':'A little hunt. A little building. Then spell it.');
+  if(![10,30,60].includes(size))return;selectedSize=size;selectedSet=-1;reset('setup');view({mode:'task',size,open:false,arrive:true});intro('Hear it. Write it. Ship it.');
   const title=n('div','air-heading',size+' WORDS');dp.append(title);
-  const sample=n('div','air-samples');['hunt','connect','build','echo'].slice(size===60?3:0).forEach((k,i)=>{const e=n('div','air-sample');e.append(n('strong','',k==='hunt'?'◎':k==='connect'?'a—b':k==='build'?'a b c':'🔊'),n('small','',k==='hunt'?'FIND':k==='connect'?'LINK':k==='build'?'BUILD':'SPELL'));sample.append(e);});dp.append(sample);
+
   if(size===10){const sets=n('div','air-setpick');const groupLabel=n('div','air-micro','PACKET');sets.append(groupLabel);[-1,0,1,2,3,4,5].forEach(i=>{const e=b(i<0?'↻':String(i+1),i<0?'on':'',()=>{selectedSet=i;[...sets.querySelectorAll('button')].forEach(btn=>btn.classList.toggle('on',btn===e));preview.textContent=i<0?'':SETS[i].slice(0,3).join(' · ')+' …';});e.setAttribute('aria-label',i<0?'Mixed words':'School set '+(i+1));sets.append(e);});const preview=n('div','air-setpreview');dp.append(sets,preview);}
   if(a.run&&!a.run.completed)dp.append(n('div','air-micro','New drop replaces your paused run. Parts stay.'));
   const go=b('','air-go',()=>{a.run=newRun(selectedSize,selectedSet,a.stats);persist();sfx('whoosh');view({mode:'task',size:selectedSize,arrive:true,progress:0});task();});go.append(ibPlaceholder('play'),n('span','','LET’S GO'));dp.append(go);
@@ -193,10 +205,10 @@ window.mountAirdrop=function(host){
   const latch=Math.floor(run.verified.length/10);if(latch>run.latch){run.latch=latch;persist();return checkpoint();}
   reset('task');const stamp=epoch,t=run.queue[run.cursor],w=WORDS[t.w];view({mode:'task',size:run.size,progress:run.verified.length/run.size,streak:run.streak,open:false,arrive:false});
   const top=n('div','air-tasktop');top.append(ib('pause','Pause drop',pause),n('strong','',run.verified.length+' / '+run.size));const charge=n('div','air-charge');for(let i=0;i<5;i++)charge.append(n('i',i<(run.streak||0)%5?'on':''));top.append(charge,ib('speaker','Hear the word',()=>say(w.word)));dp.append(top);
-  const name=n('div','air-taskname',({hunt:'FIND THE SIGNAL',connect:'CONNECT THE WORD',build:'BUILD IT',echo:'SPELL IT'})[t.kind]);dp.append(name);
+  const name=n('div','air-taskname',({hunt:'FIND THE SIGNAL',ink:'WRITE THE CODE',ink_context:'MESSAGE INCOMING',ink_copy:'TRACE THE CODE',ink_memory:'REMEMBER IT'})[t.kind]);dp.append(name);
   const feedback=littleStatus('');feedback.classList.add('air-feedback');
   let locked=false,chosen=t.selected||[],options=t.options;
-  const independent=()=>t.kind==='echo'&&!t.assisted;
+  const independent=()=>['ink','ink_context'].includes(t.kind)&&!t.assisted;
   function success(){
    if(locked||!live()||stamp!==epoch)return;locked=true;
    const exact=independent(),gain=reward(run,t.w,exact);run.streak=exact?(run.streak||0)+1:run.streak||0;
@@ -217,34 +229,32 @@ window.mountAirdrop=function(host){
    const arena=n('div','air-hunt');const cross=n('span','air-cross','⌖');arena.append(cross);
    options.forEach((word,i)=>{const pod=b(word,'air-pod pod'+i,()=>{if(locked)return;post({type:'snap'});if(word===w.word){pod.classList.add('hit');success();}else{pod.classList.add('miss');wrong();}});pod.setAttribute('aria-label','Target '+word);arena.append(pod);});dp.append(arena,feedback);helpRow();
   }else{
-   const echo=t.kind==='echo',chunks=t.kind==='connect';
-   if(!options){options=chunks?randomized(w.chunks.split('·').concat([WORDS[ALL.find(other=>other!==w.word&&WORDS[other].chunks.includes('·'))].chunks.split('·')[0]])).map((text,id)=>({id,text})):letterTray(w.word,echo);t.options=options;persist();}
-   const ports=n('div','air-ports');ports.setAttribute('aria-label','Your spelling');dp.append(ports);
-   const arena=n('div',chunks?'air-circuit':echo?'air-alphabet':'air-salvage');arena.setAttribute('aria-label',chunks?'Word chunks':echo?'Alphabet letter tiles':'Loose letter tiles');
-   let wires=null;if(chunks){wires=document.createElementNS('http://www.w3.org/2000/svg','svg');wires.setAttribute('class','air-wires');arena.append(wires);}
-   const getOption=id=>options.find(o=>o.id===id);
-   const answer=()=>chosen.map(id=>getOption(id)?.text||'').join('');
-   function paint(){
-    t.selected=chosen;persist();ports.replaceChildren();
-    chosen.forEach((id,index)=>{const tile=b(getOption(id).text,'air-letter inport',()=>{if(locked)return;chosen.splice(index,1);paint();sfx('tap');});tile.setAttribute('aria-label','Remove '+getOption(id).text);ports.append(tile);});
-    if(!chosen.length)ports.append(n('span','air-ghost',echo?'? ? ?':'↓'));
-    arena.querySelectorAll('button').forEach(el=>{const id=Number(el.dataset.id),used=chosen.includes(id);el.disabled=!echo&&used;el.classList.toggle('used',used);});
-    if(wires){wires.replaceChildren();const ns='http://www.w3.org/2000/svg';const path=document.createElementNS(ns,'polyline');const rect=arena.getBoundingClientRect();path.setAttribute('points',chosen.map(id=>{const el=arena.querySelector('[data-id="'+id+'"]'),r=el.getBoundingClientRect();return (r.left-rect.left+r.width/2)+','+(r.top-rect.top+r.height/2);}).join(' '));wires.append(path);}
+   const guided=t.kind==='ink_copy'||t.kind==='ink_memory';
+   const arena=n('div','air-inkarea'),preview=littleStatus('');preview.classList.add('air-inkpreview');dp.append(arena,preview);
+   const actions=n('div','air-inkactions');let pad;
+   const check=ib('check','Teacher: spelling correct',()=>{if(locked||!pad.hasInk())return;pad.finish();success();},'air-stamp');check.disabled=true;
+   pad=AirdropInk.createPad(arena,{
+    key:player+':'+run.started+':'+run.cursor+':'+t.w,
+    ghost:guided?w.word:'',
+    onChange:hasInk=>{check.disabled=!hasInk;},
+    onRead:text=>{preview.textContent=text?'I read: '+text:'';},
+    onState:state=>{preview.classList.toggle('reading',state==='reading');preview.setAttribute('aria-busy',String(state==='reading'));}
+   });
+   const erase=ib('eraser','Erase ink',()=>{if(!locked)erase.classList.toggle('on',pad.eraser());});
+   const later=ib('retry','Teacher: practise again later',()=>{
+    if(locked)return;locked=true;pad.finish();t.assisted=true;run.streak=0;
+    const stat=a.stats[t.w]||(a.stats[t.w]={exact:0,misses:0,helped:0});stat.misses++;
+    advance(run,false,false);persist();post({type:'snap'});task();
+   });
+   actions.append(ib('undo','Undo stroke',()=>{if(!locked)pad.undo();}),erase,later,check);dp.append(actions,feedback);
+   const hint=n('div','air-inkhelp');hint.append(ib('eye','Reveal the word',()=>{if(locked)return;showWord();pad.setGhost(w.word);}),ib('speaker','Hear the sentence',()=>say(w.sentence)));dp.append(hint);
+   taskCleanup=()=>pad.destroy();
+   if(t.kind==='ink_memory'){
+    taskTimer=setTimeout(()=>{if(live()&&stamp===epoch){pad.setGhost('');name.textContent='WRITE THE CODE';}},2200);
    }
-   function pick(id){if(locked||answer().length>=22)return;if(!echo&&chosen.includes(id))return;chosen.push(id);paint();sfx('tick');post({type:'snap'});}
-   options.forEach((option,i)=>{const tile=b(option.text,'air-letter'+(chunks?' chunk':''),()=>pick(option.id));tile.dataset.id=option.id;tile.setAttribute('aria-label',(chunks?'Chunk ':'Letter ')+option.text);
-    if(chunks){tile.style.setProperty('--x',[12,57,10,58,34][i%5]+'%');tile.style.setProperty('--y',[9,15,61,64,36][i%5]+'%');}
-    // Tap and drag both work; nothing requires dexterity or speed.
-    let drag=null;
-    tile.onpointerdown=e=>{if(locked)return;drag={x:e.clientX,y:e.clientY};tile.setPointerCapture?.(e.pointerId);};
-    tile.onpointermove=e=>{if(!drag||Math.hypot(e.clientX-drag.x,e.clientY-drag.y)<10)return;tile.style.transform='translate('+(e.clientX-drag.x)+'px,'+(e.clientY-drag.y)+'px) scale(1.1)';tile.classList.add('drag');};
-    tile.onpointerup=e=>{if(!drag)return;const moved=Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>10;tile.style.transform='';tile.classList.remove('drag');drag=null;if(moved){e.preventDefault();tile.onclick=null;const r=ports.getBoundingClientRect();if(e.clientY>=r.top-25&&e.clientY<=r.bottom+25)pick(option.id);setTimeout(()=>{tile.onclick=()=>pick(option.id);},0);}};
-    tile.onpointercancel=()=>{drag=null;tile.style.transform='';tile.classList.remove('drag');};arena.append(tile);
-   });dp.append(arena,feedback);
-   const actions=n('div','air-actions');actions.append(ib('undo','Undo last tile',()=>{if(locked)return;chosen.pop();paint();sfx('tap');}));
-   const check=ib('check','Launch code',()=>{if(locked||!chosen.length)return;if(answer()===w.word)success();else wrong();},'air-launch');actions.append(check);dp.append(actions);helpRow();paint();
   }
-  setBack(pause);voice(w.word);
+
+  setBack(pause);voice(t.kind==='ink_context'?w.sentence+' '+w.word:w.word);
  }
  function checkpoint(){
   reset('checkpoint');view({mode:'reward',size:a.run.size,open:true,arrive:false});post({type:'launch'});intro('Latch open! Send the next packet?');
@@ -256,7 +266,7 @@ window.mountAirdrop=function(host){
   reset('result');const r=a.run;view({mode:'reward',size:r.size,open:true,arrive:false});post({type:'launch'});intro(r.parked.length?'Good work. A few codes need another look.':'That’s our delivery!');
   dp.append(n('div','air-resultstamp',r.parked.length?'RECOVERED':'CLEARED!'));
   const row=n('div','air-resultstats');[[r.verified.length+'/'+r.size,'🔊'],['+'+r.tokens,'🔧']].forEach(([v,icon])=>{const cell=n('div');cell.append(n('strong','',v),n('span','',icon));row.append(cell);});dp.append(row);
-  if(r.parked.length)dp.append(b('↻ '+r.parked.length,'air-outline',()=>{r.queue.push(...randomized(r.parked).map(w=>({w,kind:'echo',assisted:false,attempts:0,retry:0})));r.completed=false;persist();task();}));
+  if(r.parked.length)dp.append(b('↻ '+r.parked.length,'air-outline',()=>{r.queue.push(...randomized(r.parked).map(w=>({w,kind:'ink',assisted:false,attempts:0,retry:0})));r.completed=false;persist();task();}));
   const go=b('','air-go',menu);go.append(ibPlaceholder('play'),n('span','','ANOTHER DROP'));dp.append(go);sfx('card');
  }
  persist();menu();

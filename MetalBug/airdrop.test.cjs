@@ -8,9 +8,9 @@ for(const word of A.ALL){assert.ok(A.WORDS[word].sentence.toLowerCase().includes
 for(const size of [10,30,60]){
  const r=A.newRun(size,-1,{});assert.equal(r.words.length,size);assert.equal(new Set(r.words).size,size);
  if(size===30)for(const group of A.SETS)assert.equal(r.words.filter(w=>group.includes(w)).length,5);
- if(size===60)assert.ok(r.queue.every(t=>t.kind==='echo'));
+ if(size===60)assert.ok(r.queue.every(t=>['ink','ink_context'].includes(t.kind)));
  const state=A.freshState();let parts=0,attempts=0;
- while(!r.completed){const t=r.queue[r.cursor],independent=t.kind==='echo'&&!t.assisted;if(independent)parts+=A.rewardWord(state,t.w,'2026-11-18');A.advance(r,true,independent);assert.ok(++attempts<200);}
+ while(!r.completed){const t=r.queue[r.cursor],independent=['ink','ink_context'].includes(t.kind)&&!t.assisted;if(independent)parts+=A.rewardWord(state,t.w,'2026-11-18');A.advance(r,true,independent);assert.ok(++attempts<200);}
  assert.equal(r.verified.length,size);assert.equal(parts,size/10);assert.equal(new Set(r.verified).size,size);
  assert.equal(A.rewardWord(state,r.words[0],'2026-11-18'),0);
  const copy=JSON.parse(JSON.stringify(r));assert.equal(copy.cursor,copy.queue.length);
@@ -23,10 +23,17 @@ const fail=A.newRun(10,0,{});let attempts=0;while(!fail.completed){A.advance(fai
 const resume=A.newRun(60,-1,{});for(let i=0;i<13;i++)A.advance(resume,true,true);const restored=JSON.parse(JSON.stringify(resume));assert.equal(restored.cursor,13);assert.equal(restored.verified.length,13);assert.equal(restored.queue[restored.cursor].w,resume.queue[13].w);
 const assisted=A.newRun(60,-1,{}),w=assisted.queue[0].w;assisted.queue[0].assisted=true;A.advance(assisted,true,false);assert.equal(assisted.verified.length,0);assert.ok(assisted.queue.slice(assisted.cursor).some(t=>t.w===w));
 const tail=A.newRun(10,0,{});tail.cursor=tail.queue.length-1;const tailWord=tail.queue.at(-1).w;A.advance(tail,true,false);assert.equal(tail.queue[tail.cursor+3].w,tailWord);assert.ok(tail.queue.slice(tail.cursor,tail.cursor+3).every(t=>t.w!==tailWord));
-const old=JSON.parse(JSON.stringify(A.newRun(30,-1,{})));delete old.engine;old.verified=old.words.slice(0,4);old.tokens=2;old.cursor=6;old.queue[6].kind='repair';const migrated=A.migrateRun(old);assert.equal(migrated.engine,2);assert.equal(migrated.verified.length,4);assert.equal(migrated.tokens,2);assert.equal(migrated.queue.length,26);assert.ok(migrated.queue.every(t=>!migrated.verified.includes(t.w)));assert.equal(A.migrateRun(migrated),migrated);
+const old=JSON.parse(JSON.stringify(A.newRun(30,-1,{})));delete old.engine;old.verified=old.words.slice(0,4);old.tokens=2;old.cursor=6;old.queue[6].kind='repair';const migrated=A.migrateRun(old);assert.equal(migrated.engine,3);assert.equal(migrated.verified.length,4);assert.equal(migrated.tokens,2);assert.equal(migrated.queue.length,26);assert.ok(migrated.queue.every(t=>!migrated.verified.includes(t.w)));assert.equal(A.migrateRun(migrated),migrated);
 const bank=A.letterTray('beginning',false);for(const ch of new Set('beginning'))assert.ok(bank.filter(t=>t.text===ch).length>='beginning'.split('').filter(x=>x===ch).length);assert.equal(new Set(bank.map(t=>t.id)).size,bank.length);assert.equal(A.letterTray('begged',true).map(t=>t.text).join(''),'abcdefghijklmnopqrstuvwxyz');
 assert.equal(source.includes("node('input'"),false);assert.equal(source.includes("inputMode"),false);
 assert.throws(()=>A.newRun(20,-1,{}));assert.throws(()=>A.newRun(10,9,{}));
 const html=fs.readFileSync(__dirname+'/index.html','utf8');for(const m of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))if(m[1].trim())new vm.Script(m[1]);
-assert.ok(html.includes('src="airdrop.js?v=2"'));
+assert.ok(html.includes('src="airdrop.js?v=3"'));
 console.log('PASS: all 60 words; set coverage; 10/30/60 completion; delayed recalls; bounded retries; JSON resume; duplicate rewards; daily six-part cap; next-day reset; script syntax.');
+
+// Version 2 upgrades keep the exact pending question and reward receipts.
+const v2=JSON.parse(JSON.stringify(A.newRun(30,-1,{})));v2.engine=2;v2.cursor=7;v2.tokens=2;v2.verified=v2.words.slice(0,4);const pending=v2.queue[7].w;v2.queue[7].selected=[1,2];v2.queue[7].options=['old'];A.migrateRun(v2);assert.equal(v2.cursor,7);assert.equal(v2.queue[7].w,pending);assert.equal(v2.tokens,2);assert.equal(v2.queue[7].selected,undefined);assert.equal(v2.verified.length,4);
+const mixed=A.newRun(30,-1,{});assert.equal(mixed.queue.filter(t=>t.kind.startsWith('ink')).length,24);
+assert.ok(source.includes("check.disabled=!hasInk"));assert.ok(source.includes("!pad.hasInk()"));
+assert.ok(html.indexOf('ink-reader.js')<html.indexOf('src="airdrop.js'));
+console.log('PASS: handwriting majority, exact-question migration, empty ink guard, reader load order.');

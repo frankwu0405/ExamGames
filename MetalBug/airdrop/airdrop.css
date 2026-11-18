@@ -24,3 +24,25 @@
 #dash.air .air-win{background-color:#16393a}#dash.air .air-nudge{animation:airNudge .25s}@keyframes airNudge{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}@keyframes airSnap{from{transform:translateY(-12px) scale(1.2)}to{transform:none}}@keyframes airPod{50%{translate:0 -5px}}
 @media(max-height:740px){#dash.air.pw iframe{height:18dvh}#dash.air .dp{gap:9px;padding-top:21px}#dash.air .air-letter{min-height:39px}#dash.air .air-letter.inport{min-height:33px}#dash.air .air-taskname{font-size:23px}#dash.air .air-ports{min-height:48px}#dash.air .air-help{gap:16px}#dash.air .air-circuit{height:150px}#dash.air .air-hunt{height:165px}}
 @media(prefers-reduced-motion:reduce){#dash.air *{animation:none!important;transition:none!important}}
+/* Ink belongs on a generous cargo label, with controls outside the pen area. */
+#dash.air.air-task iframe{height:19dvh;min-height:100px}
+#dash.air.air-task .dp{gap:10px;padding-top:18px}
+#dash.air .air-inkarea{flex:1;min-height:190px;display:flex;position:relative}
+#dash.air .air-inkpaper{position:relative;width:100%;min-height:190px;flex:1;background:#fffdf5;border:3px solid #000;box-shadow:5px 6px #000;border-radius:4px;overflow:hidden;isolation:isolate}
+#dash.air .air-inkpaper:before{content:'';position:absolute;left:14px;right:14px;top:69%;border-bottom:2px dashed #b9c4cc;pointer-events:none}
+#dash.air .air-inkghost{position:absolute;inset:0 12px;display:flex;align-items:center;justify-content:center;font:500 clamp(28px,9vw,54px)/1.2 'Comic Sans MS','Trebuchet MS',cursive;color:#b9c4cc;pointer-events:none;letter-spacing:.02em}
+#dash.air .air-inkcanvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair;user-select:none;-webkit-user-select:none}
+#dash.air .air-inkpaper.erasing .air-inkcanvas{cursor:cell}
+#dash.air .air-inkpreview{min-height:20px;font:500 14px/1.3 var(--bd);color:#b5c4d8;text-align:center;overflow-wrap:anywhere}
+#dash.air .air-inkpreview.reading:empty:before{content:'•••';color:var(--teal)}
+#dash.air .air-inkactions{display:flex;gap:12px;align-items:center;flex:none}
+#dash.air .air-inkactions .air-stamp{margin-left:auto;background:var(--teal);width:78px;height:50px;transform:rotate(-3deg)}
+#dash.air .air-inkactions .air-stamp:disabled{opacity:.35;cursor:default}
+#dash.air .air-inkactions .on{background:var(--yellow)}
+#dash.air .air-inkhelp{display:flex;justify-content:center;gap:25px;flex:none}
+#dash.air .air-inkhelp .air-icon{background:none;border:0;box-shadow:none;color:#8fadd0;width:44px;height:36px}
+#dash.air .air-settings .air-go{font-size:22px;margin:12px 0}
+#dash.air .air-settings p{font-size:13px;line-height:1.5}
+#dash.air .air-settings [hidden]{display:none}
+@media(max-height:690px){#dash.air.air-task iframe{height:14dvh;min-height:75px}#dash.air.air-task .dp{gap:7px;padding-top:15px}#dash.air .air-inkarea,#dash.air .air-inkpaper{min-height:155px}#dash.air .air-inkhelp .air-icon{height:30px}}
+@media(orientation:landscape) and (max-height:520px){#dash.air.air-task iframe{display:none}#dash.air .air-inkarea,#dash.air .air-inkpaper{min-height:125px}}
