@@ -102,7 +102,7 @@ function kindFor(word,index,size){return size===60?'ink':['ink','ink_copy','ink_
 function newRun(size,set,stats,random=Math.random){
  if(![10,30,60].includes(size)||!Number.isInteger(set)||set< -1||set>5)throw Error('Invalid drop');
  const words=pickWords(size,set,stats,random);
- return {engine:3,size,set,words,queue:words.map((w,i)=>({w,kind:kindFor(w,i,size),assisted:false,attempts:0,retry:0})),cursor:0,verified:[],parked:[],latch:0,tokens:0,streak:0,started:Date.now(),completed:false};
+ return {engine:4,size,set,words,queue:words.map((w,i)=>({w,kind:kindFor(w,i,size),assisted:false,attempts:0,retry:0})),cursor:0,verified:[],parked:[],latch:0,tokens:0,streak:0,started:Date.now(),completed:false};
 }
 function advance(run,passed,independent){
  const task=run.queue[run.cursor];if(!task)return;
@@ -116,15 +116,15 @@ function advance(run,passed,independent){
  run.cursor++;run.completed=run.cursor>=run.queue.length;
 }
 function migrateRun(run){
- if(!run||run.engine===3||run.completed)return run;
+ if(!run||run.engine===4||run.completed)return run;
  // Preserve the exact pending word, completed work and reward receipts.
- if(run.engine===2){
+ if([2,3].includes(run.engine)){
   run.queue.slice(run.cursor).forEach((t,i)=>{t.kind=t.retry||t.filler?'ink':kindFor(t.w,i,run.size);delete t.options;delete t.selected;});
  }else{
   const remaining=run.words.filter(w=>!run.verified.includes(w));
   run.queue=remaining.map((w,i)=>({w,kind:kindFor(w,i,run.size),assisted:false,attempts:0,retry:0}));run.cursor=0;run.parked=[];
  }
- run.engine=3;run.streak=0;return run;
+ run.engine=4;run.streak=0;return run;
 }
 function letterTray(word,echo,random=Math.random){
  if(echo)return 'abcdefghijklmnopqrstuvwxyz'.split('').map((text,i)=>({id:i,text}));
@@ -135,7 +135,7 @@ const clean=s=>s.trim().toLowerCase();
 window.GateAirdrop={SETS,WORDS,ALL,freshState,rewardWord,pickWords,newRun,advance,migrateRun,letterTray,clean};
 // DOM begins here. The same workshop shell, back arrow, portrait and tabs own navigation.
 const assets=new URL('airdrop/',document.currentScript.src);
-const link=document.createElement('link');link.rel='stylesheet';link.href=new URL('airdrop.css?v=3',assets);document.head.append(link);
+const link=document.createElement('link');link.rel='stylesheet';link.href=new URL('airdrop.css?v=4',assets);document.head.append(link);
 const ICON={
  speaker:'<path d="M3 9h4l5-4v14l-5-4H3zM16 8q5 4 0 8M19 5q8 7 0 14"/>',
  play:'<path d="m8 4 13 8-13 8z"/>',back:'<path d="m15 5-8 7 8 7"/>',
@@ -168,7 +168,7 @@ window.mountAirdrop=function(host){
  window.addEventListener('message',onMessage);
  fr.title='3D airdrop landing pad';fr.src=new URL('index.html?v=2',assets).href;
  function stopSpeech(){clearTimeout(speechTimer);try{speechSynthesis.cancel();}catch{}}
- function say(text){stopSpeech();if(S.muted||!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance(text);u.lang='en-US';u.rate=.83;speechSynthesis.speak(u);}
+ function say(text,force=false){stopSpeech();if((S.muted&&!force)||!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance(text);u.lang='en-US';u.rate=.83;speechSynthesis.speak(u);}
  function voice(text){const stamp=epoch;speechTimer=setTimeout(()=>{if(live()&&epoch===stamp)say(text);},160);}
  function reset(next){epoch++;clearTimeout(taskTimer);stopSpeech();taskCleanup?.();taskCleanup=null;page=next;dp.replaceChildren();dp.scrollTop=0;d.classList.toggle('pw',next==='task');d.classList.toggle('air-task',next==='task');setBack(next==='menu'?host.close:menu);}
  function intro(text){dp.append(head(true));talk(text);}
@@ -183,9 +183,9 @@ window.mountAirdrop=function(host){
  function ibPlaceholder(name){const e=n('span','air-symbol');e.innerHTML=svg(name);return e;}
  function settings(){reset('settings');intro('Ready when you are.');view({mode:'menu'});
   const detail=n('div','air-settings');
-  detail.append(n('h3','','INK READER'),n('p','','On-device transcription. About 100 MB on first use. A teacher checks the ink with ✓; ↻ brings it back later.'));
-  const status=littleStatus(''),enable=b('ENABLE READER','air-go',()=>AirdropInk.enable());detail.append(enable,status,n('p','','10 different words recalled = 1 part. Maximum 6 parts a day. Hints return later.'),b('Back','air-outline',menu));dp.append(detail);
-  taskCleanup=AirdropInk.subscribe((state,progress)=>{status.textContent=state==='ready'?'✓ Ready':state==='loading'?'Downloading… '+progress+'%':state==='error'?'Reader unavailable. You can still write.':'';enable.hidden=state==='ready'||state==='loading';enable.textContent=state==='error'?'TRY AGAIN':'ENABLE READER';});
+  detail.append(n('h3','','INK READER'),n('p','','One letter at a time. Correct letters lock in automatically. ✓ reads your letter; it cannot skip it.'));
+  const status=littleStatus(''),enable=b('LOAD READER','air-go',()=>AirdropInk.enable());detail.append(enable,status,n('p','','10 different words recalled = 1 part. Maximum 6 parts a day. Hints return later.'),b('Back','air-outline',menu));dp.append(detail);
+  taskCleanup=AirdropInk.subscribe((state,progress)=>{status.textContent=state==='ready'?'✓ Ready':state==='loading'?'Downloading… '+progress+'%':state==='error'?'Reader unavailable. Retry to continue.':'';enable.hidden=state==='ready'||state==='loading';enable.textContent=state==='error'?'TRY AGAIN':'LOAD READER';});
 
  }
  function setup(size){
@@ -204,13 +204,15 @@ window.mountAirdrop=function(host){
   const run=a.run;if(!run)return menu();if(run.completed)return result();
   const latch=Math.floor(run.verified.length/10);if(latch>run.latch){run.latch=latch;persist();return checkpoint();}
   reset('task');const stamp=epoch,t=run.queue[run.cursor],w=WORDS[t.w];view({mode:'task',size:run.size,progress:run.verified.length/run.size,streak:run.streak,open:false,arrive:false});
-  const top=n('div','air-tasktop');top.append(ib('pause','Pause drop',pause),n('strong','',run.verified.length+' / '+run.size));const charge=n('div','air-charge');for(let i=0;i<5;i++)charge.append(n('i',i<(run.streak||0)%5?'on':''));top.append(charge,ib('speaker','Hear the word',()=>say(w.word)));dp.append(top);
+  const top=n('div','air-tasktop');top.append(ib('pause','Pause drop',pause),n('strong','',run.verified.length+' / '+run.size));const charge=n('div','air-charge');for(let i=0;i<5;i++)charge.append(n('i',i<(run.streak||0)%5?'on':''));top.append(charge,ib('speaker','Hear the word',()=>say(w.word,true)));dp.append(top);
   const name=n('div','air-taskname',({hunt:'FIND THE SIGNAL',ink:'WRITE THE CODE',ink_context:'MESSAGE INCOMING',ink_copy:'TRACE THE CODE',ink_memory:'REMEMBER IT'})[t.kind]);dp.append(name);
   const feedback=littleStatus('');feedback.classList.add('air-feedback');
   let locked=false,chosen=t.selected||[],options=t.options;
   const independent=()=>['ink','ink_context'].includes(t.kind)&&!t.assisted;
   function success(){
-   if(locked||!live()||stamp!==epoch)return;locked=true;
+   if(locked||!live()||stamp!==epoch)return;
+   if(t.kind!=='hunt'&&!AirdropLetters.complete(t,w.word))return;
+   locked=true;
    const exact=independent(),gain=reward(run,t.w,exact);run.streak=exact?(run.streak||0)+1:run.streak||0;
    advance(run,true,exact);if(run.completed&&run.verified.length===run.size&&!run.stamped){a.completed[run.size]=(a.completed[run.size]||0)+1;run.stamped=true;}persist();
    top.querySelector('strong').textContent=run.verified.length+' / '+run.size;
@@ -223,35 +225,66 @@ window.mountAirdrop=function(host){
    if(t.attempts>=2)showWord();
   }
   function showWord(){t.assisted=true;persist();feedback.replaceChildren(n('strong','air-answer',w.word));voice(w.word);}
-  function helpRow(){const row=n('div','air-help');row.append(ib('eye','Show the word',showWord),ib('speaker','Hear a sentence',()=>say(w.sentence)),ib('clock','Practise this word later',()=>{if(locked)return;locked=true;advance(run,false,false);persist();task();}));dp.append(row);}
+  function helpRow(){const row=n('div','air-help');row.append(ib('eye','Show the word',showWord),ib('speaker','Hear a sentence',()=>say(w.sentence,true)),ib('clock','Practise this word later',()=>{if(locked)return;locked=true;advance(run,false,false);persist();task();}));dp.append(row);}
   if(t.kind==='hunt'){
    if(!options){options=randomized([w.word,w.damaged,ALL.find(other=>other!==w.word&&other.length===w.word.length)||'signal']);if(new Set(options).size!==3)options=[w.word,w.damaged,'signal'];t.options=options;persist();}
    const arena=n('div','air-hunt');const cross=n('span','air-cross','⌖');arena.append(cross);
    options.forEach((word,i)=>{const pod=b(word,'air-pod pod'+i,()=>{if(locked)return;post({type:'snap'});if(word===w.word){pod.classList.add('hit');success();}else{pod.classList.add('miss');wrong();}});pod.setAttribute('aria-label','Target '+word);arena.append(pod);});dp.append(arena,feedback);helpRow();
   }else{
-   const guided=t.kind==='ink_copy'||t.kind==='ink_memory';
+   AirdropInk.enable();
+   t.letters=AirdropLetters.receipts(t,w.word);persist();
+   let pad,hasInk=false,lastPrediction=null,readerState=AirdropInk.reader.state;
+   const trace=t.kind==='ink_copy';let revealed=trace;
+   name.textContent=trace?'TRACE EACH LETTER':'SPELL IT';
+   dp.append(n('div','air-writeprompt','Tap 🔊. Write one letter at a time.'));
+   const modelWord=n('div','air-modelword',trace||t.kind==='ink_memory'?w.word:'');dp.append(modelWord);
+   const slots=n('div','air-wordslots');slots.setAttribute('aria-label','Your spelling');dp.append(slots);
    const arena=n('div','air-inkarea'),preview=littleStatus('');preview.classList.add('air-inkpreview');dp.append(arena,preview);
-   const actions=n('div','air-inkactions');let pad;
-   const check=ib('check','Teacher: spelling correct',()=>{if(locked||!pad.hasInk())return;pad.finish();success();},'air-stamp');check.disabled=true;
-   pad=AirdropInk.createPad(arena,{
-    key:player+':'+run.started+':'+run.cursor+':'+t.w,
-    ghost:guided?w.word:'',
-    onChange:hasInk=>{check.disabled=!hasInk;},
-    onRead:text=>{preview.textContent=text?'I read: '+text:'';},
-    onState:state=>{preview.classList.toggle('reading',state==='reading');preview.setAttribute('aria-busy',String(state==='reading'));}
-   });
-   const erase=ib('eraser','Erase ink',()=>{if(!locked)erase.classList.toggle('on',pad.eraser());});
-   const later=ib('retry','Teacher: practise again later',()=>{
-    if(locked)return;locked=true;pad.finish();t.assisted=true;run.streak=0;
-    const stat=a.stats[t.w]||(a.stats[t.w]={exact:0,misses:0,helped:0});stat.misses++;
-    advance(run,false,false);persist();post({type:'snap'});task();
-   });
-   actions.append(ib('undo','Undo stroke',()=>{if(!locked)pad.undo();}),erase,later,check);dp.append(actions,feedback);
-   const hint=n('div','air-inkhelp');hint.append(ib('eye','Reveal the word',()=>{if(locked)return;showWord();pad.setGhost(w.word);}),ib('speaker','Hear the sentence',()=>say(w.sentence)));dp.append(hint);
-   taskCleanup=()=>pad.destroy();
-   if(t.kind==='ink_memory'){
-    taskTimer=setTimeout(()=>{if(live()&&stamp===epoch){pad.setGhost('');name.textContent='WRITE THE CODE';}},2200);
+   const actions=n('div','air-inkactions');
+   const check=ib('check','Read this letter',()=>{if(!locked)pad.read();},'air-stamp');check.disabled=true;
+   const retryReader=b('RETRY READER','air-outline',()=>AirdropInk.enable(true));retryReader.hidden=true;
+   const index=()=>t.letters.length;
+   const key=()=>player+':'+run.started+':'+run.cursor+':'+t.w+':letter:'+index();
+   function paintSlots(){
+    slots.replaceChildren();for(let i=0;i<w.word.length;i++){const tile=n('span',i<index()?'done':i===index()?'current':'',i<index()?t.letters[i].letter:'');tile.setAttribute('aria-label',i<index()?'Letter '+(i+1)+': '+t.letters[i].letter:i===index()?'Write letter '+(i+1):'Letter '+(i+1));slots.append(tile);}
    }
+   function updateCheck(){check.disabled=locked||!hasInk||readerState!=='ready';}
+   function rememberMistake(){
+    if(lastPrediction&&AirdropLetters.reliable(lastPrediction)&&lastPrediction.letter!==w.word[index()]){
+     t.assisted=true;const stat=a.stats[t.w]||(a.stats[t.w]={exact:0,misses:0,helped:0});stat.misses++;persist();
+    }
+   }
+   pad=AirdropInk.createPad(arena,{
+    key:key(),ghost:trace?w.word[index()]:'',
+    onChange:ink=>{hasInk=ink;if(readerState==='unclear'&&AirdropInk.reader.state==='ready')readerState='ready';updateCheck();},
+    onRead:prediction=>{
+     if(locked||!live()||stamp!==epoch)return;lastPrediction=prediction;
+     if(!prediction){if(readerState==='ready')preview.textContent='';return;}
+     if(!AirdropLetters.reliable(prediction)){preview.textContent='Not clear yet. Try a capital letter.';return;}
+     if(!AirdropLetters.record(t,w.word,prediction)){preview.textContent='I read '+prediction.letter.toUpperCase()+'. Try again.';return;}
+     persist();paintSlots();sfx('tick');post({type:'snap'});
+     feedback.textContent='✓ '+prediction.letter.toUpperCase();feedback.classList.add('good');
+     if(AirdropLetters.complete(t,w.word)){pad.finish();success();return;}
+     pad.next(key(),revealed?w.word[index()]:'');
+    },
+    onState:state=>{
+     readerState=state;updateCheck();preview.classList.toggle('reading',state==='reading');
+     preview.setAttribute('aria-busy',String(state==='reading'||state==='loading'));retryReader.hidden=state!=='error';
+     if(state==='loading')preview.textContent='Loading letter reader…';
+     if(state==='error')preview.textContent='Reader unavailable. Tap retry.';
+     if(state==='unclear')preview.textContent='Write a full letter.';
+     if(state==='ready'&&!hasInk)preview.textContent='';
+    }
+   });
+   actions.append(ib('undo','Undo stroke',()=>{if(!locked)pad.undo();}),ib('eraser','Clear this letter',()=>{if(locked)return;rememberMistake();pad.clear();}),check);dp.append(actions,retryReader,feedback);
+   const hint=n('div','air-inkhelp');hint.append(ib('eye','Show the spelling',()=>{if(locked)return;t.assisted=true;revealed=true;modelWord.textContent=w.word;pad.setGhost(w.word[index()]);persist();say(w.word,true);}),ib('speaker','Hear a sentence',()=>say(w.sentence,true)),ib('clock','Practise this word later',()=>{
+    if(locked)return;locked=true;pad.finish();t.assisted=true;run.streak=0;advance(run,false,false);persist();task();
+   }));dp.append(hint);paintSlots();
+   taskCleanup=()=>pad.destroy();
+   if(t.kind==='ink_memory')taskTimer=setTimeout(()=>{if(live()&&stamp===epoch&&!revealed)modelWord.textContent='';},2200);
+   // A refresh after the last validated letter can safely finish the saved word.
+   if(AirdropLetters.complete(t,w.word)){pad.finish();success();}
+
   }
 
   setBack(pause);voice(t.kind==='ink_context'?w.sentence+' '+w.word:w.word);

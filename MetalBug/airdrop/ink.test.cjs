@@ -26,9 +26,11 @@ pad.finish();assert.equal(storage.has('gate-airdrop-ink-draft'),false);pad.destr
  const image=()=>({pixels:new ArrayBuffer(4),width:1,height:1});
  const p1=A.recognize(image()),p2=A.recognize(image()).catch(e=>e.message),p3=A.recognize(image());
  assert.equal(worker.sent.length,2);assert.equal(await p2,'Superseded');
- worker.message({type:'result',id:1,text:'written'});assert.equal(await p1,'written');assert.equal(worker.sent.length,3);
+ worker.message({type:'result',id:1,prediction:{letter:'b'}});assert.equal((await p1).letter,'b');assert.equal(worker.sent.length,3);
  assert.deepEqual(Object.keys(worker.sent[2]).sort(),['height','id','pixels','type','width']);
- worker.message({type:'result',id:3,text:'next'});assert.equal(await p3,'next');
+ worker.message({type:'result',id:3,prediction:{letter:'c'}});assert.equal((await p3).letter,'c');
  const p4=A.recognize(image()).catch(e=>e.message),p5=A.recognize(image()).catch(e=>e.message);worker.onerror();assert.equal(await p4,'Reader unavailable');assert.equal(await p5,'Reader unavailable');assert.equal(A.reader.state,'error');
+ A.enable();worker.message({type:'ready'});let results=[];const staleHost=new Element('div'),stale=A.createPad(staleHost,{key:'stale',onRead:p=>{if(p)results.push(p);}}),c=staleHost.children[0].children[1];
+ c.onpointerdown(event(0,20,50));c.onpointermove(event(0,60,100));c.onpointermove(event(0,120,40));c.onpointerup(event(0,120,40));const inFlight=stale.read(),id=worker.sent.at(-1).id;stale.next('new-letter');worker.message({type:'result',id,prediction:{letter:'b'}});await inFlight;assert.equal(results.length,0);stale.destroy();
  console.log('PASS: real stroke capture, pointer ID zero, multi-touch guard, undo, question-scoped drafts, blank rejection, one active inference, newest queued inference, no target leakage, worker failure recovery.');
 })().catch(e=>{console.error(e);process.exitCode=1;});

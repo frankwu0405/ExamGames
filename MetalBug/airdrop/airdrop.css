@@ -46,3 +46,19 @@
 #dash.air .air-settings [hidden]{display:none}
 @media(max-height:690px){#dash.air.air-task iframe{height:14dvh;min-height:75px}#dash.air.air-task .dp{gap:7px;padding-top:15px}#dash.air .air-inkarea,#dash.air .air-inkpaper{min-height:155px}#dash.air .air-inkhelp .air-icon{height:30px}}
 @media(orientation:landscape) and (max-height:520px){#dash.air.air-task iframe{display:none}#dash.air .air-inkarea,#dash.air .air-inkpaper{min-height:125px}}
+/* A single letter docks into each cargo slot. Ink is a square, never a word strip. */
+#dash.air .air-writeprompt{font:600 13px/1.3 var(--bd);text-align:center;color:#b5c4d8;flex:none}
+#dash.air .air-wordslots{display:flex;gap:5px;justify-content:center;flex:none;flex-wrap:wrap}
+#dash.air .air-wordslots span{width:clamp(21px,6.7vw,34px);height:35px;border-bottom:3px solid #455c7b;color:#fff;display:grid;place-items:center;font:800 24px/1 var(--bd)}
+#dash.air .air-wordslots .current{border-color:var(--yellow);background:#ffdb3220;box-shadow:0 3px var(--yellow)}
+#dash.air .air-wordslots .done{color:var(--teal);border-color:var(--teal);animation:airSnap .15s ease-out}
+#dash.air .air-modelword{font:700 23px/1 var(--bd);text-align:center;color:var(--paper);letter-spacing:.08em;flex:none}
+#dash.air .air-modelword:empty{display:none}
+#dash.air .air-inkarea{min-height:160px;justify-content:center}
+#dash.air .air-inkpaper{width:min(100%,245px);flex:0 1 245px;min-height:160px;max-height:245px}
+#dash.air .air-inkghost{font:500 clamp(90px,25vw,150px)/1 'Comic Sans MS','Trebuchet MS',cursive;align-items:center}
+#dash.air .air-inkactions{justify-content:center}
+#dash.air .air-inkactions .air-stamp{margin-left:15px;transform:none}
+#dash.air .air-inkpreview{font-size:13px;min-height:19px}
+#dash.air .air-inkactions+[hidden]{display:none}
+@media(max-height:740px){#dash.air.air-task iframe{height:13dvh;min-height:72px}#dash.air.air-task .dp{gap:7px}#dash.air .air-inkarea,#dash.air .air-inkpaper{min-height:150px}#dash.air .air-inkpaper{flex-basis:190px;max-height:190px}#dash.air .air-inkghost{font-size:110px}}

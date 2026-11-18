@@ -1,0 +1,32 @@
+// Actual ink rasterization → actual WASM classifier → real Airdrop DOM handlers.
+const {JSDOM}=require('jsdom'),{createCanvas}=require('@napi-rs/canvas'),ort=require('onnxruntime-web/wasm'),fs=require('fs'),assert=require('node:assert/strict');
+const path=require('path');const root=path.resolve(__dirname,'..');const strokes=JSON.parse(fs.readFileSync(path.join(__dirname,'letter-fixtures.json')));
+(async()=>{
+ort.env.wasm.numThreads=1;const modelFile=process.env.AIRDROP_LETTER_MODEL||path.join(__dirname,'.cache-letter-model.onnx');
+if(!fs.existsSync(modelFile)){const response=await fetch('https://raw.githubusercontent.com/BryanDhaniel/Handwriting-Recognition-with-EMNIST-and-CNN/6f3456cad42cd56c987d367fa225285619c92e47/model.onnx');if(!response.ok)throw Error('Model download failed');fs.writeFileSync(modelFile,Buffer.from(await response.arrayBuffer()));}
+const session=await ort.InferenceSession.create(fs.readFileSync(modelFile),{executionProviders:['wasm']});
+const dom=new JSDOM('<head></head><body><div id="dash" class="air"><iframe></iframe><div class="dp"></div></div></body>',{url:'https://example.test/MetalBug/',runScripts:'outside-only'}),w=dom.window;
+const backs=new WeakMap();w.HTMLCanvasElement.prototype.getContext=function(){let back=backs.get(this);if(!back){back=createCanvas(this.width,this.height);backs.set(this,back);}if(back.width!==this.width)back.width=this.width;if(back.height!==this.height)back.height=this.height;return back.getContext('2d');};w.HTMLCanvasElement.prototype.getBoundingClientRect=()=>({left:0,top:0,width:220,height:220});
+Object.defineProperty(w.HTMLCanvasElement.prototype,'clientWidth',{get:()=>220});Object.defineProperty(w.HTMLCanvasElement.prototype,'clientHeight',{get:()=>220});
+w.ResizeObserver=class{observe(){}disconnect(){}};w.S={parts:0,muted:false};w.Snd={themeWant:false,theme(){}};w.student={id:'test'};w.save=()=>{};w.sfx=()=>{};w.partsEl=w.document.createElement('div');w.partsEl.append(w.document.createTextNode('0'));w.speechSynthesis={cancel(){},speak(){}};w.SpeechSynthesisUtterance=class{};
+let posted=[];w.Worker=class{postMessage(m){posted.push(m);if(m.type==='load'){queueMicrotask(()=>this.onmessage({data:{type:'ready'}}));return;}queueMicrotask(async()=>{const out=await session.run({[session.inputNames[0]]:new ort.Tensor('float32',new Float32Array(m.pixels),[1,28,28,1])});this.onmessage({data:{type:'result',id:m.id,prediction:w.AirdropLetters.rank(out[session.outputNames[0]].data)}});});}terminate(){}};
+for(const file of ['airdrop/letter-core.js','airdrop/ink-reader.js','airdrop.js']){Object.defineProperty(w.document,'currentScript',{configurable:true,get:()=>({src:'https://example.test/MetalBug/'+file})});w.eval(fs.readFileSync(path.join(root,file),'utf8'));}
+const d=w.document.querySelector('#dash'),dp=d.querySelector('.dp'),host={d,dp,fr:d.querySelector('iframe'),head:()=>w.document.createElement('div'),talk(){},setBack(){},close(){}};let cleanup=w.mountAirdrop(host);
+dp.querySelectorAll('.air-size')[2].click();dp.querySelector('.air-go').click();await new Promise(r=>setTimeout(r,15));
+const run=w.S.airdrop.run;let task=run.queue[0];task.w='moving';task.letters=[];cleanup();cleanup=w.mountAirdrop(host);dp.querySelector('.air-resume').click();await new Promise(r=>setTimeout(r,10));
+function event(x,y){return {pointerId:1,pointerType:'mouse',button:0,clientX:x*220,clientY:y*220,preventDefault(){}};}
+function draw(paths){const canvas=dp.querySelector('canvas');for(const path of paths){canvas.onpointerdown(event(...path[0]));for(let i=1;i<path.length;i++){const a=path[i-1],b=path[i];for(let j=1;j<=10;j++)canvas.onpointermove(event(a[0]+(b[0]-a[0])*j/10,a[1]+(b[1]-a[1])*j/10));}canvas.onpointerup(event(...path.at(-1)));}}
+async function read(){dp.querySelector('.air-stamp').click();await new Promise(r=>setTimeout(r,35));}
+const q=run.cursor;
+// Blank, dot and the wrong letter cannot advance the word or its first slot.
+await read();assert.equal(run.cursor,q);assert.equal(task.letters.length,0);
+draw([[[.5,.5],[.501,.501]]]);await read();assert.equal(task.letters.length,0);dp.querySelector('[aria-label="Clear this letter"]').click();
+draw([Array.from({length:60},(_,i)=>[i%2?.85:.15,.15+i*.011])]);await read();assert.equal(task.letters.length,0);dp.querySelector('[aria-label="Clear this letter"]').click();
+draw(strokes.b);await read();assert.equal(run.cursor,q);assert.equal(task.letters.length,0);assert.match(dp.querySelector('.air-inkpreview').textContent,/I read B/);dp.querySelector('[aria-label="Clear this letter"]').click();assert.equal(task.assisted,true);
+// True letter-by-letter classification: a partial word never counts as success.
+for(const [i,ch]of [...'moving'].entries()){draw(strokes[ch]);if(i===0)await new Promise(r=>setTimeout(r,650));else await read();assert.equal(task.letters.length,i+1);if(i<5)assert.equal(run.cursor,q);}
+assert.equal(run.cursor,q+1);assert.equal(run.verified.length,0);assert.equal(w.S.parts,0);assert.ok(run.queue.slice(run.cursor).some(t=>t.w==='moving'));assert.ok(posted.filter(m=>m.type==='read').every(m=>Object.keys(m).sort().join(',')==='height,id,pixels,type,width'));
+cleanup();task=run.queue[run.cursor];task.w='begged';task.letters=[];cleanup=w.mountAirdrop(host);dp.querySelector('.air-resume').click();await new Promise(r=>setTimeout(r,10));
+for(const ch of 'beg'){draw(strokes[ch]);await read();}assert.equal(task.letters.length,3);const savedCursor=run.cursor;cleanup();cleanup=w.mountAirdrop(host);dp.querySelector('.air-resume').click();assert.equal(dp.querySelectorAll('.air-wordslots .done').length,3);assert.equal(run.cursor,savedCursor);
+for(const ch of 'ged'){draw(strokes[ch]);await read();}assert.equal(task.letters.length,6);assert.equal(run.cursor,savedCursor+1);assert.ok(run.verified.includes('begged'));cleanup();dom.window.close();console.log('PASS: real rendered strokes → WASM → UI: empty/dot/wrong letter blocked; full matching sequence required; helped word queued for recall; no target sent to model.');
+})().catch(e=>{console.error(e);process.exitCode=1;});

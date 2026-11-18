@@ -1,30 +1,33 @@
-// Downloads a public MIT-licensed handwriting model. Ink images are processed
-// in this worker on the student's device; no writing is uploaded for inference.
-let engine,RawImage,loading;
-async function init(){
- if(engine)return engine;
- if(!loading)loading=(async()=>{
-  const lib=await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1/dist/transformers.min.js');
-  RawImage=lib.RawImage;lib.env.allowLocalModels=false;lib.env.useBrowserCache=true;
-  lib.env.backends.onnx.wasm.numThreads=1;lib.env.backends.onnx.wasm.proxy=false;
-  engine=await lib.pipeline('image-to-text','Xenova/trocr-small-handwritten',{
-   dtype:'q8',device:'wasm',
-   progress_callback:p=>postMessage({type:'progress',file:p.file,status:p.status,progress:p.progress})
-  });
-  postMessage({type:'ready'});return engine;
- })().catch(error=>{loading=null;throw error;});
- return loading;
+/* Single-letter EMNIST classifier. No spelling correction, lexicon or target input. */
+importScripts('letter-core.js?v=1');
+let session,loading;
+const runtime='https://cdn.jsdelivr.net/npm/onnxruntime-web@1.21.0/dist/';
+const modelURL='https://raw.githubusercontent.com/BryanDhaniel/Handwriting-Recognition-with-EMNIST-and-CNN/6f3456cad42cd56c987d367fa225285619c92e47/model.onnx';
+async function modelBytes(){
+ let cache;try{cache=await caches.open('gate-letter-model-v1');const hit=await cache.match(modelURL);if(hit)return hit.arrayBuffer();}catch{}
+ const response=await fetch(modelURL,{signal:AbortSignal.timeout(30000)});if(!response.ok)throw Error('Letter model download failed');
+ if(cache)try{await cache.put(modelURL,response.clone());}catch{}
+ return response.arrayBuffer();
 }
-onmessage=async event=>{
- const message=event.data;
+async function init(){
+ if(session)return session;
+ if(!loading)loading=(async()=>{
+  postMessage({type:'progress',progress:10});
+  importScripts(runtime+'ort.wasm.min.js');ort.env.wasm.numThreads=1;ort.env.wasm.proxy=false;ort.env.wasm.wasmPaths=runtime;
+  const bytes=await modelBytes();postMessage({type:'progress',progress:65});
+  session=await ort.InferenceSession.create(bytes,{executionProviders:['wasm'],graphOptimizationLevel:'all'});
+  // Warm the actual inference path before inviting the child to write.
+  await session.run({[session.inputNames[0]]:new ort.Tensor('float32',new Float32Array(784),[1,28,28,1])});
+  postMessage({type:'ready'});return session;
+ })().catch(e=>{loading=null;session=null;throw e;});return loading;
+}
+onmessage=async({data:m})=>{
  try{
-  const pipe=await init();
-  if(message.type==='load')return;
-  if(message.type!=='read')return;
-  // Deliberately receives pixels only. No target word, spelling list, context,
-  // lexicon or expected answer is supplied to the recognition model.
-  const image=new RawImage(new Uint8ClampedArray(message.pixels),message.width,message.height,4);
-  const result=await pipe(image,{max_new_tokens:24,num_beams:1,do_sample:false});
-  postMessage({type:'result',id:message.id,text:result?.[0]?.generated_text||''});
- }catch(error){postMessage({type:'error',id:message.id,message:error.message||'Reader unavailable'});}
+  const s=await init();if(m.type!=='read')return;
+  if(m.width!==28||m.height!==28||m.pixels.byteLength!==784*4)throw Error('Invalid letter image');
+  const started=performance.now(),input=new Float32Array(m.pixels);
+  const output=await s.run({[s.inputNames[0]]:new ort.Tensor('float32',input,[1,28,28,1])});
+  const prediction=AirdropLetters.rank(output[s.outputNames[0]].data);
+  postMessage({type:'result',id:m.id,prediction,inferenceMs:performance.now()-started});
+ }catch(e){postMessage({type:'error',id:m.id,message:e.message||'Letter reader unavailable'});}
 };

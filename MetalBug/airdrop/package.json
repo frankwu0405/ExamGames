@@ -2,11 +2,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "esbuild scene.source.js --bundle --minify --outfile=scene.bundle.js --legal-comments=eof && node pack-scene.cjs"
+    "build": "esbuild scene.source.js --bundle --minify --outfile=scene.bundle.js --legal-comments=eof && node pack-scene.cjs",
+    "test": "node ../airdrop.test.cjs && node ink.test.cjs && node letter.test.cjs",
+    "test:ink-integration": "node ink.integration.cjs"
   },
   "devDependencies": {
     "three": "0.187.0",
     "esbuild": "0.28.2",
-    "acorn": "8.19.0"
+    "acorn": "8.19.0",
+    "onnxruntime-web": "1.21.0",
+    "@napi-rs/canvas": "1.1.1",
+    "jsdom": "31.0.1"
   }
 }
