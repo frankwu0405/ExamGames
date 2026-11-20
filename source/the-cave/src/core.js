@@ -8,8 +8,36 @@ export function load() {
   try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(fresh(), JSON.parse(raw)); } catch (e) { }
   S.settings = Object.assign(fresh().settings, S.settings || {});
   if (!S.name) { try { const p = JSON.parse(localStorage.getItem('pebbleTown_v1') || '{}'); if (p.name) S.name = p.name; } catch (e) { } }
+  if (S.name) setTimeout(async () => { if (!(await pullIfAhead())) cloudPush(true); }, 0);
 }
-export function save() { S.savedAt = Date.now(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } }
+export function save() { S.savedAt = Date.now(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } clearTimeout(cloudTimer); cloudTimer = setTimeout(() => cloudPush(), 10000); }
+
+// ---------------------------------------------------------------- cloud save (same Firebase project as Pebble Town, doc CAVE-<NAME>)
+// The copy with more progress wins, so an older device can never overwrite newer play.
+const CBASE = 'https://firestore.googleapis.com/v1/projects/exam-games/databases/(default)/documents/saves/', CKEY = 'AIzaSyB9v9S8A1nMQ2_TiKxtNFO4GUuc26WrZSE';
+let cloudTimer = 0;
+const caveId = () => { if (/[?&]test/.test(location.search)) return ''; const n = String(S.name || '').toUpperCase().replace(/[^\p{L}\p{N}]/gu, '').slice(0, 20); return n ? 'CAVE-' + n : ''; };
+export const caveProgress = o => !o ? 0 : Object.values(o.stops || {}).filter(x => x && x.done).length * 10 + Object.keys(o.cards || {}).length * 3 + Object.keys(o.stars || {}).length + (o.ep || 0);
+async function cloudGet() {
+  const id = caveId(); if (!id) return null;
+  const r = await fetch(CBASE + encodeURIComponent(id) + '?key=' + CKEY, { signal: AbortSignal.timeout(6000) }); if (r.status === 404) return null; if (!r.ok) throw new Error('HTTP ' + r.status);
+  const j = await r.json(); return { o: JSON.parse(j.fields.d.stringValue), t: +j.fields.t.integerValue };
+}
+export async function cloudPush(force) {
+  const id = caveId(); if (!id) return false;
+  try {
+    if (!force) { const g = await cloudGet(); if (g && caveProgress(g.o) > caveProgress(S)) return false; }
+    const body = { fields: { d: { stringValue: JSON.stringify(S) }, t: { integerValue: String(Date.now()) }, game: { stringValue: 'The Cave' } } };
+    const r = await fetch(CBASE + encodeURIComponent(id) + '?key=' + CKEY, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, keepalive: true, body: JSON.stringify(body) });
+    return r.ok;
+  } catch (e) { return false; }
+}
+async function pullIfAhead() {
+  try { const g = await cloudGet(); if (!g || caveProgress(g.o) <= caveProgress(S)) return false;
+    g.o.settings = S.settings; localStorage.setItem(KEY, JSON.stringify(g.o)); location.reload(); return true; } catch (e) { return false; }
+}
+document.addEventListener('visibilitychange', () => { if (!S.name) return; if (document.visibilityState === 'hidden') { clearTimeout(cloudTimer); cloudPush(); } else pullIfAhead(); });
+
 export function miss(word) { S.misses[word] = (S.misses[word] || 0) + 1; save(); }
 
 // ---------------------------------------------------------------- audio
