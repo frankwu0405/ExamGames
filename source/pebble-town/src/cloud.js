@@ -8,10 +8,20 @@ export const idFor = name => { const n = String(name || '').toUpperCase().replac
 const seg = id => encodeURIComponent(id);
 const fields = o => ({ fields: Object.fromEntries(Object.entries(o).map(([k, v]) => [k, typeof v === 'number' ? { integerValue: String(v) } : { stringValue: v }])) });
 let lastSent = '', timer = 0;
+// How much she has done. Only grows while she plays, so it tells which copy is ahead (timestamps can't: an old device saves "newer").
+export const progressOf = o => { if (!o) return 0; let n = 0; for (const r of Object.values(o.items || {})) n += (r.c || 0) + (r.w || 0);
+  return n + ((o.wb && o.wb.marks) || '').length * 3 + (o.decor || []).length + ((o.storm && o.storm.runs) || 0); };
+export const summary = o => `${o.coins || 0} coins, ${((o.wb && o.wb.marks) || '').length}/28 bridge planks, ${Object.keys(o.items || {}).length} words practised`;
+// The copy that is ahead wins; questions she practised only on the other device are kept too.
+export function mergeSaves(win, other) { const o = JSON.parse(JSON.stringify(win)); o.items = o.items || {};
+  for (const [k, r] of Object.entries((other && other.items) || {})) { const m = o.items[k]; if (!m || (r.c || 0) + (r.w || 0) > (m.c || 0) + (m.w || 0)) o.items[k] = r; } return o; }
+async function cloudAhead() { try { const g = await fetchSave(S.cloudCode); return progressOf(g.save) > progressOf(S) ? g : null; } catch (e) { return null; } }
 export async function syncNow(force) {
   if (!S.cloudCode || cloud.busy) return false;
   try {
-    cloud.busy = true; const d = await packSave();
+    cloud.busy = true;
+    if (!force) { const g = await cloudAhead(); if (g) { cloud.ahead = g; cloud.err = 'The cloud copy has more progress'; cloud.busy = false; return false; } }
+    const d = await packSave();
     if (!force && d === lastSent) { cloud.busy = false; return true; }
     const r = await fetch(`${BASE}/saves/${seg(S.cloudCode)}?key=${KEY}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, keepalive: d.length < 60000, body: JSON.stringify(fields({ d, t: Date.now(), game: GAME })) });
     if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -29,14 +39,16 @@ export async function sendMessage(from, text) {
 }
 // auto-sync: a little after progress changes, and when the page is hidden
 onSave(() => { if (!S.cloudCode) return; clearTimeout(timer); timer = setTimeout(() => syncNow(), 15000); });
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && S.cloudCode) { clearTimeout(timer); syncNow(); } });
+document.addEventListener('visibilitychange', async () => { if (!S.cloudCode) return;
+  if (document.visibilityState === 'hidden') { clearTimeout(timer); syncNow(); return; }
+  const g = await cloudAhead(); if (g) { writeSave(mergeSaves(g.save, S)); location.reload(); } });
 
 // Called when she starts the game with her name. Returns true if the page is reloading with a restored save.
 // Safe by design: it never overwrites cloud progress with a blank or older game; it asks first.
 const blank = () => !S.coins && !Object.keys(S.items || {}).length && !(S.decor || []).length;
 export async function cloudStart(confirmFn) {
   const id = idFor(S.name); if (!id || S.cloudOff === id) return false;
-  if (S.cloudCode === id && !blank()) { syncNow(); return false; }
+  if (S.cloudCode === id && !blank()) { const g = await cloudAhead(); if (g) { writeSave(mergeSaves(g.save, S)); location.reload(); return true; } syncNow(true); return false; }
   try {
     const { save: o, t } = await fetchSave(id).catch(e => { if (e.message === 'nocode') return { save: null }; throw e; });
     if (!o) { S.cloudCode = id; save(); syncNow(true); return false; }                       // no cloud copy yet: start one

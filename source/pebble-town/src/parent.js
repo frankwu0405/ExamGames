@@ -1,6 +1,6 @@
 // Grown-ups page: what's mastered, what keeps going wrong, and settings.
 import { S, save, h, sfx, say, englishVoices, setVoice, resetAll, exportSave, importSave, isProtected, protectStorage, backupLink, shortenLink, unpackSave, writeSave } from './core.js';
-import { cloud, syncNow, turnOn, fetchSave, sendMessage, idFor } from './cloud.js';
+import { cloud, syncNow, turnOn, fetchSave, sendMessage, idFor, progressOf as saveProgress, summary } from './cloud.js';
 import { CREDITS } from './images.gen.js';
 import { SPELLING, SENTENCES, GRAMMAR } from './data.js';
 import { progressOf, syncTown, previewFinale } from './shell.js';
@@ -143,7 +143,15 @@ function cloudBox() {
     const when = cloud.last ? 'just now' : S.savedAt ? 'updates by itself while she plays' : '';
     out.append(h('div', { style: { font: '700 34px var(--display)', letterSpacing: '3px', textAlign: 'center', padding: '8px', border: '3px solid #2E2A4F', borderRadius: '12px', background: '#fff' } }, S.cloudCode),
       h('p', { style: { margin: '6px 0', fontSize: '15px' } }, `On ✓ (${when}). On another device, just start the game and type the same name: it offers to bring her game back. Or use Grown-ups → Restore → type the name.`),
-      h('div', { style: { display: 'flex', gap: '10px', flexWrap: 'wrap' } }, btn('green', '🔄 Save now', async () => { msg.textContent = 'Saving…'; msg.textContent = (await syncNow(true)) ? 'Saved to the cloud ✓' : 'Could not reach the cloud. It will try again later.'; })));
+      h('div', { style: { display: 'flex', gap: '10px', flexWrap: 'wrap' } }, btn('green', '⬆️ Save this device to cloud', async () => { msg.textContent = 'Checking…';
+        let g = null; try { g = await fetchSave(S.cloudCode); } catch (e) { }
+        if (g && saveProgress(g.save) > saveProgress(S) && !confirm(`The cloud has MORE progress:\n${summary(g.save)}\n(saved ${new Date(g.t).toLocaleString()})\n\nThis device:\n${summary(S)}\n\nOverwrite the cloud with this device anyway?`)) { msg.textContent = 'Nothing changed.'; return; }
+        msg.textContent = 'Saving…'; msg.textContent = (await syncNow(true)) ? `Saved to the cloud ✓ (${summary(S)})` : 'Could not reach the cloud. Try again in a moment.'; }),
+        btn('paper', '⬇️ Load from cloud', async () => { msg.textContent = 'Loading…'; let g;
+        try { g = await fetchSave(S.cloudCode); } catch (e) { msg.textContent = e.message === 'nocode' ? 'No cloud save yet.' : 'Could not reach the cloud. Try again in a moment.'; return; }
+        if (!confirm(`Cloud copy:\n${summary(g.save)}\n(saved ${new Date(g.t).toLocaleString()})\n\nThis device:\n${summary(S)}\n\nReplace this device's progress with the cloud copy?`)) { msg.textContent = 'Nothing changed.'; return; }
+        writeSave(g.save); location.reload(); })),
+      h('p', { style: { margin: '8px 0 0', fontSize: '15px' } }, 'This device: ' + summary(S)));
   };
   draw(); return h('div', {}, out, msg);
 }
